@@ -5,6 +5,7 @@ __pycache__/
 
 # Ignore Python virtual environment folders
 env/
+myenv/
 .venv/
 
 # C extensions
@@ -66,7 +67,6 @@ db.sqlite3
 db.sqlite3-journal
 
 # Flask stuff:
-instance/
 .webassets-cache
 
 # Scrapy stuff:
