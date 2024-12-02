@@ -7,7 +7,7 @@ api_bp = Blueprint('api', __name__)
 def index():
     return "Flask backend is up and running!"
 
-@api_bp.route("/predict", methods=["POST"])
+@api_bp.route("/predictrvo", methods=["POST"])
 def predict_route():
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400

@@ -164,3 +164,24 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+
+# Flask stuff:
+.webassets-cache
+uploads/
+
+# Model files
+*.keras
+*.h5
+*.ckpt
+
+# Dataset files
+datasets/
+*.csv
+*.tsv
+
+
+# IDE-specific files
+.vscode/
+.idea/
+
