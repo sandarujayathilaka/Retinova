@@ -19,8 +19,8 @@ import diseases from "@/assets/icons/diseases.svg";
 // This is sample data.
 const data = {
   user: {
-    name: "Doctor name",
-    email: "m@example.com",
+    name: "Anil Kumar",
+    email: "anilkumar@ihsl.com",
     avatar: "https://github.com/shadcn.png",
   },
   teams: [
@@ -90,20 +90,20 @@ const data = {
       icon: diseases,
       items: [
         {
-          title: "Introduction",
-          url: "#",
+          title: "DR",
+          url: "/diagnose/dr",
         },
         {
-          title: "Get Started",
-          url: "#",
+          title: "AMD",
+          url: "/diagnose/amd",
         },
         {
-          title: "Tutorials",
-          url: "#",
+          title: "Glaucoma",
+          url: "/diagnose/glaucoma",
         },
         {
-          title: "Changelog",
-          url: "#",
+          title: "RVO",
+          url: "/diagnose/rvo",
         },
       ],
     },
