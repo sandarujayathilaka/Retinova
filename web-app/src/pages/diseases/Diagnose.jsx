@@ -112,13 +112,16 @@ const Diagnose = ({ disease, handleSubmission, isSubmitting, prediction }) => {
                 <RotateSpinner size={80} color="#C9DDF6" />
               </div>
             ) : (
-              <img
-                src={
-                  imageUrl ??
-                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQVNer1ZryNxWVXojlY9Hoyy1-4DVNAmn7lrg&s"
-                }
-                className="w-[250px] rounded"
-              />
+              <div className="flex items-center justify-center flex-col">
+                <img
+                  src={
+                    imageUrl ??
+                    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQVNer1ZryNxWVXojlY9Hoyy1-4DVNAmn7lrg&s"
+                  }
+                  className="w-[250px] rounded"
+                />
+                <div className="mt-1">{image?.name}</div>
+              </div>
             )
           }
         </div>
