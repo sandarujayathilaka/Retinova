@@ -23,7 +23,7 @@ const AMD = () => {
       formData.append("file", image); // Append the image to the form data
 
       // Send the FormData to the backend
-      const response = await api.post("/predict/amd", formData, {
+      const response = await api.post("/api/predict/amd", formData, {
         headers: {
           "Content-Type": "multipart/form-data", // Ensure content-type is set correctly
         },
@@ -32,7 +32,7 @@ const AMD = () => {
       console.log("added:", response.data);
       setPrediction({
         disease: response.data?.disease,
-        type: response.data?.predicted_class,
+        type: response.data?.label,
         confidence: response?.data.confidence,
       }); // Set the prediction data
     } catch (error) {
