@@ -10,9 +10,15 @@ def predict_image(file):
 
     predictions = model.predict(img_array)
 
-    predicted_class = np.argmax(predictions, axis=1)[0]
+    predicted_class = np.argmax(predictions[0])
 
-    class_labels = ["0", "1", "4"]
+    print(predictions)
+    print(predicted_class)
+
+    class_labels = ["NPDR", "No_DR", "PDR"]
+
+    print(class_labels[predicted_class])
+
     predicted_label = class_labels[predicted_class]
 
     return {

@@ -1,7 +1,7 @@
 from tensorflow.keras.models import load_model
 import os
 
-MODEL_PATH = r"C:\Users\Asus\Desktop\RP Backend\Research-Project\Backend\app\services\model\trained_model.keras"
+MODEL_PATH = "app\services\model\my_final_model_corect_04.keras"
 
 def get_model():
     try:
