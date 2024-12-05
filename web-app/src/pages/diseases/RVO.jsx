@@ -23,17 +23,30 @@ const RVO = () => {
       formData.append("file", image); // Append the image to the form data
 
       // Send the FormData to the backend
-      const response = await api.post("/predict/rvo", formData, {
+      const response = await api.post("api/predict/rvo", formData, {
         headers: {
           "Content-Type": "multipart/form-data", // Ensure content-type is set correctly
         },
       });
 
       console.log("added:", response.data);
+
+      // Assuming response.data.label and response.data.confidence are valid
+      const label = response.data.label;
+      const confidenceArray = response.data.confidence;
+
+      // Map the label to the index in the confidence array
+      const classLabels = ["CRVO", "BRVO", "Healthy"];
+      const predictedIndex = classLabels.indexOf(label);
+
+      // Ensure the index is valid
+      const confidence = predictedIndex !== -1 ? confidenceArray[predictedIndex] * 100 : 0;
+
+
       setPrediction({
-        disease: response.data?.disease,
-        type: response.data?.predicted_class,
-        confidence: response?.data.confidence,
+        disease: "Retinal Vein Occlusion",
+        type: label,
+        confidence,
       }); // Set the prediction data
     } catch (error) {
       toast.error("Error uploading image");
@@ -46,7 +59,7 @@ const RVO = () => {
   return (
     <div>
       <Diagnose
-        disease={"Glaucoma"}
+        disease={"Retinal Vein Occlusion"}
         handleSubmission={handleSubmission}
         isSubmitting={isSubmitting}
         prediction={prediction}
