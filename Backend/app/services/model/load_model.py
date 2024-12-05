@@ -7,17 +7,18 @@ import tensorflow as tf
 from tensorflow.keras import layers
 import keras
 
+MODEL_PATH = "app\services\model\my_final_model_corect_04.keras"
 
-# MODEL_PATH = r"C:\Users\Asus\Desktop\RP Backend\Research-Project\Backend\app\services\model\trained_model.keras"
+MODEL_PATH = r"C:\Users\Asus\Desktop\RP Backend\Research-Project\Backend\app\services\model\trained_model.keras"
 
-# def get_model():
-#     try:
-#         model = load_model(MODEL_PATH)
-#         print("Model loaded successfully!")
-#         return model
-#     except Exception as e:
-#         print(f"Error loading model: {e}")
-#         return None
+def get_model():
+    try:
+        model = load_model(MODEL_PATH)
+        print("Model loaded successfully!")
+        return model
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        return None
 
 
 keras.config.enable_unsafe_deserialization()
