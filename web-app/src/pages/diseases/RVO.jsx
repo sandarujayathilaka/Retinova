@@ -31,7 +31,6 @@ const RVO = () => {
 
       console.log("added:", response.data);
 
-      // Assuming response.data.label and response.data.confidence are valid
       const label = response.data.label;
       const confidenceArray = response.data.confidence;
 
