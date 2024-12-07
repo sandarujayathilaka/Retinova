@@ -1,6 +1,6 @@
 # Retinal Image Analysis for Early Detection and Prediction of Eye Diseases
 
-This project focuses on the early detection and prediction of eye diseases such as Diabetic Retinopathy (DR), Glaucoma, Age-Related Macular Degeneration (AMD), and Retinal Vein Occlusion (RVO) using retinal fundus images. The goal is to create a reliable and robust model for detecting these diseases early, improving diagnosis, and enabling timely interventions.
+This project focuses on the early detection and prediction of eye diseases such as Diabetic Retinopathy (DR), Glaucoma, Age-Related Macular Degeneration (AMD), and Retinal Vein Occlusion (RVO) using retinal fundus images. The goal is to create a reliable and robust multi-disease detection system by integrating models for early detection of these diseases, improving diagnosis, and enabling timely interventions.
 
 ## Abbreviations
 - **DR**: Diabetic Retinopathy
