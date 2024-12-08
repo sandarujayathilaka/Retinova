@@ -39,7 +39,7 @@ const RVO = () => {
       const predictedIndex = classLabels.indexOf(label);
 
       // Ensure the index is valid
-      const confidence = predictedIndex !== -1 ? confidenceArray[predictedIndex] * 100 : 0;
+      const confidence = predictedIndex !== -1 ? confidenceArray[predictedIndex] : 0;
 
 
       setPrediction({
