@@ -26,7 +26,8 @@ This project focuses on the early detection and prediction of eye diseases such 
 | 👤 Kumanayake I.A. - IT21267772           | Member  | it21267772@my.sliit.lk         | Glaucoma Detection     |
 | 👤 E.A. Sandeepani - IT21181924           | Member  | it21181924@my.sliit.lk         | RVO Detection          |
 
-## Architectural
-![Architectural Diagram](https://github.com/user-attachments/assets/9c3a661d-548a-4016-b4da-7a6b5832f0e1)
- Diagram
+## Architectural Diagram
+![Architectural Diagram](https://github.com/user-attachments/assets/8249c557-ecfd-43fc-9e55-e49e93262a48)
+
+
 
