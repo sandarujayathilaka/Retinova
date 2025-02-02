@@ -9,6 +9,7 @@ import RVO from "./pages/diseases/RVO";
 import AMD from "./pages/diseases/AMD";
 import { Toaster } from "react-hot-toast";
 import DoctorsList from "./pages/doctors/List";
+import Add from "./pages/doctors/New";
 
 const App = () => {
   return (
@@ -24,6 +25,7 @@ const App = () => {
           <Route path="/diagnose/rvo" element={<RVO />} />
 
           <Route path="/doctors" element={<DoctorsList />} />
+          <Route path="/add" element={<Add />} />
 
           {/* 404 Not Found Page */}
           <Route path="*" element={<NotFound />} />

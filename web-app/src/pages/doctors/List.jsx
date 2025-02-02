@@ -34,6 +34,7 @@ import SortableHeader from "@/components/data-table/SortableHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FaUserDoctor } from "react-icons/fa6";
 import { days } from "@/constants";
+import Add from "./Add";
 
 const data = [
   {
@@ -261,10 +262,7 @@ const List = () => {
           <FaUserDoctor className="inline-block size-10 mr-2 text-blue-500" />
           {data?.length} Doctors
         </div>
-        <Button variant="primary">
-          <PlusIcon />
-          Add Doctor
-        </Button>
+        <Add />
       </div>
       <div className="flex items-center py-4">
         <Input
