@@ -8,6 +8,7 @@ import Glaucoma from "./pages/diseases/Glaucoma";
 import RVO from "./pages/diseases/RVO";
 import AMD from "./pages/diseases/AMD";
 import { Toaster } from "react-hot-toast";
+import DoctorsList from "./pages/doctors/List";
 
 const App = () => {
   return (
@@ -21,6 +22,8 @@ const App = () => {
           <Route path="/diagnose/amd" element={<AMD />} />
           <Route path="/diagnose/glaucoma" element={<Glaucoma />} />
           <Route path="/diagnose/rvo" element={<RVO />} />
+
+          <Route path="/doctors" element={<DoctorsList />} />
 
           {/* 404 Not Found Page */}
           <Route path="*" element={<NotFound />} />

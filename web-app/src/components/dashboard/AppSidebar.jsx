@@ -46,6 +46,7 @@ const data = {
       url: "#",
       icon: dashboard,
       isActive: true,
+      isExpandable: true,
       items: [
         {
           title: "DR",
@@ -67,27 +68,15 @@ const data = {
     },
     {
       title: "Doctors",
-      url: "#",
+      url: "/doctors",
       icon: doctors,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
+      isExpandable: false,
     },
     {
       title: "Diseases",
       url: "#",
       icon: diseases,
+      isExpandable: true,
       items: [
         {
           title: "DR",
