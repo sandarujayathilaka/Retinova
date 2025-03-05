@@ -7,7 +7,7 @@ const cors = require("cors");
 const { connectDB } = require("./config/db");
 const { errorHandler } = require("./middleware/error-handler");
 const { currentUser } = require("./middleware/current-user");
-
+const patientRoutes = require("./routes/patientRoutes")
 const userRoutes = require("./routes/user.routes");
 
 
@@ -23,6 +23,8 @@ app.use(currentUser);
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
+
+app.use("/api/patients", patientRoutes);
 
 app.use("/api/users", userRoutes);
 
