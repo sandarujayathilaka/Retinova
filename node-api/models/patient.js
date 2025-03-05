@@ -5,6 +5,7 @@ const diagnoseSchema = new mongoose.Schema({
   imageUrl: String,
   diagnosis: { type: String, default: "Processing" },
   uploadedAt: { type: Date, default: Date.now },
+  status:{type: String, default: "Unchecked" },
   confidenceScores: [Number], // Store confidence scores for transparency
 });
 
@@ -20,6 +21,7 @@ const patientSchema = new mongoose.Schema(
   {
     patientId: { type: String, required: true, unique: true },
     fullName: { type: String, required: true },
+    category: { type: [String], enum: ["DR", "AMD", "Glaucoma", "RVO", "Others"] },
     age: { type: Number, required: true },
     gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
     contactNumber: { type: String, required: true },
