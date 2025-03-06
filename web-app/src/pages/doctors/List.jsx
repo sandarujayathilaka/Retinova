@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -7,8 +6,10 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown, MoreHorizontal, PlusIcon } from "lucide-react";
+import { ChevronDown, MoreHorizontal } from "lucide-react";
+import { useState } from "react";
 
+import SortableHeader from "@/components/data-table/SortableHeader";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -29,11 +30,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import SortableHeader from "@/components/data-table/SortableHeader";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { FaUserDoctor } from "react-icons/fa6";
 import { days } from "@/constants";
+import { FaUserDoctor } from "react-icons/fa6";
 import Add from "./Add";
 
 const data = [
