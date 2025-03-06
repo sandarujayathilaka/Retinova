@@ -5,8 +5,13 @@ const diagnoseSchema = new mongoose.Schema({
   imageUrl: String,
   diagnosis: { type: String, default: "Processing" },
   uploadedAt: { type: Date, default: Date.now },
-  status:{type: String, default: "Unchecked" },
-  confidenceScores: [Number], // Store confidence scores for transparency
+  status: { type: String, default: "Unchecked" },
+  confidenceScores: [Number],
+  recommend: {
+    medicine: [String],
+    tests: [String],
+    note: { type: String },
+  }, // Store confidence scores for transparency
 });
 
 // Schema for patient medical history

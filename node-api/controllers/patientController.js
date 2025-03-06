@@ -3,6 +3,7 @@ const s3 = require("../config/s3");
 const axios = require("axios");
 require("dotenv").config();
 const path = require("path");
+const { v4: uuidv4 } = require("uuid");
 
 const FormData = require("form-data"); // Import FormData
 
@@ -408,5 +409,100 @@ exports.saveMultipleDiagnoses = async (req, res) => {
   }
 };
 
+exports.updatePatientDiagnosis = async (req, res) => {
+  try {
+    if (
+      !req.file ||
+      !req.body.confidenceScores ||
+      !req.body.recommend ||
+      !req.body.category ||
+      !req.body.diagnosis
+    ) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
 
+    // Extract patient ID from filename (e.g., 12345_jndj.jpg → 12345)
+    const filename = req.file.originalname;
+    const patientIdMatch = filename.match(/^\d+/);
+    if (!patientIdMatch) {
+      return res.status(400).json({
+        error: "Invalid filename format. Expected: patientId_randomtext.jpg",
+      });
+    }
 
+    const patientId = patientIdMatch[0];
+
+    // Find the patient
+    let patient = await Patient.findOne({ patientId });
+    if (!patient) {
+      return res.status(404).json({ error: "Patient not found" });
+    }
+
+    // Upload image to S3
+    const s3Key = `diagnosis_images/${uuidv4()}_${req.file.originalname}`;
+    const params = {
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: s3Key,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype,
+    };
+    const uploadResult = await s3.upload(params).promise();
+    const imageUrl = uploadResult.Location;
+
+    // Ensure confidenceScores is parsed correctly as an array of numbers
+    let confidenceScores;
+    try {
+      confidenceScores = JSON.parse(req.body.confidenceScores).map(Number);
+    } catch (error) {
+      return res.status(400).json({ error: "Invalid confidenceScores format" });
+    }
+
+    // Parse recommend field correctly as an object
+    let recommend;
+    try {
+      recommend = JSON.parse(req.body.recommend);
+      if (
+        !recommend.medicine ||
+        !Array.isArray(recommend.medicine) ||
+        !recommend.tests ||
+        !Array.isArray(recommend.tests) ||
+        typeof recommend.note !== "string"
+      ) {
+        return res.status(400).json({ error: "Invalid recommend format" });
+      }
+    } catch (error) {
+      return res.status(400).json({ error: "Invalid recommend JSON format" });
+    }
+
+    // Ensure category is handled as an array
+    const category = Array.isArray(req.body.category)
+      ? req.body.category
+      : [req.body.category];
+
+    // Update patient record
+    patient.diagnoseHistory.push({
+      imageUrl,
+      diagnosis: req.body.diagnosis,
+      confidenceScores,
+      category,
+      recommend,
+      status: "Unchecked", // Default from schema
+    });
+
+    await patient.save();
+
+    res.json({
+      message: "Patient diagnosis updated successfully",
+      patientId,
+      imageUrl,
+      diagnosis: req.body.diagnosis,
+      confidenceScores,
+      category,
+      recommend,
+      status: "Checked",
+    });
+  } catch (error) {
+    console.error("Error in updatePatientDiagnosis:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
