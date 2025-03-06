@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import uploadIcon from "../../assets/icons/upload.svg"; // Verify this path
 import { useDropzone } from "react-dropzone";
 import { PushSpinner } from "react-spinners-kit";
@@ -11,8 +11,21 @@ import {
   FaFileCsv,
   FaSearchPlus,
   FaUndo,
+  FaSave,
 } from "react-icons/fa";
-import { Alert, Tabs, Progress, Card, Typography, List, Button, Avatar, Modal } from "antd";
+import {
+  Alert,
+  Tabs,
+  Progress,
+  Card,
+  Typography,
+  List,
+  Button,
+  Avatar,
+  Modal,
+  Input,
+  Form,
+} from "antd";
 import { UserOutlined, UploadOutlined } from "@ant-design/icons";
 import {
   LineChart,
@@ -28,11 +41,14 @@ import { motion } from "framer-motion";
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
+const { TextArea } = Input;
 
 const Diagnose = ({
   disease,
   handleSubmission,
+  handleSavePrescription,
   isSubmitting,
+  isSaving,
   prediction,
   patientData,
   errorMessage,
@@ -42,10 +58,11 @@ const Diagnose = ({
   const [imageUrl, setImageUrl] = useState(null);
   const [uploadError, setUploadError] = useState(null);
   const [activeTab, setActiveTab] = useState("patientInfo");
-  const [showUploader, setShowUploader] = useState(true); // Control uploader visibility
-  const [selectedImage, setSelectedImage] = useState(null); // For modal
-  const [zoomLevel, setZoomLevel] = useState(1); // Zoom level for modal
-  const [rotation, setRotation] = useState(0); // Rotation angle for modal
+  const [showUploader, setShowUploader] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [form] = Form.useForm();
 
   const onDrop = useCallback(
     acceptedFiles => {
@@ -76,16 +93,15 @@ const Diagnose = ({
     accept: { "image/*": [".jpeg", ".jpg", ".png"] },
   });
 
-  // Reset state for new upload or error
   const resetForNewUpload = () => {
     setImage(null);
     setImageUrl(null);
     setUploadError(null);
     setShowUploader(true);
-    resetState(); // Reset parent state
+    resetState();
+    form.resetFields();
   };
 
-  // Handle errors and reset to uploader
   const handleError = () => {
     if (
       errorMessage?.includes("No patient profile found") ||
@@ -93,18 +109,16 @@ const Diagnose = ({
     ) {
       setTimeout(() => {
         resetForNewUpload();
-      }, 3000); // Show error for 3 seconds, then reset
+      }, 3000);
     }
   };
 
-  // Call handleError when errorMessage changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (errorMessage) {
       handleError();
     }
   }, [errorMessage]);
 
-  // Prediction styling
   const getPredictionDetails = type => {
     switch (type) {
       case "advanced":
@@ -118,18 +132,16 @@ const Diagnose = ({
     }
   };
 
-  // Image interaction handlers
   const handleImageClick = url => {
     setSelectedImage(url);
-    setZoomLevel(1); // Reset zoom
-    setRotation(0); // Reset rotation
+    setZoomLevel(1);
+    setRotation(0);
   };
 
-  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.2, 3)); // Max zoom 3x
-  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.2, 0.5)); // Min zoom 0.5x
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.2, 3));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.2, 0.5));
   const handleRotate = () => setRotation(prev => (prev + 90) % 360);
 
-  // Download image
   const handleImageDownload = () => {
     if (imageUrl && image) {
       const link = document.createElement("a");
@@ -139,7 +151,6 @@ const Diagnose = ({
     }
   };
 
-  // Chart data
   const chartData =
     patientData?.diagnoseHistory
       ?.filter(item => item.confidenceScores?.length > 0)
@@ -148,25 +159,24 @@ const Diagnose = ({
         confidence: Math.max(...item.confidenceScores) * 100,
       })) || [];
 
-  // Export handlers (placeholders)
   const handleExportPDF = () => alert("Exporting as PDF...");
   const handleExportCSV = () => alert("Exporting as CSV...");
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <Title level={2} className="text-gray-800 mb-6 font-semibold">
-        Diagnose <span className="text-gray-600 font-medium">{disease}</span>
+      <Title level={2} className="text-gray-800 mb-6 font-semibold text-center">
+        Diagnose <span className="text-blue-600 font-medium">{disease}</span>
       </Title>
 
-      {/* Upload Section - Shown Initially */}
-      {showUploader && !isSubmitting && (
+      {/* Upload Section */}
+      {!isSubmitting && !prediction?.type && !errorMessage && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <Card
-            className="shadow-lg rounded-xl overflow-hidden border-none"
+            className="shadow-xl rounded-xl overflow-hidden border-none bg-gradient-to-br from-white to-gray-50"
             bodyStyle={{ padding: "0" }}
           >
             <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
@@ -174,16 +184,16 @@ const Diagnose = ({
                 Upload Retinal Scan
               </Title>
               <Text className="text-white opacity-80">
-                Upload an image to detect Diabetic Retinopathy
+                Drop an image to analyze Diabetic Retinopathy
               </Text>
             </div>
-            <div className="p-8 bg-white">
+            <div className="p-8">
               <div
                 {...getRootProps()}
                 className={`border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-center transition-all duration-300 ${
                   isDragActive
                     ? "border-blue-500 bg-blue-50"
-                    : "border-gray-300 hover:border-blue-400"
+                    : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
                 }`}
               >
                 <input {...getInputProps()} />
@@ -209,7 +219,12 @@ const Diagnose = ({
                 )}
               </div>
               {uploadError && (
-                <Alert message={uploadError} type="error" showIcon className="mt-4 rounded-md" />
+                <Alert
+                  message={uploadError}
+                  type="error"
+                  showIcon
+                  className="mt-4 rounded-md shadow-sm"
+                />
               )}
             </div>
           </Card>
@@ -232,60 +247,115 @@ const Diagnose = ({
         </motion.div>
       )}
 
-      {/* Results Section - Shown Only After Prediction */}
-      {prediction.type && !isSubmitting && (
+      {/* Results Section */}
+      {prediction?.type && !isSubmitting && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Prediction Summary */}
-          <Card className="mb-6 shadow-md rounded-xl bg-gradient-to-r from-gray-50 to-white">
-            <div className="flex items-center gap-6">
-              <img
-                src={imageUrl}
-                alt="Uploaded"
-                className="w-32 h-32 rounded-lg object-cover cursor-pointer shadow-sm"
-                onClick={() => handleImageClick(imageUrl)}
-                title="Click to zoom/rotate"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  {getPredictionDetails(prediction.type).icon}
-                  <Text
-                    strong
-                    className={`text-xl capitalize text-${getPredictionDetails(prediction.type).color}-500`}
-                  >
-                    {prediction.type}
-                  </Text>
+          <Card className="shadow-xl rounded-xl overflow-hidden bg-gradient-to-br from-white to-gray-50 border-none">
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left: Image and Prediction */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <img
+                    src={imageUrl}
+                    alt="Uploaded"
+                    className="w-32 h-32 rounded-lg object-cover cursor-pointer shadow-md hover:shadow-lg transition-shadow"
+                    onClick={() => handleImageClick(imageUrl)}
+                    title="Click to zoom/rotate"
+                  />
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      {getPredictionDetails(prediction.type).icon}
+                      <Text
+                        strong
+                        className={`text-2xl capitalize text-${getPredictionDetails(prediction.type).color}-500`}
+                      >
+                        {prediction.type}
+                      </Text>
+                    </div>
+                    <Text className="text-gray-600 font-medium">Confidence Level</Text>
+                    <Progress
+                      percent={Math.round(prediction.confidence * 100)}
+                      strokeColor={getPredictionDetails(prediction.type).color}
+                      size="small"
+                      className="w-full mt-1"
+                    />
+                    <Text className="text-sm text-gray-600">
+                      Score: {(prediction.confidence * 100).toFixed(2)}%
+                    </Text>
+                  </div>
                 </div>
-                <Text className="text-gray-600 font-medium">Confidence Level</Text>
-                <Progress
-                  percent={Math.round(prediction.confidence * 100)}
-                  strokeColor={getPredictionDetails(prediction.type).color}
+                <Button
                   size="small"
-                  className="w-3/4 mt-1"
-                />
-                <Text className="text-sm text-gray-600 mt-1">
-                  Confidence Score: {(prediction.confidence * 100).toFixed(2)}%
+                  onClick={handleImageDownload}
+                  className="bg-blue-500 text-white hover:bg-blue-600 rounded-md"
+                >
+                  Download Image
+                </Button>
+                <Text className="text-xs text-gray-500 flex items-center gap-1">
+                  <FaInfoCircle /> AI-generated result. Consult a specialist.
                 </Text>
-                <div className="mt-2">
-                  <Button
-                    size="small"
-                    onClick={handleImageDownload}
-                    className="mr-2 bg-blue-500 text-white hover:bg-blue-600"
+              </div>
+
+              {/* Right: Prescription Form */}
+              <div className="space-y-4">
+                <Title level={4} className="text-gray-800">
+                  Doctor's Prescription
+                </Title>
+                <Form
+                  form={form}
+                  layout="vertical"
+                  onFinish={handleSavePrescription}
+                  className="space-y-4"
+                >
+                  <Form.Item
+                    label={<Text strong>Prescribed Medicine</Text>}
+                    name="medicine"
+                    rules={[{ message: "Enter medicines separated by commas" }]}
                   >
-                    Download
-                  </Button>
-                </div>
-                <Text className="text-xs text-gray-500 flex items-center gap-1 mt-2">
-                  <FaInfoCircle /> AI-generated result. Consult a specialist for confirmation.
-                </Text>
+                    <Input
+                      placeholder="e.g., Metformin, Insulin"
+                      className="rounded-md border-gray-300 focus:border-blue-500 shadow-sm"
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    label={<Text strong>Recommended Tests</Text>}
+                    name="tests"
+                    rules={[{ message: "Enter tests separated by commas" }]}
+                  >
+                    <Input
+                      placeholder="e.g., Blood Sugar, Eye Exam"
+                      className="rounded-md border-gray-300 focus:border-blue-500 shadow-sm"
+                    />
+                  </Form.Item>
+                  <Form.Item label={<Text strong>Clinical Notes</Text>} name="note">
+                    <TextArea
+                      rows={3}
+                      placeholder="Add clinical notes..."
+                      className="rounded-md border-gray-300 focus:border-blue-500 shadow-sm"
+                    />
+                  </Form.Item>
+                  <Form.Item>
+                    <Button
+                      type="primary"
+                      icon={<FaSave />}
+                      htmlType="submit"
+                      disabled={isSaving}
+                      loading={isSaving}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 rounded-md shadow-md"
+                    >
+                      {isSaving ? "Saving..." : "Save Prescription"}
+                    </Button>
+                  </Form.Item>
+                </Form>
               </div>
             </div>
           </Card>
 
-          {/* Tabs for Additional Details */}
+          {/* Tabs */}
           <Tabs
             activeKey={activeTab}
             onChange={setActiveTab}
@@ -295,7 +365,7 @@ const Diagnose = ({
           >
             <TabPane tab="Patient Information" key="patientInfo">
               {patientData && (
-                <Card className="shadow-md rounded-xl">
+                <Card className="shadow-md rounded-xl bg-white">
                   <div className="flex items-center gap-4 mb-6">
                     <Avatar size={64} icon={<UserOutlined />} className="bg-blue-500" />
                     <div>
@@ -349,7 +419,7 @@ const Diagnose = ({
 
             <TabPane tab="Medical History" key="medicalHistory">
               {patientData?.medicalHistory?.length > 0 && (
-                <Card className="shadow-md rounded-xl">
+                <Card className="shadow-md rounded-xl bg-white">
                   <List
                     dataSource={patientData.medicalHistory}
                     renderItem={item => (
@@ -380,7 +450,7 @@ const Diagnose = ({
 
             <TabPane tab="Diagnosis History" key="diagnosisHistory">
               {patientData?.diagnoseHistory?.length > 0 && (
-                <Card className="shadow-md rounded-xl">
+                <Card className="shadow-md rounded-xl bg-white">
                   <List
                     dataSource={patientData.diagnoseHistory}
                     renderItem={item => (
@@ -390,7 +460,7 @@ const Diagnose = ({
                             <img
                               src={item.imageUrl}
                               alt="Diagnosis"
-                              className="w-16 h-16 rounded-lg object-cover cursor-pointer"
+                              className="w-16 h-16 rounded-lg object-cover cursor-pointer shadow-sm"
                               onClick={() => handleImageClick(item.imageUrl)}
                               title="Click to zoom/rotate"
                             />
@@ -412,6 +482,19 @@ const Diagnose = ({
                                   %
                                 </Text>
                               )}
+                              {item.recommend && (
+                                <>
+                                  <Text className="block text-gray-600">
+                                    Medicine: {item.recommend.medicine?.join(", ") || "None"}
+                                  </Text>
+                                  <Text className="block text-gray-600">
+                                    Tests: {item.recommend.tests?.join(", ") || "None"}
+                                  </Text>
+                                  <Text className="block text-gray-600">
+                                    Note: {item.recommend.note || "N/A"}
+                                  </Text>
+                                </>
+                              )}
                             </div>
                           }
                         />
@@ -424,7 +507,7 @@ const Diagnose = ({
 
             <TabPane tab="Trend Analysis" key="charts">
               {chartData.length > 0 && (
-                <Card className="shadow-md rounded-xl">
+                <Card className="shadow-md rounded-xl bg-white">
                   <Title level={4} className="text-gray-800 mb-4">
                     Confidence Trend Over Time
                   </Title>
@@ -447,37 +530,20 @@ const Diagnose = ({
               )}
             </TabPane>
 
-            <TabPane tab="Notes" key="notes">
-              <Card className="shadow-md rounded-xl">
-                <textarea
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                  rows={4}
-                  placeholder="Add clinical notes about this diagnosis..."
-                />
-                <Button
-                  type="primary"
-                  className="mt-4 bg-blue-600 hover:bg-blue-700"
-                  onClick={() => alert("Notes saved!")}
-                >
-                  Save Notes
-                </Button>
-              </Card>
-            </TabPane>
-
             <TabPane tab="Export" key="export">
-              <Card className="shadow-md rounded-xl">
+              <Card className="shadow-md rounded-xl bg-white">
                 <div className="flex gap-4">
                   <Button
                     icon={<FaFilePdf />}
                     onClick={handleExportPDF}
-                    className="flex items-center gap-2 bg-red-500 text-white hover:bg-red-600"
+                    className="flex items-center gap-2 bg-red-500 text-white hover:bg-red-600 rounded-md"
                   >
                     Export as PDF
                   </Button>
                   <Button
                     icon={<FaFileCsv />}
                     onClick={handleExportCSV}
-                    className="flex items-center gap-2 bg-green-500 text-white hover:bg-green-600"
+                    className="flex items-center gap-2 bg-green-500 text-white hover:bg-green-600 rounded-md"
                   >
                     Export as CSV
                   </Button>
@@ -492,7 +558,7 @@ const Diagnose = ({
               type="default"
               icon={<UploadOutlined />}
               onClick={resetForNewUpload}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md shadow-md"
             >
               Upload Another Image
             </Button>
@@ -500,7 +566,7 @@ const Diagnose = ({
         </motion.div>
       )}
 
-      {/* Error Message - Shown Temporarily Before Reset */}
+      {/* Error Message */}
       {errorMessage && !isSubmitting && showUploader && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -526,6 +592,7 @@ const Diagnose = ({
         onCancel={() => setSelectedImage(null)}
         width={800}
         bodyStyle={{ padding: "20px", textAlign: "center" }}
+        className="rounded-lg"
       >
         <img
           src={selectedImage}
@@ -541,14 +608,14 @@ const Diagnose = ({
           <Button
             icon={<FaSearchPlus />}
             onClick={handleZoomIn}
-            className="bg-blue-500 text-white hover:bg-blue-600"
+            className="bg-blue-500 text-white hover:bg-blue-600 rounded-md"
           >
             Zoom In
           </Button>
           <Button
             icon={<FaSearchPlus />}
             onClick={handleZoomOut}
-            className="bg-blue-500 text-white hover:bg-blue-600"
+            className="bg-blue-500 text-white hover:bg-blue-600 rounded-md"
             style={{ transform: "rotate(180deg)" }}
           >
             Zoom Out
@@ -556,7 +623,7 @@ const Diagnose = ({
           <Button
             icon={<FaUndo />}
             onClick={handleRotate}
-            className="bg-blue-500 text-white hover:bg-blue-600"
+            className="bg-blue-500 text-white hover:bg-blue-600 rounded-md"
           >
             Rotate
           </Button>
