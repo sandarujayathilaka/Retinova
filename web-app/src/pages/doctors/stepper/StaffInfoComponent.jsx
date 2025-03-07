@@ -1,10 +1,17 @@
-import { useFormContext } from "react-hook-form";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+import { Controller, useFormContext } from "react-hook-form";
 
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 import { useEffect } from "react";
 
@@ -13,6 +20,7 @@ export default function StaffInfoComponent() {
     register,
     setValue,
     watch,
+    control,
     formState: { errors },
   } = useFormContext();
 
@@ -116,10 +124,32 @@ export default function StaffInfoComponent() {
         >
           Specialist
         </label>
-        <Input
-          id={register("specialist").name}
-          {...register("specialist")}
-          className="block w-full p-2 border rounded-md"
+        <Controller
+          control={control}
+          name={`specialist`}
+          render={({ field }) => (
+            <Select onValueChange={field.onChange} value={field.value}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a specialist" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="ophthalmologist">Ophthalmologist</SelectItem>
+                  <SelectItem value="optometrist">Optometrist</SelectItem>
+                  <SelectItem value="retina_specialist">Retina Specialist</SelectItem>
+                  <SelectItem value="cornea_specialist">Cornea Specialist</SelectItem>
+                  <SelectItem value="glaucoma_specialist">Glaucoma Specialist</SelectItem>
+                  <SelectItem value="pediatric_ophthalmologist">
+                    Pediatric Ophthalmologist
+                  </SelectItem>
+                  <SelectItem value="neuro_ophthalmologist">Neuro-Ophthalmologist</SelectItem>
+                  <SelectItem value="oculoplastic_surgeon">Oculoplastic Surgeon</SelectItem>
+                  <SelectItem value="ocular_oncologist">Ocular Oncologist</SelectItem>
+                  <SelectItem value="contact_lens_specialist">Contact Lens Specialist</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          )}
         />
         {errors.specialist && (
           <span className="text-sm text-destructive">{errors.specialist.message}</span>

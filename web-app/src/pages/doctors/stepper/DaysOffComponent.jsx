@@ -1,4 +1,4 @@
-import { Controller, useFieldArray, useFormContext } from "react-hook-form";
+import { useFieldArray, useFormContext } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,71 +21,74 @@ import { useState } from "react";
 import { MdOutlineEventRepeat } from "react-icons/md";
 
 export default function DaysOffComponent() {
-  const {
-    register,
-    control,
-    setValue,
-    formState: { errors },
-    watch,
-  } = useFormContext();
-
-  const { fields, append, remove, update } = useFieldArray({
-    control,
-    name: "daysOff",
-  });
+  const { control, watch } = useFormContext();
+  const { fields, append, remove, update } = useFieldArray({ control, name: "daysOff" });
 
   const [selectedDay, setSelectedDay] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
 
+  const [dayOffName, setDayOffName] = useState("");
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [repeatYearly, setRepeatYearly] = useState(false);
+
   const formValues = watch();
+  console.log("Form values", formValues);
+
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    let newErrors = {};
+
+    if (!dayOffName || dayOffName.length < 5) {
+      newErrors.dayOffName = "Day Off Name must be at least 5 characters.";
+    }
+    if (!startDate) {
+      newErrors.startDate = "Start date is required.";
+    }
+    if (!endDate) {
+      newErrors.endDate = "End date is required.";
+    } else if (startDate && endDate < startDate) {
+      newErrors.endDate = "End date must be after or equal to the start date.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleAddDayOff = () => {
-    const formData = watch();
-
-    if (!formData.dayOffName || !formData.startDate || !formData.endDate) {
-      console.error("Missing data:", formData);
-      return;
-    }
+    if (!validate()) return;
 
     if (isEditing && selectedDay !== null) {
-      update(selectedDay, {
-        dayOffName: formData.dayOffName,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        repeatYearly: formData.repeatYearly || false,
-      });
+      update(selectedDay, { dayOffName, startDate, endDate, repeatYearly });
     } else {
-      append({
-        dayOffName: formData.dayOffName,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        repeatYearly: formData.repeatYearly || false,
-      });
+      append({ dayOffName, startDate, endDate, repeatYearly });
     }
 
-    // Reset state and close dialog
-    setSelectedDay(null);
-    setIsEditing(false);
-    setIsAdding(false);
-
-    // Clear input values
-    setValue("dayOffName", "");
-    setValue("startDate", null);
-    setValue("endDate", null);
-    setValue("repeatYearly", false);
+    resetModal();
   };
 
   const handleEditDayOff = index => {
     const day = fields[index];
-
-    setValue("dayOffName", day.dayOffName);
-    setValue("startDate", day.startDate);
-    setValue("endDate", day.endDate);
-    setValue("repeatYearly", day.repeatYearly);
+    setDayOffName(day.dayOffName);
+    setStartDate(day.startDate);
+    setEndDate(day.endDate);
+    setRepeatYearly(day.repeatYearly);
 
     setSelectedDay(index);
     setIsEditing(true);
+  };
+
+  const resetModal = () => {
+    setDayOffName("");
+    setStartDate(null);
+    setEndDate(null);
+    setRepeatYearly(false);
+    setSelectedDay(null);
+    setIsEditing(false);
+    setIsAdding(false);
+    setErrors({});
   };
 
   return (
@@ -128,25 +131,13 @@ export default function DaysOffComponent() {
       <PlusCircle
         className="size-8 mt-3 text-gray-500 hover:text-gray-800 cursor-pointer"
         onClick={() => {
+          resetModal();
           setIsAdding(true);
-          setIsEditing(false);
-          setSelectedDay(null);
-
-          setValue("dayOffName", "");
-          setValue("startDate", null);
-          setValue("endDate", null);
-          setValue("repeatYearly", false);
         }}
       />
 
-      {/* Reusable Add/Edit Dialog */}
-      <Dialog
-        open={isEditing || isAdding}
-        onOpenChange={() => {
-          setIsEditing(false);
-          setIsAdding(false);
-        }}
-      >
+      {/* Add/Edit Dialog */}
+      <Dialog open={isEditing || isAdding} onOpenChange={resetModal}>
         <DialogTrigger asChild></DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -161,114 +152,82 @@ export default function DaysOffComponent() {
               </label>
               <Input
                 id="dayOffName"
-                {...register("dayOffName", { required: "Day off name is required" })}
+                value={dayOffName}
+                onChange={e => setDayOffName(e.target.value)}
                 className="block w-full p-2 border rounded-md"
               />
-              {errors.dayOffName && (
-                <span className="text-sm text-destructive">{errors.dayOffName.message}</span>
-              )}
+              {errors.dayOffName && <p className="text-red-500 text-sm">{errors.dayOffName}</p>}
             </div>
 
             {/* Date Picker */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-primary">Date</label>
-              <div className="flex items-center gap-4">
-                <Controller
-                  name="startDate"
-                  control={control}
-                  render={({ field }) => (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className="w-1/2 justify-start text-left font-normal"
-                        >
-                          <CalendarIcon />
-                          {field.value ? (
-                            format(new Date(field.value), "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                />
-                to
-                <Controller
-                  name="endDate"
-                  control={control}
-                  render={({ field }) => (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className="w-1/2 justify-start text-left font-normal"
-                        >
-                          <CalendarIcon />
-                          {field.value ? (
-                            format(new Date(field.value), "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                />
+              <div className="flex gap-4 justify-between items-start">
+                {/* Start Date */}
+                <div className="flex flex-col w-full space-y-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon />
+                        {startDate ? format(new Date(startDate), "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {errors.startDate && <p className="text-red-500 text-sm">{errors.startDate}</p>}
+                </div>
+
+                {/* Centered "to" Text */}
+                <span className="text-sm font-medium mt-2">to</span>
+
+                {/* End Date */}
+                <div className="flex flex-col w-full space-y-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon />
+                        {endDate ? format(new Date(endDate), "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {errors.endDate && <p className="text-red-500 text-sm">{errors.endDate}</p>}
+                </div>
               </div>
             </div>
 
             {/* Repeat Yearly Switch */}
-            <div className="flex items-center space-x-2">
-              <Controller
-                name="repeatYearly"
-                control={control}
-                render={({ field }) => (
-                  <Switch
-                    id="repeat-yearly"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                )}
-              />
+            <div className="flex items-center space-x-2 pt-3">
+              <Switch id="repeat-yearly" checked={repeatYearly} onCheckedChange={setRepeatYearly} />
               <Label htmlFor="repeat-yearly">Repeat this day off yearly</Label>
             </div>
 
             {/* Buttons */}
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => {
-                  setIsEditing(false);
-                  setIsAdding(false);
-                }}
-              >
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={resetModal}>
                 Cancel
               </Button>
-              <Button
-                onClick={e => {
-                  e.preventDefault();
-                  handleAddDayOff();
-                }}
-              >
+              <Button type="button" onClick={handleAddDayOff}>
                 Save
               </Button>
             </div>

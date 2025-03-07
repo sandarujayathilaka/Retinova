@@ -28,17 +28,87 @@ import WorkingHoursComponent from "./stepper/WorkingHoursComponent";
 
 const staffInfoSchema = z.object({
   type: z.enum(["full-time", "part-time"]),
-  name: z.string().min(0, "Name is required"),
-  specialist: z.string().min(0, "Specialist is required"),
+  name: z.string().min(1, "Name is required"),
+  specialist: z.enum(
+    [
+      "ophthalmologist",
+      "optometrist",
+      "retina_specialist",
+      "cornea_specialist",
+      "glaucoma_specialist",
+      "pediatric_ophthalmologist",
+      "neuro_ophthalmologist",
+      "oculoplastic_surgeon",
+      "ocular_oncologist",
+      "contact_lens_specialist",
+    ],
+    { message: "Specialist is required" },
+  ),
 });
 
 const contactInfoSchema = z.object({
-  phone: z.string().min(0, "Phone is required"),
-  email: z.string().min(0, "Email is required"),
-  address: z.string().min(0, "Address is required"),
+  phone: z
+    .string()
+    .min(10, "Phone number must be at least 10 digits")
+    .max(15, "Phone number can't be longer than 15 digits")
+    .regex(/^\d+$/, "Phone number must contain only numbers"),
+  email: z.string().email("Invalid email address").min(1, "Email is required"),
+  address: z
+    .string()
+    .min(5, "Address must be at least 5 characters long")
+    .max(200, "Address can't be longer than 200 characters"),
 });
 
-const workingHoursSchema = z.object({});
+// Define a schema for individual day's working hours
+const workingDaySchema = z
+  .object({
+    enabled: z.boolean(),
+    startTime: z.string().optional(),
+    endTime: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    // If enabled is true, startTime must be present
+    if (data.enabled && !data.startTime) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Required",
+        path: ["startTime"],
+      });
+    }
+
+    // If enabled is true, endTime must be present
+    if (data.enabled && !data.endTime) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Required",
+        path: ["endTime"],
+      });
+    }
+  });
+
+// Define the working hours schema with validation for at least one working day
+const workingHoursSchema = z.object({
+  workingHours: z
+    .object({
+      Monday: workingDaySchema,
+      Tuesday: workingDaySchema,
+      Wednesday: workingDaySchema,
+      Thursday: workingDaySchema,
+      Friday: workingDaySchema,
+      Saturday: workingDaySchema,
+      Sunday: workingDaySchema,
+    })
+    .refine(
+      data => {
+        // At least one day should be enabled
+        return Object.values(data).some(day => day.enabled);
+      },
+      {
+        message: "At least one working day must be selected",
+        path: ["day"],
+      },
+    ),
+});
 
 const { useStepper, steps, utils } = defineStepper(
   { id: "staffInfo", label: "Staff Info", icon: <FaUserPen />, schema: staffInfoSchema },
@@ -54,23 +124,151 @@ const { useStepper, steps, utils } = defineStepper(
 
 function Add() {
   const stepper = useStepper();
+  const currentIndex = utils.getIndex(stepper.current.id);
 
+  // Initialize a ref to keep track of form data across steps
+  const formDataRef = React.useRef({});
+
+  // Create a form instance for the current step
   const form = useForm({
     mode: "onTouched",
     resolver: zodResolver(stepper.current.schema),
+    defaultValues: {
+      workingHours: {
+        Monday: { enabled: false },
+        Tuesday: { enabled: false },
+        Wednesday: { enabled: false },
+        Thursday: { enabled: false },
+        Friday: { enabled: false },
+        Saturday: { enabled: false },
+        Sunday: { enabled: false },
+      },
+    },
   });
 
+  // Handle form submission for the current step
   const onSubmit = values => {
-    // biome-ignore lint/suspicious/noConsoleLog: <We want to log the form values>
+    // Store the current step's form values
+    formDataRef.current[stepper.current.id] = values;
+
     console.log(`Form values for step ${stepper.current.id}:`, values);
+
     if (stepper.isLast) {
+      // Process the complete form data
+      console.log("Complete form data:", formDataRef.current);
       stepper.reset();
+      // Reset the formDataRef when stepper is reset
+      formDataRef.current = {};
     } else {
       stepper.next();
     }
   };
 
-  const currentIndex = utils.getIndex(stepper.current.id);
+  // Handle back button click
+  const handleBack = () => {
+    // Store current form values even when going back
+    const currentValues = form.getValues();
+    formDataRef.current[stepper.current.id] = currentValues;
+
+    // Navigate to previous step without validation
+    stepper.prev();
+  };
+
+  const handleDemo = () => {
+    // Helper function to generate time in correct format within the valid range (8 AM - 7 PM)
+    const getRandomTime = startHour => {
+      const hour = Math.floor(Math.random() * (12 - startHour)) + startHour; // Random hour between startHour and 7 PM
+      const period = hour < 12 ? "AM" : "PM";
+      const formattedHour = hour > 12 ? hour - 12 : hour; // Convert to 12-hour format
+      return `${formattedHour}:00 ${period}`;
+    };
+
+    const workingHours = {
+      Monday: {
+        enabled: Math.random() > 0.5,
+        startTime: undefined,
+        endTime: undefined,
+      },
+      Tuesday: {
+        enabled: Math.random() > 0.5,
+        startTime: undefined,
+        endTime: undefined,
+      },
+      Wednesday: {
+        enabled: true,
+        startTime: getRandomTime(8), // Start from 8 AM
+        endTime: getRandomTime(9), // End after 8 AM, within valid range
+      },
+      Thursday: {
+        enabled: Math.random() > 0.5,
+        startTime: undefined,
+        endTime: undefined,
+      },
+      Friday: {
+        enabled: true,
+        startTime: getRandomTime(8), // Start from 8 AM
+        endTime: getRandomTime(9), // End after 8 AM, within valid range
+      },
+      Saturday: {
+        enabled: Math.random() > 0.5,
+        startTime: undefined,
+        endTime: undefined,
+      },
+      Sunday: {
+        enabled: Math.random() > 0.5,
+        startTime: undefined,
+        endTime: undefined,
+      },
+    };
+
+    // Adjust start and end times based on the 'enabled' state
+    Object.keys(workingHours).forEach(day => {
+      if (workingHours[day].enabled) {
+        // If working hours are enabled, we assign start and end times within the valid range
+        const startHour = Math.floor(Math.random() * 12) + 8; // Random start hour between 8 AM and 7 PM
+        const endHour = Math.floor(Math.random() * (19 - startHour)) + startHour + 1; // End hour after start hour
+
+        // Assign start and end times in 12-hour format
+        workingHours[day].startTime = getRandomTime(startHour);
+        workingHours[day].endTime = getRandomTime(endHour);
+      }
+    });
+
+    // Set random type, name, specialist, phone, email, and address
+    const formValues = {
+      workingHours,
+      type: Math.random() > 0.5 ? "full-time" : "part-time",
+      name: `Dr. ${["Smith", "Jones", "Taylor", "Brown", "Williams"][Math.floor(Math.random() * 5)]}`,
+      specialist: [
+        "ophthalmologist",
+        "optometrist",
+        "retina_specialist",
+        "cornea_specialist",
+        "glaucoma_specialist",
+        "pediatric_ophthalmologist",
+        "neuro_ophthalmologist",
+        "oculoplastic_surgeon",
+        "ocular_oncologist",
+        "contact_lens_specialist",
+      ][Math.floor(Math.random() * 10)],
+      phone: `0${Math.floor(Math.random() * 10e10)}`,
+      email: `test${Math.floor(Math.random() * 10000)}@example.com`,
+      address: `123 ${["Main St", "Broadway", "Elm St", "High St", "Park Ave"][Math.floor(Math.random() * 5)]}`,
+    };
+
+    // Set random days off
+    formValues.daysOff = [
+      {
+        dayOffName: "Holiday",
+        startDate: new Date().toISOString(),
+        endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+        repeatYearly: Math.random() > 0.5,
+      },
+    ];
+
+    // Update the form with random values
+    form.reset(formValues);
+  };
 
   return (
     <Dialog>
@@ -110,11 +308,18 @@ function Add() {
                         aria-selected={stepper.current.id === step.id}
                         className="flex size-10 p-0 items-center justify-center rounded-full"
                         onClick={async () => {
-                          const valid = await form.trigger();
-                          //must be validated
-                          if (!valid) return;
-                          //can't skip steps forwards but can go back anywhere if validated
-                          if (index - currentIndex > 1) return;
+                          // Store current form values
+                          const currentValues = form.getValues();
+                          formDataRef.current[stepper.current.id] = currentValues;
+
+                          // Only validate when moving forward
+                          if (index > currentIndex) {
+                            const valid = await form.trigger();
+                            if (!valid) return;
+                            if (index - currentIndex > 1) return; // Prevent skipping steps forward
+                          }
+
+                          // Always allow going backward
                           stepper.goTo(step.id);
                         }}
                       >
@@ -147,22 +352,36 @@ function Add() {
                 workingHours: () => <WorkingHoursComponent />,
                 daysOff: () => <DaysOffComponent />,
               })}
-
               {!stepper.isLast ? (
                 <div className="flex justify-end gap-4">
+                  <Button type="button" variant="ghost" onClick={handleDemo}>
+                    Demo
+                  </Button>
                   {stepper.isFirst ? (
                     <DialogClose asChild>
                       <Button variant="outline">Cancel</Button>
                     </DialogClose>
                   ) : (
-                    <Button variant="secondary" onClick={stepper.prev} disabled={stepper.isFirst}>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleBack}
+                      disabled={stepper.isFirst}
+                    >
                       Back
                     </Button>
                   )}
                   <Button type="submit">{stepper.isLast ? "Complete" : "Next"}</Button>
                 </div>
               ) : (
-                <Button onClick={stepper.reset}>Reset</Button>
+                <Button
+                  onClick={() => {
+                    stepper.reset();
+                    form.reset({});
+                  }}
+                >
+                  Reset
+                </Button>
               )}
             </div>
           </form>
