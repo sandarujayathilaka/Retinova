@@ -9,6 +9,8 @@ const { errorHandler } = require("./middleware/error-handler");
 const { currentUser } = require("./middleware/current-user");
 
 const userRoutes = require("./routes/user.routes");
+const treatmentRoutes = require("./routes/treatment.routes");
+const patientRoutes = require("./routes/patient.routes.temp");
 
 
 const app = express();
@@ -25,6 +27,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/users", userRoutes);
+app.use("/api/treatments", treatmentRoutes);
+app.use("/api/patients", patientRoutes);
 
 app.use(errorHandler);
 
