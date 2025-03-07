@@ -7,9 +7,9 @@ const cors = require("cors");
 const { connectDB } = require("./config/db");
 const { errorHandler } = require("./middleware/error-handler");
 const { currentUser } = require("./middleware/current-user");
-const patientRoutes = require("./routes/patientRoutes")
+const patientRoutes = require("./routes/patientRoutes");
 const userRoutes = require("./routes/user.routes");
-
+const utilRoutes = require("./routes/util.routes");
 
 const app = express();
 
@@ -27,6 +27,7 @@ app.get("/", (req, res) => {
 app.use("/api/patients", patientRoutes);
 
 app.use("/api/users", userRoutes);
+app.use("/api/util", utilRoutes);
 
 app.use(errorHandler);
 
