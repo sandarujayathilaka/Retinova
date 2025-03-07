@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Diagnose from "./Diagnose";
-import { api } from "@/services/api.service";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 const DR = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -10,59 +10,74 @@ const DR = () => {
     type: null,
     confidence: null,
   });
+  const [patientData, setPatientData] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const handleSubmission = async image => {
-    setIsSubmitting(true); // Start loading
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setPrediction({ disease: null, type: null, confidence: null }); // Reset prediction
+    setPatientData(null); // Reset patient data
 
     try {
-      console.log("Uploading image...");
-      console.log("image:", image);
+      console.log("Uploading image:", image.name);
 
-      // Create a FormData object
       const formData = new FormData();
-      formData.append("file", image); // Append the image to the form data
+      formData.append("file", image); // Matches backend's expected field
 
-      // Send the FormData to the backend
-      const response = await api.post("/api/predict", formData, {
+      const response = await axios.post("http://localhost:4000/api/patients/predict", formData, {
         headers: {
-          "Content-Type": "multipart/form-data", // Ensure content-type is set correctly
+          "Content-Type": "multipart/form-data",
         },
       });
 
       console.log("Response data:", response.data);
 
-      // Extract confidence array and find the highest value
-      const confidenceArray = response?.data?.confidence || [];
-      console.log("Confidence array:", confidenceArray);
+      const { diagnosis, confidenceScores, patientData } = response.data;
 
-      if (confidenceArray.length > 0) {
-        const highestConfidence = Math.max(...confidenceArray); // Find the highest confidence value
-        console.log("Highest confidence value:", highestConfidence);
+      if (!patientData) {
+        throw new Error("Patient data not returned from backend");
+      }
 
+      setPatientData(patientData);
+
+      if (confidenceScores && confidenceScores.length > 0) {
+        const highestConfidence = Math.max(...confidenceScores);
         setPrediction({
           disease: "Diabetic Retinopathy",
-          type: response.data.label,
-          confidence: highestConfidence, // Set the highest confidence value
+          type: diagnosis,
+          confidence: highestConfidence,
         });
       } else {
-        console.warn("Confidence array is empty or invalid");
-        toast.error("Invalid response: No confidence values found");
+        toast.error("No confidence scores returned");
       }
     } catch (error) {
-      toast.error("Error uploading image");
       console.error("Error uploading image:", error);
+      const errorMsg = error.response?.data?.error || "Error uploading image. Please try again.";
+      setErrorMessage(errorMsg);
+      toast.error(errorMsg);
     } finally {
-      setIsSubmitting(false); // End loading
+      setIsSubmitting(false);
     }
+  };
+
+  const resetState = () => {
+    setPrediction({ disease: null, type: null, confidence: null });
+    setPatientData(null);
+    setErrorMessage(null);
+    setIsSubmitting(false);
   };
 
   return (
     <div>
       <Diagnose
-        disease={"Diabetic Retinopathy"}
+        disease="Diabetic Retinopathy"
         handleSubmission={handleSubmission}
         isSubmitting={isSubmitting}
         prediction={prediction}
+        patientData={patientData}
+        errorMessage={errorMessage}
+        resetState={resetState}
       />
     </div>
   );
