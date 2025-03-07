@@ -6,6 +6,6 @@ const upload = require("../middleware/upload");
 const router = express.Router();
 
 router.post("/upload-image", upload.single("image"), uploadImage);
-router.delete("/delete-image", removeImage);
+router.post("/delete-image", removeImage);
 
 module.exports = router;

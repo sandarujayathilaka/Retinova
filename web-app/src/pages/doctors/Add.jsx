@@ -44,6 +44,12 @@ const staffInfoSchema = z.object({
     ],
     { message: "Specialist is required" },
   ),
+  image: z.object({
+    Location: z
+      .string()
+      .min(10, { message: "Please upload an image" }) // Image URL is required
+      .url({ message: "Invalid image URL" }), // Check if it's a valid URL
+  }),
 });
 
 const contactInfoSchema = z.object({
@@ -143,6 +149,7 @@ function Add() {
         Saturday: { enabled: false },
         Sunday: { enabled: false },
       },
+      image: { Location: "" },
     },
   });
 
