@@ -134,18 +134,18 @@ export default function StaffInfoComponent() {
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="ophthalmologist">Ophthalmologist</SelectItem>
-                  <SelectItem value="optometrist">Optometrist</SelectItem>
-                  <SelectItem value="retina_specialist">Retina Specialist</SelectItem>
-                  <SelectItem value="cornea_specialist">Cornea Specialist</SelectItem>
-                  <SelectItem value="glaucoma_specialist">Glaucoma Specialist</SelectItem>
-                  <SelectItem value="pediatric_ophthalmologist">
+                  <SelectItem value="Ophthalmologist">Ophthalmologist</SelectItem>
+                  <SelectItem value="Optometrist">Optometrist</SelectItem>
+                  <SelectItem value="Retina Specialist">Retina Specialist</SelectItem>
+                  <SelectItem value="Cornea Specialist">Cornea Specialist</SelectItem>
+                  <SelectItem value="Glaucoma Specialist">Glaucoma Specialist</SelectItem>
+                  <SelectItem value="Pediatric Ophthalmologist">
                     Pediatric Ophthalmologist
                   </SelectItem>
-                  <SelectItem value="neuro_ophthalmologist">Neuro-Ophthalmologist</SelectItem>
-                  <SelectItem value="oculoplastic_surgeon">Oculoplastic Surgeon</SelectItem>
-                  <SelectItem value="ocular_oncologist">Ocular Oncologist</SelectItem>
-                  <SelectItem value="contact_lens_specialist">Contact Lens Specialist</SelectItem>
+                  <SelectItem value="Neuro-Ophthalmologist">Neuro-Ophthalmologist</SelectItem>
+                  <SelectItem value="Oculoplastic Surgeon">Oculoplastic Surgeon</SelectItem>
+                  <SelectItem value="Ocular Oncologist">Ocular Oncologist</SelectItem>
+                  <SelectItem value="Contact Lens Specialist">Contact Lens Specialist</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
