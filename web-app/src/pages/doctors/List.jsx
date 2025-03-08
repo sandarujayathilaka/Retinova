@@ -6,7 +6,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown, MoreHorizontal } from "lucide-react";
+import { ChevronDown, Loader2, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
 
 import SortableHeader from "@/components/data-table/SortableHeader";
@@ -224,7 +224,7 @@ const List = () => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <Loader2 className="animate-spin size-8 mt-4" />;
   }
 
   return (
