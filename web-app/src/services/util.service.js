@@ -16,8 +16,6 @@ export const useUploadImage = () => {
 
 export const useDeleteImage = () => {
   return useMutation({
-    mutationFn: async ({ key }) => {
-      return api.post("/util/delete-image", { key });
-    },
+    mutationFn: async ({ key }) => api.post("/util/delete-image", { key }),
   });
 };

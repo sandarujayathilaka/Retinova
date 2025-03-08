@@ -17,7 +17,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+import { useAddDoctor } from "@/services/doctor.service";
 import { PlusIcon } from "lucide-react";
+import { useState } from "react";
+import toast from "react-hot-toast";
 import { FaUserPen } from "react-icons/fa6";
 import { PiClockClockwiseBold } from "react-icons/pi";
 import { TbClockX } from "react-icons/tb";
@@ -129,6 +132,8 @@ const { useStepper, steps, utils } = defineStepper(
 );
 
 function Add() {
+  const [isOpen, setIsOpen] = useState(false); // Track the dialog state
+
   const stepper = useStepper();
   const currentIndex = utils.getIndex(stepper.current.id);
 
@@ -153,6 +158,23 @@ function Add() {
     },
   });
 
+  const mutationAdd = useAddDoctor();
+
+  const handleReset = () => {
+    form.reset({
+      workingHours: {
+        Monday: { enabled: false },
+        Tuesday: { enabled: false },
+        Wednesday: { enabled: false },
+        Thursday: { enabled: false },
+        Friday: { enabled: false },
+        Saturday: { enabled: false },
+        Sunday: { enabled: false },
+      },
+      image: { Location: "" },
+    });
+  };
+
   // Handle form submission for the current step
   const onSubmit = values => {
     // Store the current step's form values
@@ -162,10 +184,24 @@ function Add() {
 
     if (stepper.isLast) {
       // Process the complete form data
-      console.log("Complete form data:", formDataRef.current);
-      stepper.reset();
-      // Reset the formDataRef when stepper is reset
-      formDataRef.current = {};
+      console.log("Complete form data:", form.getValues());
+
+      // Call the mutation when reaching the last step
+      mutationAdd.mutate(form.getValues(), {
+        onSuccess: data => {
+          console.log("Doctor added successfully:", data);
+          handleReset();
+          stepper.reset();
+          // Reset the formDataRef when stepper is reset
+          formDataRef.current = {};
+          toast.success("Doctor added successfully!");
+          setIsOpen(false); // This will close the dialog
+        },
+        onError: error => {
+          console.error(error);
+          toast.error("Failed to add doctor. Please try again.");
+        },
+      });
     } else {
       stepper.next();
     }
@@ -279,7 +315,7 @@ function Add() {
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="primary">
           <PlusIcon />
@@ -382,14 +418,19 @@ function Add() {
                   <Button type="submit">{stepper.isLast ? "Complete" : "Next"}</Button>
                 </div>
               ) : (
-                <Button
-                  onClick={() => {
-                    stepper.reset();
-                    form.reset({});
-                  }}
-                >
-                  Reset
-                </Button>
+                <>
+                  <Button
+                    onClick={() => {
+                      stepper.reset();
+                      handleReset();
+                    }}
+                  >
+                    Reset
+                  </Button>
+                  <Button type="submit" variant="primary">
+                    Add Doctor
+                  </Button>
+                </>
               )}
             </div>
           </form>
