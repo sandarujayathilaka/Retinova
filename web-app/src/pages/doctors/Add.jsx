@@ -32,7 +32,7 @@ import WorkingHoursComponent from "./stepper/WorkingHoursComponent";
 const staffInfoSchema = z.object({
   type: z.enum(["Full time", "Part time"]),
   name: z.string().min(1, "Name is required"),
-  specialist: z.enum(
+  specialty: z.enum(
     [
       "Ophthalmologist",
       "Optometrist",
@@ -282,7 +282,7 @@ function Add() {
       workingHours,
       type: Math.random() > 0.5 ? "Full time" : "Part time",
       name: `Dr. ${["Smith", "Jones", "Taylor", "Brown", "Williams"][Math.floor(Math.random() * 5)]}`,
-      specialist: [
+      specialty: [
         "Ophthalmologist",
         "Optometrist",
         "Retina Specialist",

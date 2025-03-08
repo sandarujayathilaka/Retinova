@@ -203,14 +203,14 @@ export default function StaffInfoComponent() {
       </div>
       <div className="space-y-2">
         <label
-          htmlFor={register("specialist").name}
+          htmlFor={register("specialty").name}
           className="block text-sm font-medium text-primary"
         >
           Specialist
         </label>
         <Controller
           control={control}
-          name={`specialist`}
+          name={`specialty`}
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
               <SelectTrigger className="w-full">

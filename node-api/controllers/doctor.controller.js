@@ -3,7 +3,7 @@ const addDoctor = async (req, res) => {
   const {
     name,
     type,
-    specialist,
+    specialty,
     phone,
     email,
     address,
@@ -23,7 +23,7 @@ const addDoctor = async (req, res) => {
   const doctor = new Doctor({
     name,
     type,
-    specialist,
+    specialty,
     phone,
     email,
     address,
