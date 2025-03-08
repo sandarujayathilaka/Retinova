@@ -7,6 +7,9 @@ const {
   multiImageSave,
   saveMultipleDiagnoses,
   updatePatientDiagnosis,
+  getAllPatients,
+  getPatientById,
+  getPatientsWithUncheckedDiagnoses,
 } = require("../controllers/patientController");
 const upload = require("../middleware/upload");
 
@@ -19,6 +22,9 @@ router.post("/multisave", upload.array("files", 10), multiImageSave);
 router.post("/predict", upload.single("file"), predictAndFetch);
 router.post("/multiDataSave", upload.array("files", 10), saveMultipleDiagnoses);
 router.post("/onedatasave", upload.single("file"), updatePatientDiagnosis);
+router.get("/getallpatients", getAllPatients);
+router.get("/:patientId", getPatientById);
+router.get("/unchecked", getPatientsWithUncheckedDiagnoses);
 
 // **Get Patient Diagnosis History**
 router.get("/:patientId/history", getPatientHistory);
