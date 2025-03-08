@@ -4,14 +4,22 @@ const diagnoseSchema = new mongoose.Schema({
   imageUrl: String,
   diagnosis: { type: String, default: "Processing" },
   uploadedAt: { type: Date, default: Date.now },
-  status: { type: String, default: "Unchecked" },
+  status: {
+    type: String,
+    enum: ["Unchecked", "Reviewed", "Completed","Checked"],
+    default: "Unchecked",
+  },
   confidenceScores: [Number],
   recommend: {
     medicine: String,
     tests: [
       {
         testName: String,
-        status: { type: String, default: "Pending" }, // Example statuses: "Pending", "Completed", "In Progress"
+        status: {
+          type: String,
+          enum: ["Pending", "In Progress", "Completed"],
+          default: "Pending",
+        },
         attachmentURL: String,
       },
     ],
