@@ -124,7 +124,7 @@ export default function AddPatient() {
   return (
     <div className=" bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
-        <Card className="shadow-2xl rounded-2xl overflow-hidden border-0 transition-all duration-300">
+        <Card className="rounded-2xl overflow-hidden border-0 transition-all duration-300">
           <CardHeader className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-600 text-white py-8 px-6">
             <div className="flex items-center justify-center space-x-4">
               <User2 className="h-8 w-8" />

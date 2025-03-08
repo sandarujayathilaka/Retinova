@@ -44,7 +44,7 @@ const AMD = () => {
   };
 
   return (
-    <div>
+    <div >
       <Diagnose
         disease={"AMD"}
         handleSubmission={handleSubmission}
