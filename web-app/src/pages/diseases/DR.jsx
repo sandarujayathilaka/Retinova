@@ -5,7 +5,7 @@ import axios from "axios";
 
 const DR = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSaving, setIsSaving] = useState(false); // Separate state for saving
+  const [isSaving, setIsSaving] = useState(false);
   const [prediction, setPrediction] = useState({
     disease: null,
     type: null,
@@ -70,27 +70,33 @@ const DR = () => {
       return;
     }
 
-    setIsSaving(true); // Start saving state
+    setIsSaving(true);
 
     try {
       const formData = new FormData();
       formData.append("file", imageFile);
       formData.append("diagnosis", prediction.type);
-      formData.append("confidenceScores", JSON.stringify([prediction.confidence])); // Array as string
-      formData.append("category", JSON.stringify(["DR"])); // Fixed as ["DR"]
-      formData.append(
-        "recommend",
-        JSON.stringify({
-          medicine: formValues.medicine ? formValues.medicine.split(",").map(m => m.trim()) : [],
-          tests: formValues.tests ? formValues.tests.split(",").map(t => t.trim()) : [],
-          note: formValues.note || "",
-        }),
-      );
+      formData.append("confidenceScores", JSON.stringify([prediction.confidence]));
+      formData.append("category", JSON.stringify(["DR"]));
+
+      // Format recommend according to the backend schema
+      const recommend = {
+        medicine: formValues.medicine || "",
+        tests: formValues.tests.map(test => ({
+          testName: test.testName,
+          status: "Pending",
+          attachmentURL: "",
+        })),
+        note: formValues.note || "",
+      };
+      formData.append("recommend", JSON.stringify(recommend));
 
       const response = await axios.post(
         "http://localhost:4000/api/patients/onedatasave",
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } },
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
       );
 
       console.log("Save response:", response.data);
@@ -102,7 +108,7 @@ const DR = () => {
       setErrorMessage(errorMsg);
       toast.error(errorMsg);
     } finally {
-      setIsSaving(false); // End saving state
+      setIsSaving(false);
     }
   };
 
@@ -123,7 +129,7 @@ const DR = () => {
         handleSubmission={handleSubmission}
         handleSavePrescription={handleSavePrescription}
         isSubmitting={isSubmitting}
-        isSaving={isSaving} // Pass saving state
+        isSaving={isSaving}
         prediction={prediction}
         patientData={patientData}
         errorMessage={errorMessage}

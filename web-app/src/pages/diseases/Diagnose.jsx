@@ -12,6 +12,8 @@ import {
   FaSearchPlus,
   FaUndo,
   FaSave,
+  FaPlus,
+  FaTrash,
 } from "react-icons/fa";
 import {
   Alert,
@@ -67,18 +69,15 @@ const Diagnose = ({
   const onDrop = useCallback(
     acceptedFiles => {
       setUploadError(null);
-
       if (acceptedFiles.length !== 1) {
         setUploadError("Please upload exactly one image.");
         return;
       }
-
       const file = acceptedFiles[0];
       if (!file.type.startsWith("image/")) {
         setUploadError("Please upload a valid image file (JPEG, PNG).");
         return;
       }
-
       setImage(file);
       setImageUrl(URL.createObjectURL(file));
       setShowUploader(false);
@@ -310,27 +309,60 @@ const Diagnose = ({
                   layout="vertical"
                   onFinish={handleSavePrescription}
                   className="space-y-4"
+                  initialValues={{ tests: [{ testName: "" }] }}
                 >
                   <Form.Item
                     label={<Text strong>Prescribed Medicine</Text>}
                     name="medicine"
-                    rules={[{ message: "Enter medicines separated by commas" }]}
+                    rules={[{ message: "Enter prescribed medicine" }]}
                   >
                     <Input
-                      placeholder="e.g., Metformin, Insulin"
+                      placeholder="e.g., Insulin"
                       className="rounded-md border-gray-300 focus:border-blue-500 shadow-sm"
                     />
                   </Form.Item>
-                  <Form.Item
-                    label={<Text strong>Recommended Tests</Text>}
-                    name="tests"
-                    rules={[{ message: "Enter tests separated by commas" }]}
-                  >
-                    <Input
-                      placeholder="e.g., Blood Sugar, Eye Exam"
-                      className="rounded-md border-gray-300 focus:border-blue-500 shadow-sm"
-                    />
-                  </Form.Item>
+
+                  <Form.List name="tests">
+                    {(fields, { add, remove }) => (
+                      <>
+                        {fields.map(({ key, name, ...restField }, index) => (
+                          <div key={key} className="flex items-end gap-4">
+                            <Form.Item
+                              {...restField}
+                              label={index === 0 ? <Text strong>Recommended Tests</Text> : null}
+                              name={[name, "testName"]}
+                              rules={[{ required: true, message: "Enter test name" }]}
+                              className="flex-1"
+                            >
+                              <Input
+                                placeholder="e.g., Blood Sugar"
+                                className="rounded-md border-gray-300 focus:border-blue-500 shadow-sm"
+                              />
+                            </Form.Item>
+                            {fields.length > 1 && (
+                              <Button
+                                icon={<FaTrash />}
+                                onClick={() => remove(name)}
+                                className="text-red-500 hover:text-red-600 border-none"
+                              />
+                            )}
+                          </div>
+                        ))}
+                        <Form.Item>
+                          <Button
+                            type="dashed"
+                            onClick={() => add()}
+                            block
+                            icon={<FaPlus />}
+                            className="flex items-center justify-center gap-2 text-gray-700 hover:text-blue-600"
+                          >
+                            Add Another Test
+                          </Button>
+                        </Form.Item>
+                      </>
+                    )}
+                  </Form.List>
+
                   <Form.Item label={<Text strong>Clinical Notes</Text>} name="note">
                     <TextArea
                       rows={3}
@@ -338,6 +370,7 @@ const Diagnose = ({
                       className="rounded-md border-gray-300 focus:border-blue-500 shadow-sm"
                     />
                   </Form.Item>
+
                   <Form.Item>
                     <Button
                       type="primary"
@@ -485,10 +518,15 @@ const Diagnose = ({
                               {item.recommend && (
                                 <>
                                   <Text className="block text-gray-600">
-                                    Medicine: {item.recommend.medicine?.join(", ") || "None"}
+                                    Medicine: {item.recommend.medicine || "None"}
                                   </Text>
                                   <Text className="block text-gray-600">
-                                    Tests: {item.recommend.tests?.join(", ") || "None"}
+                                    Tests:{" "}
+                                    {item.recommend.tests?.length > 0
+                                      ? item.recommend.tests
+                                          .map(test => `${test.testName} (${test.status})`)
+                                          .join(", ")
+                                      : "None"}
                                   </Text>
                                   <Text className="block text-gray-600">
                                     Note: {item.recommend.note || "N/A"}
