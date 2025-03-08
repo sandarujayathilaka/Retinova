@@ -1,33 +1,34 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import AddTreatment from "./AddTreatment";
 
 const TreatmentRecords = () => {
-    const { patientId } = useParams();  // Get patientId from the URL
-
+    const { patientId } = useParams();
     const [diagnoseHistory, setDiagnoseHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedDiagnosis, setSelectedDiagnosis] = useState(null); // Track selected diagnosis for side box
+    const [selectedDiagnosis, setSelectedDiagnosis] = useState(null);
+    const [showAddTreatmentForm, setShowAddTreatmentForm] = useState(false);
+
+    // Fetch diagnosis history
+    const fetchDiagnoseHistory = async () => {
+        try {
+            const response = await axios.get(`http://localhost:4000/api/treatments/${patientId}/diagnoses-with-treatments`);
+            setDiagnoseHistory(response.data);
+        } catch (err) {
+            setError("Failed to fetch diagnose history");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchDiagnoseHistory = async () => {
-            try {
-                const response = await axios.get(`http://localhost:4000/api/treatments/${patientId}/diagnoses-with-treatments`);
-                console.log(response.data); // Log data for debugging
-                setDiagnoseHistory(response.data);
-            } catch (err) {
-                setError("Failed to fetch diagnose history");
-                console.error(err); // Log the error for debugging
-            } finally {
-                setLoading(false);
-            }
-        };
-
         if (patientId) {
             fetchDiagnoseHistory();
         }
-    }, [patientId]);  // Re-fetch data when patientId changes
+    }, [patientId]);
 
     // Open side box for a specific diagnosis
     const openSideBox = (diagnose) => {
@@ -37,45 +38,77 @@ const TreatmentRecords = () => {
     // Close side box
     const closeSideBox = () => {
         setSelectedDiagnosis(null);
+        setShowAddTreatmentForm(false);
+    };
+
+    // Open the add treatment form
+    const openAddTreatmentForm = () => {
+        setShowAddTreatmentForm(true);
+    };
+
+    // Handle new treatment submission
+    const handleNewTreatmentAdded = async () => {
+        try {
+            // Refetch the diagnosis history
+            const response = await axios.get(`http://localhost:4000/api/treatments/${patientId}/diagnoses-with-treatments`);
+            setDiagnoseHistory(response.data);
+
+            // Find the updated diagnosis in the new data
+            const updatedDiagnosis = response.data.find(
+                (diagnose) => diagnose.diagnosis._id === selectedDiagnosis.diagnosis._id
+            );
+
+            // Update the selectedDiagnosis state with the new data
+            if (updatedDiagnosis) {
+                setSelectedDiagnosis(updatedDiagnosis);
+            }
+
+            setShowAddTreatmentForm(false); // Close the form
+        } catch (error) {
+            console.error("Error refetching data:", error);
+        }
     };
 
     if (loading) return <p className="text-center text-gray-600">Loading...</p>;
     if (error) return <p className="text-center text-red-600">{error}</p>;
 
-    // Helper function to format date or return fallback
+    // Helper function to format date
     const formatDate = (dateString) => {
-        if (!dateString) return "Date not available"; // Fallback if dateString is missing
+        if (!dateString) return "Date not available";
         const date = new Date(dateString);
-        return isNaN(date.getTime()) ? "Invalid date" : date.toLocaleDateString(); // Check if date is valid
+        return isNaN(date.getTime()) ? "Invalid date" : date.toLocaleDateString();
     };
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
-            <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Treatment Records for Patient {patientId}</h2>
+        <div className="p-4 md:p-6 bg-gray-50 min-h-screen">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8 text-gray-800">
+                Treatment Records for Patient {patientId}
+            </h2>
 
             {/* Main Grid and Side Box Container */}
-            <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-10rem)]">
-                {/* Main Grid (2x2 when side box is open) */}
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)]">
+                {/* Main Grid */}
                 <div className={`w-full ${selectedDiagnosis ? "md:w-2/3" : "w-full"} overflow-y-auto`}>
-                    <div className={`grid ${selectedDiagnosis ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"} gap-6 transition-all duration-300`}>
+                    <div className={`grid ${selectedDiagnosis ? "grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"} gap-4 md:gap-6 transition-all duration-300`}>
                         {diagnoseHistory.map((diagnose) => (
                             <div key={diagnose._id} className="bg-white shadow-xl rounded-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300">
-                                <div className="p-6">
+                                <div className="p-4 md:p-6">
                                     {/* Diagnosis Section */}
-                                    <div className="mb-6">
-                                        <h3 className="text-xl font-semibold text-gray-800">
+                                    <div className="mb-4 md:mb-6">
+                                        <h3 className="text-lg md:text-xl font-semibold text-gray-800">
                                             Diagnosis: {diagnose.diagnosis?.diagnosis || "No diagnosis available"}
                                         </h3>
-                                        <p className="text-sm text-gray-500 mt-1">
+                                        <p className="text-xs md:text-sm text-gray-500 mt-1">
                                             Last Updated: {formatDate(diagnose.diagnosis?.uploadedAt)}
                                         </p>
-                                        <p className="text-sm text-gray-500 mt-1">
+                                        <p className="text-xs md:text-sm text-gray-500 mt-1">
                                             Status: <span className={`font-medium ${diagnose.diagnosis?.status === "Unchecked" ? "text-yellow-600" : "text-green-600"}`}>
                                                 {diagnose.diagnosis?.status || "No status available"}
                                             </span>
                                         </p>
                                     </div>
 
+                                    
                                     {/* Doctor Prescribes Section */}
                                     {diagnose.diagnosis?.recommend && (
                                         <div className="mb-6">
@@ -106,6 +139,7 @@ const TreatmentRecords = () => {
                                         </div>
                                     )}
 
+
                                     {/* Show Treatments Button */}
                                     {diagnose.treatments && diagnose.treatments.length > 0 && (
                                         <button
@@ -121,30 +155,51 @@ const TreatmentRecords = () => {
                     </div>
                 </div>
 
-                {/* Side Box (1/3 width when open) */}
+                {/* Side Box */}
                 {selectedDiagnosis && (
-                    <div className="w-full md:w-1/3 bg-white shadow-xl rounded-lg p-6 overflow-y-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-semibold text-gray-800">Treatments for Diagnosis: {selectedDiagnosis.diagnosis?.diagnosis}</h3>
-                            <button
-                                onClick={closeSideBox}
-                                className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
+                    <div className="w-full md:w-1/2 bg-teal-50 shadow-xl rounded-lg p-4 md:p-6 overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4 md:mb-6">
+                            <h3 className="text-lg md:text-xl font-semibold text-black">
+                                Treatment Records | {selectedDiagnosis.diagnosis?.diagnosis}
+                            </h3>
+                            <div>
+                                <button
+                                    onClick={openAddTreatmentForm}
+                                    className="bg-sky-500 text-white py-2 px-4 rounded-lg hover:bg-teal-500 transition-colors duration-300 mr-2"
+                                >
+                                    Add Record
+                                </button>
+                                <button
+                                    onClick={closeSideBox}
+                                    className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
+
+                        {/* Add Treatment Form */}
+                        {showAddTreatmentForm && (
+                            <AddTreatment
+                                patientId={patientId}
+                                diagnosisId={selectedDiagnosis.diagnosis._id}
+                                optometristId="65e8319b8b93e45a1d4fba69" // Default logged-in user ID
+                                onClose={() => setShowAddTreatmentForm(false)}
+                                onNewTreatmentAdded={handleNewTreatmentAdded} // Pass the callback function
+                            />
+                        )}
 
                         {/* Treatments & Tests Section */}
                         {selectedDiagnosis.treatments.map((treatment) => (
-                            <div key={treatment._id} className="bg-gray-50 p-4 rounded-lg mb-4">
+                            <div key={treatment._id} className="bg-cyan-100 p-4 rounded-lg mb-4">
                                 <p className="text-sm font-medium text-gray-700">Treatment Plan: {treatment.description}</p>
                                 <p className="text-xs text-gray-500 mt-1">Created At: {formatDate(treatment.createdAt)}</p>
 
                                 {/* Treatments Subcard */}
                                 {treatment.treatments && treatment.treatments.length > 0 && (
-                                    <div className="mt-3 p-3 bg-white rounded-lg">
+                                    <div className="mt-3 p-3 bg-sky-50 rounded-lg">
                                         <h5 className="text-sm font-semibold text-gray-600">Treatments:</h5>
                                         <ul className="list-disc list-inside mt-2">
                                             {treatment.treatments.map((treat, index) => (
@@ -160,7 +215,7 @@ const TreatmentRecords = () => {
 
                                 {/* Tests Subcard */}
                                 {treatment.tests && treatment.tests.length > 0 && (
-                                    <div className="mt-3 p-3 bg-white rounded-lg">
+                                    <div className="mt-3 p-3 bg-sky-50 rounded-lg">
                                         <h5 className="text-sm font-semibold text-gray-600">Tests:</h5>
                                         <ul className="list-disc list-inside mt-2">
                                             {treatment.tests.map((test, index) => (
