@@ -1,4 +1,5 @@
 import { Controller, useFormContext } from "react-hook-form";
+import { z } from "zod";
 
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,32 @@ import { useDeleteImage, useUploadImage } from "@/services/util.service";
 import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+
+export const staffInfoSchema = z.object({
+  type: z.enum(["Full time", "Part time"]),
+  name: z.string().min(1, "Name is required"),
+  specialty: z.enum(
+    [
+      "Ophthalmologist",
+      "Optometrist",
+      "Retina Specialist",
+      "Cornea Specialist",
+      "Glaucoma Specialist",
+      "Pediatric Ophthalmologist",
+      "Neuro-Ophthalmologist",
+      "Oculoplastic Surgeon",
+      "Ocular Oncologist",
+      "Contact Lens Specialist",
+    ],
+    { message: "Specialist is required" },
+  ),
+  image: z.object({
+    Location: z
+      .string()
+      .min(10, { message: "Please upload an image" }) // Image URL is required
+      .url({ message: "Invalid image URL" }), // Check if it's a valid URL
+  }),
+});
 
 export default function StaffInfoComponent() {
   const {

@@ -1,10 +1,24 @@
 import { useFormContext } from "react-hook-form";
+import { z } from "zod";
 
 import { Input } from "@/components/ui/input";
 
 import { Textarea } from "@/components/ui/textarea";
 
 import { Mail, Phone } from "lucide-react";
+
+export const contactInfoSchema = z.object({
+  phone: z
+    .string()
+    .min(10, "Phone number must be at least 10 digits")
+    .max(15, "Phone number can't be longer than 15 digits")
+    .regex(/^\d+$/, "Phone number must contain only numbers"),
+  email: z.string().email("Invalid email address").min(1, "Email is required"),
+  address: z
+    .string()
+    .min(5, "Address must be at least 5 characters long")
+    .max(200, "Address can't be longer than 200 characters"),
+});
 
 export default function ContactInfoComponent() {
   const {

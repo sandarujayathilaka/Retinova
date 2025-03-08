@@ -1,4 +1,5 @@
 import { Controller, useFormContext } from "react-hook-form";
+import { z } from "zod";
 
 import { Separator } from "@/components/ui/separator";
 
@@ -14,6 +15,57 @@ import {
 import { Switch } from "@/components/ui/switch";
 
 import { Clock } from "lucide-react";
+
+// Define a schema for individual day's working hours
+export const workingDaySchema = z
+  .object({
+    enabled: z.boolean(),
+    startTime: z.string().optional(),
+    endTime: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    // If enabled is true, startTime must be present
+    if (data.enabled && !data.startTime) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Required",
+        path: ["startTime"],
+      });
+    }
+
+    // If enabled is true, endTime must be present
+    if (data.enabled && !data.endTime) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Required",
+        path: ["endTime"],
+      });
+    }
+  });
+
+// Define the working hours schema with validation for at least one working day
+export const workingHoursSchema = z.object({
+  workingHours: z
+    .object({
+      Monday: workingDaySchema,
+      Tuesday: workingDaySchema,
+      Wednesday: workingDaySchema,
+      Thursday: workingDaySchema,
+      Friday: workingDaySchema,
+      Saturday: workingDaySchema,
+      Sunday: workingDaySchema,
+    })
+    .refine(
+      data => {
+        // At least one day should be enabled
+        return Object.values(data).some(day => day.enabled);
+      },
+      {
+        message: "At least one working day must be selected",
+        path: ["day"],
+      },
+    ),
+});
 
 export default function WorkingHoursComponent() {
   const {
@@ -38,6 +90,7 @@ export default function WorkingHoursComponent() {
     try {
       return errors?.workingHours?.[day]?.[field]?.message;
     } catch (e) {
+      console.error(e);
       return null;
     }
   };

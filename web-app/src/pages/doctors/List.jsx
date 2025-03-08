@@ -35,7 +35,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useDeleteDoctor, useGetDoctors } from "@/services/doctor.service";
 import toast from "react-hot-toast";
 import { FaUserDoctor } from "react-icons/fa6";
-import Add from "./Add";
+import DoctorForm from "./DoctorForm";
 
 const List = () => {
   const columns = [
@@ -67,8 +67,10 @@ const List = () => {
       cell: ({ row }) => (
         <div className="flex gap-2 items-center">
           <Avatar className="size-8">
-            <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-            <AvatarFallback>CN</AvatarFallback>
+            <AvatarImage src={row.original.image.Location} alt="@shadcn" />
+            <AvatarFallback className="bg-gray-300">
+              {row.original.name?.charAt(0).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
             <div className="capitalize font-semibold text-black/80">{row.getValue("name")}</div>
@@ -144,7 +146,12 @@ const List = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => navigator.clipboard.writeText(payment.id)}>
+              <DropdownMenuItem
+                onClick={() => {
+                  setDoctorIdToEdit(row.original._id);
+                  setIsEditDialogOpen(true);
+                }}
+              >
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -169,6 +176,8 @@ const List = () => {
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [doctorIdToDelete, setDoctorIdToDelete] = useState(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [doctorIdToEdit, setDoctorIdToEdit] = useState(null);
 
   const { data: doctors, isLoading } = useGetDoctors();
   const { mutate: deleteDoctorMutation } = useDeleteDoctor();
@@ -226,7 +235,7 @@ const List = () => {
             <FaUserDoctor className="inline-block size-10 mr-2 text-blue-500" />
             {doctors?.length} Doctors
           </div>
-          <Add />
+          <DoctorForm mode="add" />
         </div>
         <div className="flex items-center py-4">
           <Input
@@ -323,6 +332,12 @@ const List = () => {
           </div>
         </div>
       </div>
+      <DoctorForm
+        mode="edit"
+        doctorId={doctorIdToEdit}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+      />
       <ConfirmDialog
         onSuccess={() => handleDelete(doctorIdToDelete)}
         title="chapter"
