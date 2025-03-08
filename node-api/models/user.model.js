@@ -1,26 +1,16 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const userSchema = mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
-    name: {
+    email: { type: String, unique: true, required: true },
+    password: { type: String, required: true },
+    role: {
       type: String,
+      enum: ["doctor", "nurse", "patient", "admin"],
       required: true,
     },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
-    favourites: [
-      {
-        type: String,
-      },
-    ],
+    profileId: { type: mongoose.Schema.Types.ObjectId, refPath: "role" }, // Reference to doctor/nurse/patient
   },
   {
     timestamps: true,

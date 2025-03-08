@@ -138,7 +138,7 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
           },
           onError: error => {
             console.error(error);
-            toast.error("Failed to add doctor. Please try again.");
+            toast.error(error?.response?.data?.error || "Failed to add doctor. Please try again.");
           },
         });
       }

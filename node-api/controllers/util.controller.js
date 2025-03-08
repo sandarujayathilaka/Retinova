@@ -1,5 +1,5 @@
 const { nanoid } = require("nanoid");
-const s3 = require("../config/s3");
+const { s3 } = require("../config/aws");
 
 const uploadImage = async (req, res) => {
   try {
