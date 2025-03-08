@@ -30,7 +30,7 @@ export default function StaffInfoComponent() {
   // Set default value when the component mounts
   useEffect(() => {
     if (!watch("type")) {
-      setValue("type", "full-time"); // Default to "full-time"
+      setValue("type", "Full time"); // Default to "Full time"
     }
   }, [watch, setValue]);
 
@@ -151,19 +151,19 @@ export default function StaffInfoComponent() {
           {/* Full Time */}
           <div
             className={`flex items-center p-2 space-x-2 w-1/2 border rounded-md cursor-pointer ${
-              watch("type") === "full-time" ? "border-main" : ""
+              watch("type") === "Full time" ? "border-main" : ""
             }`}
-            onClick={() => setValue("type", "full-time")}
+            onClick={() => setValue("type", "Full time")}
           >
             <input
               type="radio"
               {...register("type")}
-              value="full-time"
-              checked={watch("type") === "full-time"}
+              value="Full Time"
+              checked={watch("type") === "Full Time"}
               className="hidden"
             />
             <span className="w-4 h-4 border rounded-full flex items-center justify-center">
-              {watch("type") === "full-time" && <div className="w-2 h-2 bg-main rounded-full" />}
+              {watch("type") === "Full time" && <div className="w-2 h-2 bg-main rounded-full" />}
             </span>
             <span>Full Time</span>
           </div>
@@ -171,19 +171,19 @@ export default function StaffInfoComponent() {
           {/* Part Time */}
           <div
             className={`flex items-center p-2 space-x-2 w-1/2 border rounded-md cursor-pointer ${
-              watch("type") === "part-time" ? "border-main" : ""
+              watch("type") === "Part time" ? "border-main" : ""
             }`}
-            onClick={() => setValue("type", "part-time")}
+            onClick={() => setValue("type", "Part time")}
           >
             <input
               type="radio"
               {...register("type")}
-              value="part-time"
-              checked={watch("type") === "part-time"}
+              value="Part time"
+              checked={watch("type") === "Part time"}
               className="hidden"
             />
             <span className="w-4 h-4 border rounded-full flex items-center justify-center">
-              {watch("type") === "part-time" && <div className="w-2 h-2 bg-main rounded-full" />}
+              {watch("type") === "Part time" && <div className="w-2 h-2 bg-main rounded-full" />}
             </span>
             <span>Part Time</span>
           </div>

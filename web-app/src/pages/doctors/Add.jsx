@@ -27,7 +27,7 @@ import StaffInfoComponent from "./stepper/StaffInfoComponent";
 import WorkingHoursComponent from "./stepper/WorkingHoursComponent";
 
 const staffInfoSchema = z.object({
-  type: z.enum(["full-time", "part-time"]),
+  type: z.enum(["Full time", "Part time"]),
   name: z.string().min(1, "Name is required"),
   specialist: z.enum(
     [
@@ -244,7 +244,7 @@ function Add() {
     // Set random type, name, specialist, phone, email, and address
     const formValues = {
       workingHours,
-      type: Math.random() > 0.5 ? "full-time" : "part-time",
+      type: Math.random() > 0.5 ? "Full time" : "Part time",
       name: `Dr. ${["Smith", "Jones", "Taylor", "Brown", "Williams"][Math.floor(Math.random() * 5)]}`,
       specialist: [
         "Ophthalmologist",
@@ -261,6 +261,7 @@ function Add() {
       phone: `0${Math.floor(Math.random() * 10e10)}`,
       email: `test${Math.floor(Math.random() * 10000)}@example.com`,
       address: `123 ${["Main St", "Broadway", "Elm St", "High St", "Park Ave"][Math.floor(Math.random() * 5)]}`,
+      image: { Location: "" },
     };
 
     // Set random days off

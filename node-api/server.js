@@ -10,6 +10,7 @@ const { currentUser } = require("./middleware/current-user");
 const patientRoutes = require("./routes/patientRoutes");
 const userRoutes = require("./routes/user.routes");
 const utilRoutes = require("./routes/util.routes");
+const doctorRoutes = require("./routes/doctor.routes");
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api/patients", patientRoutes);
 
 app.use("/api/users", userRoutes);
 app.use("/api/util", utilRoutes);
+app.use("/api/doctors", doctorRoutes);
 
 app.use(errorHandler);
 
