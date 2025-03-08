@@ -340,7 +340,7 @@ const List = () => {
       />
       <ConfirmDialog
         onSuccess={() => handleDelete(doctorIdToDelete)}
-        title="chapter"
+        title="doctor"
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
       />

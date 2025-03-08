@@ -41,6 +41,32 @@ export const workingDaySchema = z
         path: ["endTime"],
       });
     }
+
+    // If both times are present, endTime must be after startTime
+    if (data.enabled && data.startTime && data.endTime) {
+      // Parse times (format: "h:00 AM/PM")
+      const parseTime = timeString => {
+        const [hourMinute, period] = timeString.split(" ");
+        let [hour] = hourMinute.split(":").map(Number);
+
+        // Convert to 24-hour format for comparison
+        if (period === "PM" && hour < 12) hour += 12;
+        if (period === "AM" && hour === 12) hour = 0;
+
+        return hour;
+      };
+
+      const startHour = parseTime(data.startTime);
+      const endHour = parseTime(data.endTime);
+
+      if (endHour <= startHour) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "End time must be after start time",
+          path: ["general"],
+        });
+      }
+    }
   });
 
 // Define the working hours schema with validation for at least one working day
@@ -190,6 +216,9 @@ export default function WorkingHoursComponent() {
                 )}
               </div>
             </div>
+            {getErrorMessage(day, "general") && (
+              <p className="text-destructive text-xs mt-0">{getErrorMessage(day, "general")}</p>
+            )}
 
             {/* Hide separator for last item */}
             {index !== daysOfWeek.length - 1 && (

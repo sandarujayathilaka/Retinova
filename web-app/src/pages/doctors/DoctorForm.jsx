@@ -24,6 +24,7 @@ import toast from "react-hot-toast";
 import { FaUserPen } from "react-icons/fa6";
 import { PiClockClockwiseBold } from "react-icons/pi";
 import { TbClockX } from "react-icons/tb";
+import { PushSpinner } from "react-spinners-kit";
 import ContactInfoComponent, { contactInfoSchema } from "./stepper/ContactInfoComponent";
 import DaysOffComponent from "./stepper/DaysOffComponent";
 import StaffInfoComponent, { staffInfoSchema } from "./stepper/StaffInfoComponent";
@@ -78,18 +79,20 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
   const mutationUpdate = useUpdateDoctor();
 
   const handleReset = () => {
-    form.reset({
-      workingHours: {
-        Monday: { enabled: false },
-        Tuesday: { enabled: false },
-        Wednesday: { enabled: false },
-        Thursday: { enabled: false },
-        Friday: { enabled: false },
-        Saturday: { enabled: false },
-        Sunday: { enabled: false },
-      },
-      image: { Location: "" },
-    });
+    mode === "edit"
+      ? form.reset(doctor)
+      : form.reset({
+          workingHours: {
+            Monday: { enabled: false },
+            Tuesday: { enabled: false },
+            Wednesday: { enabled: false },
+            Thursday: { enabled: false },
+            Friday: { enabled: false },
+            Saturday: { enabled: false },
+            Sunday: { enabled: false },
+          },
+          image: { Location: "" },
+        });
   };
 
   // Handle form submission for the current step
@@ -158,7 +161,7 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
     if (mode === "edit" && doctor && !isLoading) {
       form.reset(doctor);
     }
-  }, [doctor, isLoading, form, mode]);
+  }, [doctor, isLoading, form, mode, open]);
 
   const handleDemo = () => {
     // Helper function to generate time in correct format within the valid range (8 AM - 7 PM)
@@ -277,7 +280,9 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
         </DialogHeader>
 
         {isLoading && mode === "edit" ? (
-          <div className="p-6 text-center">Loading doctor information...</div>
+          <div className="flex items-center justify-center h-32">
+            <PushSpinner size={30} color="#3B82F6" />
+          </div>
         ) : (
           <Form {...form}>
             <form
@@ -351,29 +356,13 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
                   workingHours: () => <WorkingHoursComponent />,
                   daysOff: () => <DaysOffComponent />,
                 })}
-                {!stepper.isLast ? (
-                  <div className="flex justify-end gap-4">
-                    <Button type="button" variant="ghost" onClick={handleDemo}>
-                      Demo
-                    </Button>
-                    {stepper.isFirst ? (
-                      <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
-                      </DialogClose>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={handleBack}
-                        disabled={stepper.isFirst}
-                      >
-                        Back
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    {mode === "add" && (
+                      <Button type="button" variant="outline" onClick={handleDemo}>
+                        Demo
                       </Button>
                     )}
-                    <Button type="submit">{stepper.isLast ? "Complete" : "Next"}</Button>
-                  </div>
-                ) : (
-                  <div className="flex justify-end gap-4">
                     <Button
                       type="button"
                       variant="outline"
@@ -384,11 +373,24 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
                     >
                       Reset
                     </Button>
-                    <Button type="submit" variant="primary">
-                      {mode === "edit" ? "Update Doctor" : "Add Doctor"}
+                  </div>
+
+                  <div className="flex justify-end gap-4">
+                    {stepper.isFirst ? (
+                      <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                      </DialogClose>
+                    ) : (
+                      <Button type="button" variant="outline" onClick={handleBack}>
+                        Back
+                      </Button>
+                    )}
+
+                    <Button type="submit" variant={stepper.isLast ? "primary" : "default"}>
+                      {stepper.isLast ? (mode === "edit" ? "Update Doctor" : "Add Doctor") : "Next"}
                     </Button>
                   </div>
-                )}
+                </div>
               </div>
             </form>
           </Form>

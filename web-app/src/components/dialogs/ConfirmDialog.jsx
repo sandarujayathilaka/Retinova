@@ -18,7 +18,7 @@ const ConfirmDialog = ({ trigger, onSuccess, title, open, onOpenChange }) => {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your {title} and remove your
+            This action cannot be undone. This will permanently delete the {title} and remove the
             data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>

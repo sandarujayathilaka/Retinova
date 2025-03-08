@@ -20,7 +20,9 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 export const staffInfoSchema = z.object({
-  type: z.enum(["Full time", "Part time"]),
+  type: z.enum(["Full time", "Part time"], {
+    message: "Type is required",
+  }),
   name: z.string().min(1, "Name is required"),
   specialty: z.enum(
     [
@@ -262,8 +264,8 @@ export default function StaffInfoComponent() {
             </Select>
           )}
         />
-        {errors.specialist && (
-          <span className="text-sm text-destructive">{errors.specialist.message}</span>
+        {errors.specialty && (
+          <span className="text-sm text-destructive">{errors.specialty.message}</span>
         )}
       </div>
     </div>
