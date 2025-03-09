@@ -1,6 +1,3 @@
-
-
-
 // // Main Patient Schema
 // const patientSchema = new mongoose.Schema(
 //   {
@@ -31,15 +28,15 @@
 
 const mongoose = require("mongoose");
 
-
 const diagnoseSchema = new mongoose.Schema({
   imageUrl: String,
   diagnosis: { type: String, default: "Processing" },
+  eye: { type: String, enum: ["LEFT", "RIGHT"] },
   uploadedAt: { type: Date, default: Date.now },
   doctorId: { type: mongoose.Schema.Types.ObjectId, ref: "Doctor" },
   status: {
     type: String,
-    enum: ["Unchecked", "Completed","Checked"],
+    enum: ["Unchecked", "Completed", "Checked"],
     default: "Unchecked",
   },
   confidenceScores: [Number],
@@ -50,7 +47,7 @@ const diagnoseSchema = new mongoose.Schema({
         testName: String,
         status: {
           type: String,
-          enum: ["Pending", "In Progress", "Completed"],
+          enum: ["Pending", "In Progress", "Completed", "TestCompleted"],
           default: "Pending",
         },
         attachmentURL: String,
@@ -59,7 +56,6 @@ const diagnoseSchema = new mongoose.Schema({
     note: { type: String },
   },
 });
-
 
 // Schema for patient medical history
 const medicalHistorySchema = mongoose.Schema(
@@ -75,7 +71,7 @@ const medicalHistorySchema = mongoose.Schema(
       default: Date.now,
     },
     filePaths: {
-      type: [String], 
+      type: [String],
       default: [],
     },
   },
@@ -126,7 +122,13 @@ const patientSchema = new mongoose.Schema(
     diagnoseHistory: [diagnoseSchema],
     patientStatus: {
       type: String,
-      enum: ["Pre-Monitoring", "Published", "Review", "Completed", "Monitoring"],
+      enum: [
+        "Pre-Monitoring",
+        "Published",
+        "Review",
+        "Completed",
+        "Monitoring",
+      ],
       default: "Monitoring",
       index: true,
     },
@@ -145,7 +147,6 @@ patientSchema.pre("save", function (next) {
   }
   next();
 });
-
 
 // Compound index for common query combinations (optional)
 patientSchema.index({ category: 1, gender: 1 }); // For queries filtering by both category and gender

@@ -73,6 +73,29 @@ const data = {
       isExpandable: false,
     },
     {
+      title: "Patients",
+      icon: doctors,
+      isExpandable: true,
+      items: [
+        {
+          title: "Review",
+          url: "/review-patients",
+        },
+        {
+          title: "Monitoring",
+          url: "/monitorpatients",
+        },
+        {
+          title: "Pre-Monitoring",
+          url: "/pre-monitoring-patients",
+        },
+        {
+          title: "Completed",
+          url: "/completed-patients",
+        },
+      ],
+    },
+    {
       title: "Diseases",
       url: "#",
       icon: diseases,

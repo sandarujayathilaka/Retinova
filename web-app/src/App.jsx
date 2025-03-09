@@ -8,6 +8,13 @@ import Diagnose from "./pages/diseases/Diagnose";
 import DR from "./pages/diseases/DR";
 import Glaucoma from "./pages/diseases/Glaucoma";
 import MultiDiagnosePage from "./pages/diseases/MultiDiagnosePage";
+import PatientsPage from "./pages/PatientsPage";
+import PatientProfile from "./pages/PatientProfile";
+import Test from "./pages/diseases/Test";
+import MonitoringPatientsPage from "./pages/MonitoringPatientsPage";
+import PreMonitoringPatientsPage from "./pages/PreMonitoringPatientsPage";
+import CompletedPatientsPage from "./pages/CompletedPatientsPage";
+import ReviewPatientsPage from "./pages/ReviewPatientsPage";
 import Dashboard from "./pages/Dashboard";
 import MonitoringPatients from "./pages/Nurse/MonitoringPatients";
 import PublishedPatients from "./pages/Nurse/PublishedPatients";
@@ -36,6 +43,12 @@ const App = () => {
           <Route path="/diagnose/glaucoma" element={<Glaucoma />} />
           <Route path="/diagnose/rvo" element={<RVO />} />
           <Route path="/diagnose/multidr" element={<MultiDiagnosePage />} />
+          <Route path="/patients" element={<PatientsPage />} />
+          <Route path="/patients/:patientId" element={<PatientProfile />} />
+          <Route path="/monitorpatients" element={<MonitoringPatientsPage />} />
+          <Route path="/pre-monitoring-patients" element={<PreMonitoringPatientsPage />} />
+          <Route path="/completed-patients" element={<CompletedPatientsPage />} />
+          <Route path="/review-patients" element={<ReviewPatientsPage />} />
 
           <Route path="/doctors" element={<DoctorsList />} />
           <Route path="/add" element={<Add />} />

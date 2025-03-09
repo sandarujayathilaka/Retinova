@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import Diagnose from "./Diagnose";
+import Diagnose from "./abc";
+import { api } from "@/services/api.service";
 import toast from "react-hot-toast";
 import axios from "axios";
 
@@ -46,13 +47,12 @@ const AMD = () => {
       //   confidence: confidenceScores,
       // });
 
-        // const highestConfidence = confidenceScores;
-        setPrediction({
-          disease: "Age Related Macular Degeneration",
-          type: diagnosis,
-          confidence: confidenceScores,
-        });
-      
+      // const highestConfidence = confidenceScores;
+      setPrediction({
+        disease: "Age Related Macular Degeneration",
+        type: diagnosis,
+        confidence: confidenceScores,
+      });
     } catch (error) {
       console.error("Error uploading image:", error);
       const errorMsg = error.response?.data?.error || "Error uploading image. Please try again.";
