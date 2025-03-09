@@ -13,7 +13,6 @@ const patientRoutes = require("./routes/patientRoutes");
 const userRoutes = require("./routes/user.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
 const patientNurseRoutes = require("./routes/patient.routes");
-const patientRoutes = require("./routes/patientRoutes");
 const utilRoutes = require("./routes/util.routes");
 const doctorRoutes = require("./routes/doctor.routes");
 const updatePatientAges = require("./config/cron.jobs");
