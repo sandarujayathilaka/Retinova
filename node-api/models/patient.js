@@ -3,10 +3,11 @@ const mongoose = require("mongoose");
 const diagnoseSchema = new mongoose.Schema({
   imageUrl: String,
   diagnosis: { type: String, default: "Processing" },
+  eye: { type: String, enum: ["LEFT", "RIGHT"] },
   uploadedAt: { type: Date, default: Date.now },
   status: {
     type: String,
-    enum: ["Unchecked", "Reviewed", "Completed","Checked"],
+    enum: ["Unchecked", "Completed","Checked"],
     default: "Unchecked",
   },
   confidenceScores: [Number],
@@ -57,6 +58,18 @@ const patientSchema = new mongoose.Schema(
     address: { type: String, required: false },
     medicalHistory: [medicalHistorySchema],
     diagnoseHistory: [diagnoseSchema],
+    patientStatus: {
+      type: String,
+      enum: [
+        "Pre-Monitoring",
+        "Published",
+        "Review",
+        "Completed",
+        "Monitoring",
+      ],
+      default: "Monitoring",
+    },
+    nextVisit: { type: Date },
   },
   { timestamps: true } // Automatically adds createdAt & updatedAt fields
 );

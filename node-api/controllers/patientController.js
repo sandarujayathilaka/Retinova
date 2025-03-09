@@ -90,15 +90,13 @@ exports.predictAndFetch = async (req, res) => {
     }
 
     // **1. Extract Patient ID from Image Filename**
-    const filename = req.file.originalname; // Example: "123456_jndfdkj.jpg"
-    const patientIdMatch = filename.match(/^(\d+)_/); // Regex to extract numbers before '_'
+    const filename = req.file.originalname; // Example: "abc123y_right_tye785.jpg"
+    const patientIdMatch = filename.match(/^([^_]+)_/); // Regex to capture everything before the first '_'
 
     if (!patientIdMatch) {
-      return res
-        .status(400)
-        .json({
-          error: "Invalid filename format. Expected: patientId_randomtext.jpg",
-        });
+      return res.status(400).json({
+        error: "Invalid filename format. Expected: patientId_randomtext.jpg",
+      });
     }
 
     const patientId = patientIdMatch[1]; // Extracted patient ID
@@ -333,9 +331,8 @@ exports.saveMultipleDiagnoses = async (req, res) => {
         .json({ error: "No diagnosis data or images provided" });
     }
 
-    // **1. Parse diagnosis data**
     const diagnosisData = JSON.parse(req.body.diagnosisData);
-    const category = req.body.category; // Extract category from request
+    const category = req.body.category;
 
     if (!category) {
       return res.status(400).json({ error: "Category is required" });
@@ -343,19 +340,16 @@ exports.saveMultipleDiagnoses = async (req, res) => {
 
     let results = [];
 
-    // **2. Loop through each diagnosis entry**
     for (let diagnosisEntry of diagnosisData) {
       const { patientId, diagnosis, confidenceScores } = diagnosisEntry;
 
-      // **3. Find the matching image file using patientId**
       const file = req.files.find((f) => f.originalname.includes(patientId));
 
       if (!file) {
         console.error(`No image found for Patient ID: ${patientId}`);
-        continue; // Skip this entry if no matching image is found
+        continue;
       }
 
-      // **4. Find the patient in the database**
       let patient = await Patient.findOne({ patientId });
 
       if (!patient) {
@@ -365,7 +359,6 @@ exports.saveMultipleDiagnoses = async (req, res) => {
 
       console.log(`Updating Patient: ${patientId}`);
 
-      // **5. Upload Image to AWS S3**
       const params = {
         Bucket: process.env.S3_BUCKET_NAME,
         Key: `diagnosis_images/${Date.now()}_${file.originalname}`,
@@ -375,19 +368,18 @@ exports.saveMultipleDiagnoses = async (req, res) => {
       const uploadResult = await s3.upload(params).promise();
       const imageUrl = uploadResult.Location;
 
-      // **6. Ensure category is added to patient's record (if not already present)**
       if (!patient.category.includes(category)) {
         patient.category.push(category);
       }
 
-      // **7. Update DiagnoseHistory with category**
       patient.diagnoseHistory.push({
         imageUrl,
         diagnosis,
         confidenceScores,
       });
 
-      // **8. Save Changes to Database**
+      patient.patientStatus = "Pre-Monitoring";
+
       await patient.save();
 
       results.push({
@@ -409,6 +401,7 @@ exports.saveMultipleDiagnoses = async (req, res) => {
   }
 };
 
+
 exports.updatePatientDiagnosis = async (req, res) => {
   try {
     // Check for required fields
@@ -424,14 +417,18 @@ exports.updatePatientDiagnosis = async (req, res) => {
 
     // Extract patient ID from filename (e.g., 12345_jndj.jpg → 12345)
     const filename = req.file.originalname;
-    const patientIdMatch = filename.match(/^\d+/);
-    if (!patientIdMatch) {
+    const match = filename.match(/^([^_]+)_(left|right)_/i);
+
+    if (!match) {
       return res.status(400).json({
-        error: "Invalid filename format. Expected: patientId_randomtext.jpg",
+        error:
+          "Invalid filename format. Expected: patientId_LEFTorRIGHT_randomtext.jpg",
       });
     }
 
-    const patientId = patientIdMatch[0];
+    const patientId = match[0];
+    console.log(`Extracted Patient ID: ${patientId}`);
+    const sideIdentifier = match[2].toUpperCase();
 
     // Find the patient
     let patient = await Patient.findOne({ patientId });
@@ -490,8 +487,9 @@ exports.updatePatientDiagnosis = async (req, res) => {
       diagnosis: req.body.diagnosis,
       confidenceScores,
       category,
+      eye: sideIdentifier,
       recommend, // Use the parsed recommend object directly
-      status: "Unchecked", // Default from schema
+      status: "Checked", // Default from schema
     });
 
     await patient.save();
@@ -505,7 +503,7 @@ exports.updatePatientDiagnosis = async (req, res) => {
       confidenceScores,
       category,
       recommend,
-      status: "Unchecked", // Match the pushed status
+      status: "Checked", // Match the pushed status
     });
   } catch (error) {
     console.error("Error in updatePatientDiagnosis:", error);
@@ -651,5 +649,198 @@ exports.getPatientsWithUncheckedDiagnoses = async (req, res) => {
   } catch (error) {
     console.error("Error in getPatientsWithUncheckedDiagnoses:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+const VALID_STATUSES = ["Pre-Monitoring", "Monitoring", "Completed", "Review"];
+
+exports.getPatientsByOneStatus = async (req, res) => {
+  try {
+    // Extract query parameters for pagination, filtering, and status
+    const {
+      page = 1,
+      limit = 10,
+      category,
+      gender,
+      ageMin,
+      ageMax,
+      search,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      status, // New parameter to specify patientStatus
+    } = req.query;
+
+    console.log(status);
+
+    // Validate status parameter
+    const statusTrimmed = status?.trim();
+    if (!statusTrimmed || !VALID_STATUSES.includes(statusTrimmed)) {
+      return res.status(400).json({
+        error:
+          "Invalid or missing status. Valid values are: Pre-Monitoring, Monitoring, Completed, Review",
+      });
+    }
+
+    // Parse pagination parameters with validation
+    const pageNum = Math.max(1, parseInt(page)); // Ensure page >= 1
+    const limitNum = Math.min(Math.max(1, parseInt(limit)), 100); // Cap limit between 1 and 100
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build query object
+    const query = {
+      patientStatus: statusTrimmed, // Dynamically filter by the provided status
+    };
+
+    // Add filters if provided
+    if (category) {
+      query.category = { $in: Array.isArray(category) ? category : [category] };
+    }
+    if (gender) {
+      query.gender = gender;
+    }
+    if (ageMin || ageMax) {
+      query.age = {};
+      if (ageMin && !isNaN(ageMin)) query.age.$gte = parseInt(ageMin);
+      if (ageMax && !isNaN(ageMax)) query.age.$lte = parseInt(ageMax);
+    }
+    if (search) {
+      query.$or = [
+        { fullName: { $regex: search, $options: "i" } },
+        { patientId: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Ensure sort field is valid
+    const allowedSortFields = ["createdAt", "age"];
+    const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+
+    // Determine sort order (asc = 1, desc = -1)
+    const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
+
+    // Fetch patients with pagination, sorting, and lean for performance
+    const patients = await Patient.find(query)
+      .sort({ [sortField]: sortDirection })
+      .skip(skip)
+      .limit(limitNum)
+      .lean()
+      .select("-__v"); // Exclude version key
+
+    // Get total count for pagination metadata
+    const totalPatients = await Patient.countDocuments(query);
+
+    if (!patients || patients.length === 0) {
+      return res
+        .status(404)
+        .json({ error: `No ${statusTrimmed} patients found` });
+    }
+
+    // Response structure
+    res.json({
+      message: `${statusTrimmed} patients retrieved successfully`,
+      data: patients,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(totalPatients / limitNum),
+        totalPatients: totalPatients,
+        patientsPerPage: limitNum,
+      },
+      filtersApplied: {
+        status: statusTrimmed,
+        category: category || null,
+        gender: gender || null,
+        ageRange: ageMin || ageMax ? { min: ageMin, max: ageMax } : null,
+        search: search || null,
+      },
+    });
+  } catch (error) {
+    console.error("Error in getPatientsByStatus:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+// Update recommendations for a specific diagnosis in the patient's diagnoseHistory
+
+exports.updateDiagnosisRecommendations = async (req, res) => {
+  try {
+    const { patientId, diagnosisId } = req.params;
+    const { medicine, tests, note } = req.body;
+
+    // Validate required fields (allow empty payload for "Mark as Checked")
+    if (medicine === undefined || tests === undefined || note === undefined) {
+      return res
+        .status(400)
+        .json({
+          error: "Medicine, tests, and note are required (can be empty)",
+        });
+    }
+
+    // Find the patient by ID
+    const patient = await Patient.findById(patientId);
+    if (!patient) {
+      return res.status(404).json({ error: "Patient not found" });
+    }
+
+    // Find the diagnosis in the diagnoseHistory array
+    const diagnosis = patient.diagnoseHistory.id(diagnosisId);
+    if (!diagnosis) {
+      return res.status(404).json({ error: "Diagnosis not found" });
+    }
+
+    // Ensure the diagnosis is not already checked
+    if (diagnosis.status === "Checked" || diagnosis.status === "Completed") {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Cannot update recommendations for a checked or completed diagnosis",
+        });
+    }
+
+    // Convert medicine to string if it’s an array
+    const normalizedMedicine = Array.isArray(medicine)
+      ? medicine.join(" ")
+      : medicine;
+
+    // Update the recommend field (allow empty values for "Mark as Checked")
+    diagnosis.recommend = {
+      medicine: normalizedMedicine || "",
+      tests: Array.isArray(tests)
+        ? tests.map((test) => ({
+            testName: test.testName || "",
+            status: test.status || "Pending",
+            attachmentURL: test.attachmentURL || "",
+          }))
+        : [],
+      note: note || "",
+    };
+
+    // Mark the diagnosis as checked after adding recommendations
+    diagnosis.status = "Checked";
+
+    // Check if there are any remaining "Unchecked" diagnoses
+    const hasUncheckedDiagnoses = patient.diagnoseHistory.some(
+      (diag) => diag.status === "Unchecked"
+    );
+
+    // If no "Unchecked" diagnoses remain, update patientStatus to "Monitoring"
+    if (!hasUncheckedDiagnoses) {
+      patient.patientStatus = "Monitoring";
+    }
+
+    // Save the updated patient
+    await patient.save();
+
+    res.json({
+      message: "Diagnosis recommendations updated successfully",
+      data: diagnosis,
+      patientStatus: patient.patientStatus,
+    });
+  } catch (error) {
+    console.error("Error updating diagnosis recommendations:", error);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
   }
 };
