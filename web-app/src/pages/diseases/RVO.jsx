@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Diagnose from "./Diagnose";
+import Diagnose from "./abc";
 import { api } from "@/services/api.service";
 import toast from "react-hot-toast";
 

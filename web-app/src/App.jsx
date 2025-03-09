@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Diagnose from "./pages/diseases/Diagnose";
+import Diagnose from "./pages/diseases/abc";
 import NotFound from "./pages/NotFound";
 import AdminLayout from "./layouts/AdminLayout";
 import DR from "./pages/diseases/DR";
@@ -12,6 +12,10 @@ import MultiDiagnosePage from "./pages/diseases/MultiDiagnosePage";
 import PatientsPage from "./pages/PatientsPage";
 import PatientProfile from "./pages/PatientProfile";
 import Test from "./pages/diseases/Test";
+import MonitoringPatientsPage from "./pages/MonitoringPatientsPage";
+import PreMonitoringPatientsPage from "./pages/PreMonitoringPatientsPage";
+import CompletedPatientsPage from "./pages/CompletedPatientsPage";
+import ReviewPatientsPage from "./pages/ReviewPatientsPage";
 
 const App = () => {
   return (
@@ -19,7 +23,7 @@ const App = () => {
       <AdminLayout>
         <Toaster position="top-right" />
         <Routes>
-          <Route path="/" element={<Test/>} />
+          <Route path="/" element={<Test />} />
 
           <Route path="/diagnose/dr" element={<DR />} />
           <Route path="/diagnose/amd" element={<AMD />} />
@@ -28,7 +32,10 @@ const App = () => {
           <Route path="/diagnose/multidr" element={<MultiDiagnosePage />} />
           <Route path="/patients" element={<PatientsPage />} />
           <Route path="/patients/:patientId" element={<PatientProfile />} />
-
+          <Route path="/monitorpatients" element={<MonitoringPatientsPage />} />
+          <Route path="/pre-monitoring-patients" element={<PreMonitoringPatientsPage />} />
+          <Route path="/completed-patients" element={<CompletedPatientsPage />} />
+          <Route path="/review-patients" element={<ReviewPatientsPage />} />
           {/* 404 Not Found Page */}
           <Route path="*" element={<NotFound />} />
           <Route path="/404" element={<NotFound />} />
