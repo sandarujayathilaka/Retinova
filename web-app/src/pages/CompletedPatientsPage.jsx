@@ -5,7 +5,7 @@ import Filters from "../components/PatientsPage/Filters";
 import PatientsTable from "../components/PatientsPage/PatientsTable";
 import Pagination from "../components/PatientsPage/Pagination";
 
-const PatientsPage = () => {
+const CompletedPatientsPage = () => {
   const [patients, setPatients] = useState([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -23,29 +23,30 @@ const PatientsPage = () => {
     search: "",
     sortBy: "createdAt",
     sortOrder: "desc",
+    status: "Completed", // Fixed status for Completed patients
   });
   const [loading, setLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const navigate = useNavigate();
 
-  const fetchPatients = async () => {
+  const fetchCompletedPatients = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:4000/api/patients/getallpatients", {
+      const response = await axios.get("http://localhost:4000/api/patients/status", {
         params: filters,
       });
       setPatients(response.data.data);
       setPagination(response.data.pagination);
     } catch (error) {
-      console.error("Error fetching patients:", error);
-      alert("Failed to fetch patients");
+      console.error("Error fetching Completed patients:", error);
+      alert("Failed to fetch Completed patients");
     }
     setLoading(false);
   };
 
   useEffect(() => {
     if (isInitialLoad) {
-      fetchPatients();
+      fetchCompletedPatients();
       setIsInitialLoad(false);
     }
   }, [isInitialLoad]);
@@ -56,12 +57,12 @@ const PatientsPage = () => {
   };
 
   const handleSearch = () => {
-    fetchPatients();
+    fetchCompletedPatients();
   };
 
   const handlePageChange = newPage => {
     setFilters(prev => ({ ...prev, page: newPage }));
-    fetchPatients();
+    fetchCompletedPatients();
   };
 
   const handleViewPatient = patientId => {
@@ -70,7 +71,7 @@ const PatientsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Patient Records</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Completed Patients</h1>
       <Filters
         filters={filters}
         handleFilterChange={handleFilterChange}
@@ -82,4 +83,4 @@ const PatientsPage = () => {
   );
 };
 
-export default PatientsPage;
+export default CompletedPatientsPage;

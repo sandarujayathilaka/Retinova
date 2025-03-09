@@ -1,23 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom"; // Add useLocation
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import Header from "../components/PatientProfile/Header";
-import TabNavigation from "../components/PatientProfile/TabNavigation";
-import TabContent from "../components/PatientProfile/TabContent";
-import Footer from "../components/PatientProfile/Footer";
-import ImageModal from "../components/PatientProfile/ImageModal";
+import Header from "./Header";
+import TabNavigation from "./TabNavigation";
+import TabContent from "./TabContent";
+import Footer from "./Footer";
+import ImageModal from "./ImageModal";
 
 const PatientProfile = () => {
   const { patientId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation(); // Get location to access referrer
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("basic");
   const [selectedImage, setSelectedImage] = useState(null);
-
-  // Check if the referrer is PreMonitoringPatientsPage
-  const isFromPreMonitoring = location.state?.referrer === "PreMonitoringPatientsPage";
 
   useEffect(() => {
     const fetchPatient = async () => {
@@ -69,7 +65,6 @@ const PatientProfile = () => {
           patient={patient}
           getMaxConfidence={getMaxConfidence}
           openImage={openImage}
-          isFromPreMonitoring={isFromPreMonitoring} // Pass the referrer flag
         />
         <Footer patient={patient} />
         <ImageModal selectedImage={selectedImage} closeImage={closeImage} />
