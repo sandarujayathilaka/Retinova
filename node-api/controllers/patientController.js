@@ -414,6 +414,7 @@ exports.updatePatientDiagnosis = async (req, res) => {
     ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+    console.log(req.body.diagnosis);
 
     // Extract patient ID from filename (e.g., 12345_jndj.jpg → 12345)
     const filename = req.file.originalname;
@@ -426,7 +427,7 @@ exports.updatePatientDiagnosis = async (req, res) => {
       });
     }
 
-    const patientId = match[0];
+    const patientId = match[1];
     console.log(`Extracted Patient ID: ${patientId}`);
     const sideIdentifier = match[2].toUpperCase();
 
@@ -465,7 +466,9 @@ exports.updatePatientDiagnosis = async (req, res) => {
         !recommend.tests.every(
           (test) =>
             typeof test.testName === "string" &&
-            ["Pending", "In Progress", "Completed"].includes(test.status) &&
+            ["Pending", "In Progress", "Completed", "TestCompleted"].includes(
+              test.status
+            ) &&
             typeof test.attachmentURL === "string"
         ) ||
         typeof recommend.note !== "string" // Must be a string

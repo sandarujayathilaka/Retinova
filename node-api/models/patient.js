@@ -7,7 +7,7 @@ const diagnoseSchema = new mongoose.Schema({
   uploadedAt: { type: Date, default: Date.now },
   status: {
     type: String,
-    enum: ["Unchecked", "Completed","Checked"],
+    enum: ["Unchecked", "Completed", "Checked"],
     default: "Unchecked",
   },
   confidenceScores: [Number],
@@ -18,7 +18,7 @@ const diagnoseSchema = new mongoose.Schema({
         testName: String,
         status: {
           type: String,
-          enum: ["Pending", "In Progress", "Completed"],
+          enum: ["Pending", "In Progress", "Completed", "TestCompleted"],
           default: "Pending",
         },
         attachmentURL: String,
