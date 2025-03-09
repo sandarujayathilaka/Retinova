@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Users2,Users,Users2Icon,UsersIcon,UsersRound,UsersRoundIcon,SearchIcon, Loader2, User } from "lucide-react";
+import { UsersIcon, SearchIcon, Loader2 } from "lucide-react";
 import { api } from "../../services/api.service";
 import { useNavigate } from "react-router-dom";
 import {
@@ -24,83 +24,98 @@ import {
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Function to calculate age from birthDate
-// const calculateAge = (birthDate) => {
-//   const birth = new Date(birthDate);
-//   const today = new Date();
-//   let age = today.getFullYear() - birth.getFullYear();
-//   const monthDifference = today.getMonth() - birth.getMonth();
-
-//   if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birth.getDate())) {
-//     age--;
-//   }
-//   return age;
-// };
-
-const AllPatients = () => {
+const MonitoringPatients = () => {
   const [patients, setPatients] = useState([]);
-  const [filteredPatients, setFilteredPatients] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedGender, setSelectedGender] = useState("all");
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalPatients: 0,
+    limit: 10,
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchMonitoringPatients = async (page = 1) => {
       setLoading(true);
       try {
-        const patientsRes = await api.get("/patients");
-        setPatients(patientsRes.data.patients);
-        setFilteredPatients(patientsRes.data.patients);
+        const response = await api.get("/v2/patients", {
+          params: {
+            status: "Monitoring",
+            page,
+            limit: pagination.limit,
+            search: searchTerm || undefined,
+            gender: selectedGender === "all" ? undefined : selectedGender,
+          },
+        });
+        console.log("API Request Params:", {
+          status: "Monitoring",
+          page,
+          limit: pagination.limit,
+          search: searchTerm || undefined,
+          gender: selectedGender === "all" ? undefined : selectedGender,
+        });
+        console.log("API Response:", response.data);
+        
+        // Check if response.data has the expected structure
+        if (!response.data || !Array.isArray(response.data.patients)) {
+          throw new Error("Invalid API response format");
+        }
+
+        setPatients(response.data.patients);
+        setPagination(response.data.pagination || {
+          currentPage: 1,
+          totalPages: 1,
+          totalPatients: response.data.patients.length,
+          limit: pagination.limit,
+        });
       } catch (error) {
-        toast.error("Failed to fetch patients. Please try again.", {
+        console.error("Fetch Error:", error);
+        toast.error("Failed to fetch monitoring patients. Please try again.", {
           position: "top-right",
-          autoClose: 3000, 
-        })
+          autoClose: 3000,
+        });
+        setError(`Failed to load patients: ${error.message}`);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
-
-  const applyFilters = (term, gender) => {
-    const filtered = patients.filter((patient) => {
-      const matchesSearch =
-        patient.fullName.toLowerCase().includes(term.toLowerCase()) ||
-        patient.nic.toLowerCase().includes(term.toLowerCase()) ||
-        patient.email?.toLowerCase().includes(term.toLowerCase());
-      const matchesGender =
-        gender === "all" || patient.gender.toLowerCase() === gender.toLowerCase();
-      return matchesSearch && matchesGender;
-    });
-    setFilteredPatients(filtered);
-  };
+    fetchMonitoringPatients(pagination.currentPage);
+  }, [pagination.currentPage, searchTerm, selectedGender]);
 
   const handleSearch = (e) => {
-    const term = e.target.value;
-    setSearchTerm(term);
-    applyFilters(term, selectedGender);
+    setSearchTerm(e.target.value);
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
   };
 
   const handleGenderFilter = (gender) => {
     setSelectedGender(gender);
-    applyFilters(searchTerm, gender);
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
   };
 
   const handleViewPatient = (patientId) => {
-    navigate(`/allPatients/view/${patientId}`);
+    navigate(`/monitoringPatients/view/${patientId}`);
   };
 
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination((prev) => ({ ...prev, currentPage: newPage }));
+    }
+  };
+
+  const displayedCount = patients.length;
+
   return (
-    <div className=" bg-gray-100">
+    <div className="bg-gray-100">
       <Card className="max-w-7xl mx-auto rounded-2xl overflow-hidden transition-all duration-300">
         <CardHeader className="bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-600 text-white py-8 px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <CardTitle className="text-3xl font-extrabold tracking-tight">
               <span className="flex items-center gap-2">
-                <UsersIcon className="h-8 w-8" /> Patients Record
+                <UsersIcon className="h-8 w-8" /> Monitoring Patients
               </span>
             </CardTitle>
             <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
@@ -136,27 +151,27 @@ const AllPatients = () => {
           ) : error ? (
             <div className="p-6 bg-red-50 text-red-600 rounded-lg text-center">{error}</div>
           ) : (
-            <Table className="w-full">
-              <TableHeader className="bg-gray-50 sticky top-0 z-10">
-                <TableRow>
-                  <TableHead className="py-4 font-semibold text-gray-700">Patient ID</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-700">Name</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-700">NIC</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-700">Age</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-700">Gender</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-700 text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPatients.map((patient) => {
-                  return (
+            <>
+              <Table className="w-full">
+                <TableHeader className="bg-gray-50 sticky top-0 z-10">
+                  <TableRow>
+                    <TableHead className="py-4 font-semibold text-gray-700">Patient ID</TableHead>
+                    <TableHead className="py-4 font-semibold text-gray-700">Name</TableHead>
+                    <TableHead className="py-4 font-semibold text-gray-700">NIC</TableHead>
+                    <TableHead className="py-4 font-semibold text-gray-700">Age</TableHead>
+                    <TableHead className="py-4 font-semibold text-gray-700">Gender</TableHead>
+                    <TableHead className="py-4 font-semibold text-gray-700 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {patients.map((patient) => (
                     <TableRow
-                      key={patient.id}
+                      key={patient.patientId}
                       className="hover:bg-teal-50 transition-all duration-200 border-b border-gray-200 animate-fadeIn"
                     >
                       <TableCell className="py-4 font-medium text-teal-700">{patient.patientId}</TableCell>
-                      <TableCell className="py-4 font-medium text-gray-800">{patient.fullName}</TableCell>
-                      <TableCell className="py-4 text-gray-600">{patient.nic}</TableCell>
+                      <TableCell className="py-4 font-medium text-gray-800">{patient.fullName || "N/A"}</TableCell>
+                      <TableCell className="py-4 text-gray-600">{patient.nic || "N/A"}</TableCell>
                       <TableCell className="py-4">
                         <Badge
                           variant="outline"
@@ -166,7 +181,7 @@ const AllPatients = () => {
                               : "bg-green-100 text-green-700 border-green-300"
                           } rounded-full px-2`}
                         >
-                          {patient.age}
+                          {patient.age || "0"}
                         </Badge>
                       </TableCell>
                       <TableCell className="py-4">
@@ -180,7 +195,7 @@ const AllPatients = () => {
                               : "bg-purple-100 text-purple-700 border-purple-300"
                           }`}
                         >
-                          {patient.gender}
+                          {patient.gender || "N/A"}
                         </Badge>
                       </TableCell>
                       <TableCell className="py-4 text-right">
@@ -193,23 +208,50 @@ const AllPatients = () => {
                         </Button>
                       </TableCell>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {pagination.totalPatients > 0 && (
+                <div className="flex justify-between items-center mt-4">
+                  <p className="text-sm text-gray-600">
+                    Showing {displayedCount > 0 ? (pagination.currentPage - 1) * pagination.limit + 1 : 0} to{" "}
+                    {Math.min(pagination.currentPage * pagination.limit, pagination.totalPatients)} of{" "}
+                    {pagination.totalPatients} patients
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      disabled={pagination.currentPage === 1}
+                      onClick={() => handlePageChange(pagination.currentPage - 1)}
+                      className="rounded-full"
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      disabled={pagination.currentPage === pagination.totalPages}
+                      onClick={() => handlePageChange(pagination.currentPage + 1)}
+                      className="rounded-full"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
-          {!loading && filteredPatients.length === 0 && (
-            <div className="p-10 text-center text-gray-500 bg-gray-50 rounded-lg">
-              <p className="text-lg">No patients found matching your criteria.</p>
+          {!loading && patients.length === 0 && (
+            <div className="p-10 text-center text-gray-600 bg-gray-50 rounded-lg">
+              <p className="text-lg">No monitoring patients found matching your criteria.</p>
               <p className="text-sm mt-2">Try adjusting your search or filters.</p>
             </div>
           )}
         </CardContent>
       </Card>
-      
     </div>
   );
 };
 
-export default AllPatients;
+export default MonitoringPatients;
