@@ -71,16 +71,20 @@ const data = {
       icon: doctors,
       items: [
         {
-          title: "Genesis",
-          url: "#",
+          title: "Review",
+          url: "/review-patients",
         },
         {
-          title: "Explorer",
-          url: "#",
+          title: "Monitoring",
+          url: "/monitorpatients",
         },
         {
-          title: "Quantum",
-          url: "#",
+          title: "Pre-Monitoring",
+          url: "/pre-monitoring-patients",
+        },
+        {
+          title: "Completed",
+          url: "/completed-patients",
         },
       ],
     },
