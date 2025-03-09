@@ -9,5 +9,9 @@ AWS.config.update({
 });
 
 const s3 = new AWS.S3();
+const ses = new AWS.SES({ apiVersion: "2010-12-01" });
 
-module.exports = s3;
+module.exports = {
+  s3,
+  ses,
+};

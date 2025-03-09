@@ -32,8 +32,9 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/patients", patientRoutes);
+
+app.use("/api/auth", userRoutes);
 app.use("/api/v2/patients", patientNurseRoutes);
-app.use("/api/users", userRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/util", utilRoutes);
 app.use("/api/doctors", doctorRoutes);

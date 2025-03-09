@@ -1,5 +1,5 @@
 const Patient = require("../models/patient");
-const s3 = require("../config/s3");
+const { s3 } = require("../config/aws");
 const axios = require("axios");
 require("dotenv").config();
 const path = require("path");

@@ -73,6 +73,7 @@ const DoctorSchema = new mongoose.Schema(
     },
     image: { type: ImageSchema, required: true },
     daysOff: { type: [DayOffSchema], default: [] },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Link to User model
   },
   {
     timestamps: true,

@@ -10,9 +10,8 @@ import { Mail, Phone } from "lucide-react";
 export const contactInfoSchema = z.object({
   phone: z
     .string()
-    .min(10, "Phone number must be at least 10 digits")
-    .max(15, "Phone number can't be longer than 15 digits")
-    .regex(/^\d+$/, "Phone number must contain only numbers"),
+    .length(10, "Phone number must be 10 digits")
+    .regex(/^0\d{9}$/, "Phone number must start with 0 and be 10 digits long"),
   email: z.string().email("Invalid email address").min(1, "Email is required"),
   address: z
     .string()

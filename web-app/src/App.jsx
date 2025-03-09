@@ -24,13 +24,23 @@ import RVO from "./pages/diseases/RVO";
 import DoctorsList from "./pages/doctors/List";
 import Add from "./pages/doctors/New";
 import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/auth/ResetPassword";
+import { Roles } from "./constants/roles";
+import ProtectedRoute from "./middleware/ProtectedRoute";
 
 const App = () => {
   return (
     <BrowserRouter>
-      <AdminLayout>
-        <Toaster position="top-right" />
-        <Routes>
+      <Toaster position="top-right" />
+      <Routes>
+        <Route path="/" element={<Diagnose />} />
+
+        {/* common routes - for all roles */}
+        <Route
+          element={
+            <ProtectedRoute roles={[Roles.ADMIN, Roles.DOCTOR, Roles.NURSE]} redirectPath="/404" />
+          }
+        >
           <Route path="/" element={<Diagnose />} />
           <Route path="/monitoringPatients" element={<MonitoringPatients />} />
           <Route path="/publishedPatients" element={<PublishedPatients />} />
@@ -52,13 +62,14 @@ const App = () => {
 
           <Route path="/doctors" element={<DoctorsList />} />
           <Route path="/add" element={<Add />} />
+        </Route>
 
-          {/* 404 Not Found Page */}
-          <Route path="*" element={<NotFound />} />
-          <Route path="/404" element={<NotFound />} />
-        </Routes>
-        <ToastContainer />
-      </AdminLayout>
+        <Route path="/reset-password" element={<ResetPassword />} />
+
+        {/* 404 Not Found Page */}
+        <Route path="*" element={<NotFound />} />
+        <Route path="/404" element={<NotFound />} />
+      </Routes>
     </BrowserRouter>
   );
 };
