@@ -47,7 +47,6 @@ exports.uploadImage = async (req, res) => {
       { headers: { ...formData.getHeaders() } } // Ensure headers are set correctly
     );
 
-
     console.log(flaskResponse);
 
     const diagnosisResult = flaskResponse.data.label;
@@ -96,11 +95,9 @@ exports.predictAndFetch = async (req, res) => {
     
     console.log(patientIdMatch)
     if (!patientIdMatch) {
-      return res
-        .status(400)
-        .json({
-          error: "Invalid filename format. Expected: patientId_randomtext.jpg",
-        });
+      return res.status(400).json({
+        error: "Invalid filename format. Expected: patientId_randomtext.jpg",
+      });
     }
 
     const patientId = patientIdMatch[1]; // Extracted patient ID
@@ -171,7 +168,6 @@ console.log(confidence)
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 exports.uploadImages = async (req, res) => {
   try {
@@ -435,6 +431,3 @@ exports.saveMultipleDiagnoses = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
-
-

@@ -1,21 +1,22 @@
-import React from "react";
+import { Toaster } from "react-hot-toast";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Diagnose from "./pages/diseases/Diagnose";
-import NotFound from "./pages/NotFound";
 import AdminLayout from "./layouts/AdminLayout";
+import AMD from "./pages/diseases/AMD";
+import Diagnose from "./pages/diseases/Diagnose";
 import DR from "./pages/diseases/DR";
 import Glaucoma from "./pages/diseases/Glaucoma";
-import RVO from "./pages/diseases/RVO";
-import AMD from "./pages/diseases/AMD";
-import { Toaster } from "react-hot-toast";
 import MultiDiagnosePage from "./pages/diseases/MultiDiagnosePage";
 import Dashboard from "./pages/Dashboard";
 import MonitoringPatients from "./pages/Nurse/MonitoringPatients";
 import PublishedPatients from "./pages/Nurse/PublishedPatients";
 import AddPatient from "./pages/Nurse/AddPatient";
 import View from "./pages/Nurse/View";
-import { ToastContainer } from 'react-toastify';
-import "react-toastify/dist/ReactToastify.css";
+import RVO from "./pages/diseases/RVO";
+import DoctorsList from "./pages/doctors/List";
+import Add from "./pages/doctors/New";
+import NotFound from "./pages/NotFound";
 
 const App = () => {
   return (
@@ -35,6 +36,9 @@ const App = () => {
           <Route path="/diagnose/glaucoma" element={<Glaucoma />} />
           <Route path="/diagnose/rvo" element={<RVO />} />
           <Route path="/diagnose/multidr" element={<MultiDiagnosePage />} />
+
+          <Route path="/doctors" element={<DoctorsList />} />
+          <Route path="/add" element={<Add />} />
 
           {/* 404 Not Found Page */}
           <Route path="*" element={<NotFound />} />
