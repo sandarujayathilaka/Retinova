@@ -10,6 +10,7 @@ import RVO from "./pages/diseases/RVO";
 import DoctorsList from "./pages/doctors/List";
 import Add from "./pages/doctors/New";
 import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/auth/ResetPassword";
 
 const App = () => {
   return (
@@ -27,6 +28,8 @@ const App = () => {
 
           <Route path="/doctors" element={<DoctorsList />} />
           <Route path="/add" element={<Add />} />
+
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* 404 Not Found Page */}
           <Route path="*" element={<NotFound />} />

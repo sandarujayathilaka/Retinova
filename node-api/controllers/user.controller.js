@@ -2,8 +2,11 @@ const User = require("../models/user.model");
 const {
   generateToken,
   generateRefreshToken,
+  generateResetToken,
 } = require("../utils/generate-token");
 const jwt = require("jsonwebtoken");
+const { sendEmail } = require("../utils/send-email");
+const { generateResetLink } = require("../utils/generate-link");
 
 const signUp = async (req, res) => {
   const { name, username, email, password, role } = req.body;
@@ -61,22 +64,73 @@ const refreshToken = async (req, res) => {
 };
 
 const resetPassword = async (req, res) => {
-  try {
-    const { token, newPassword } = req.body;
-    const decoded = jwt.verify(token, "your_secret_key");
+  const { token, newPassword } = req.body;
 
-    const user = await User.findOne({ email: decoded.email });
-    if (!user) {
-      return res.status(400).json({ error: "Invalid token" });
-    }
-
-    user.password = newPassword;
-    await user.save();
-
-    res.json({ message: "Password reset successful" });
-  } catch (error) {
-    res.status(400).json({ error: "Invalid or expired token" });
+  if (!token || !newPassword) {
+    return res
+      .status(400)
+      .json({ error: "Token and new password are required" });
   }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(400).json({ error: "TokenExpiredError" });
+    }
+    return res.status(400).json({ error: "Invalid token" });
+  }
+
+  const user = await User.findOne({ email: decoded.email });
+  if (!user) {
+    return res.status(400).json({ error: "Invalid token" });
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  res.json({ message: "Password reset successful" });
 };
 
-module.exports = { signUp, signIn, refreshToken, resetPassword };
+const resendResetLink = async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(400).json({ error: "Email not found" });
+  }
+
+  // Generate a new reset token (valid for 24h)
+  const resetToken = generateResetToken(email);
+  const resetLink = generateResetLink(resetToken);
+
+  // Send email with the new reset link
+  await sendEmail(email, "Password Reset Request", "password-reset", {
+    name: user.name || "User",
+    resetLink,
+  });
+
+  res.json({ message: "Reset link sent successfully" });
+};
+
+const getUser = async (req, res) => {
+  // Populate related fields, e.g. profile or role
+  const user = await User.findById(req.params.id).populate("profile"); // Assuming you have a profile field in User
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  res.json(user);
+};
+
+module.exports = {
+  signUp,
+  signIn,
+  refreshToken,
+  resetPassword,
+  resendResetLink,
+  getUser,
+};

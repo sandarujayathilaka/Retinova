@@ -35,7 +35,7 @@ const addDoctor = async (req, res) => {
 
   await doctor.save();
 
-  await UserService.createUser(email, "doctor", doctor._id);
+  await UserService.createUser(email, "doctor", doctor._id, name);
 
   res.status(201).json({ message: "Doctor added successfully", doctor });
 };

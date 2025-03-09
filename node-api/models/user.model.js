@@ -5,12 +5,16 @@ const userSchema = new mongoose.Schema(
   {
     email: { type: String, unique: true, required: true },
     password: { type: String, required: true },
+    name: { type: String },
     role: {
       type: String,
       enum: ["doctor", "nurse", "patient", "admin"],
       required: true,
     },
-    profileId: { type: mongoose.Schema.Types.ObjectId, refPath: "role" }, // Reference to doctor/nurse/patient
+    profile: {
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: "onModel",
+    },
   },
   {
     timestamps: true,
@@ -24,6 +28,12 @@ const userSchema = new mongoose.Schema(
     },
   }
 );
+
+// Add a virtual property that converts role to model name
+userSchema.virtual("onModel").get(function () {
+  if (this.role === "admin") return undefined;
+  return this.role.charAt(0).toUpperCase() + this.role.slice(1);
+});
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
