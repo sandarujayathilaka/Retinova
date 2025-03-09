@@ -46,6 +46,7 @@ const data = {
       url: "#",
       icon: dashboard,
       isActive: true,
+      isExpandable: true,
       items: [
         {
           title: "DR",
@@ -67,8 +68,14 @@ const data = {
     },
     {
       title: "Doctors",
-      url: "#",
+      url: "/doctors",
       icon: doctors,
+      isExpandable: false,
+    },
+    {
+      title: "Patients",
+      icon: doctors,
+      isExpandable: true,
       items: [
         {
           title: "Review",
@@ -92,6 +99,7 @@ const data = {
       title: "Diseases",
       url: "#",
       icon: diseases,
+      isExpandable: true,
       items: [
         {
           title: "DR",

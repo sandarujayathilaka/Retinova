@@ -9,6 +9,7 @@ const FormData = require("form-data"); // Import FormData
 
 exports.uploadImage = async (req, res) => {
   try {
+    console.log("dsdsd");
     const { patientId } = req.body;
     if (!patientId || !req.file) {
       return res
@@ -42,11 +43,10 @@ exports.uploadImage = async (req, res) => {
     });
 
     const flaskResponse = await axios.post(
-      process.env.FLASK_API_URL,
+      process.env.FLASK_API_URL_DR,
       formData,
       { headers: { ...formData.getHeaders() } } // Ensure headers are set correctly
     );
-
 
     console.log(flaskResponse);
 
@@ -113,6 +113,27 @@ exports.predictAndFetch = async (req, res) => {
 
     console.log(`Patient found: ${patientId}, proceeding with prediction.`);
 
+    const { diseaseType } = req.body;
+
+    if (
+      !diseaseType ||
+      !["amd", "dr", "rvo", "glaucoma"].includes(diseaseType.toLowerCase())
+    ) {
+      return res.status(400).json({
+        error:
+          "Invalid or missing diseaseType parameter. Use 'amd' or 'dr' or 'rvo' or 'glaucoma'.",
+      });
+    }
+
+    const flaskApiUrl = {
+      amd: process.env.FLASK_API_URL_AMD,
+      dr: process.env.FLASK_API_URL_DR,
+      rvo: process.env.FLASK_API_URL_RVO,
+      glaucoma: process.env.FLASK_API_URL_GLAUCOMA,
+    }[diseaseType.toLowerCase()];
+
+    console.log(`Using Flask API: ${flaskApiUrl}`);
+
     // **3. Prepare Image for Flask API**
     const formData = new FormData();
     formData.append("file", req.file.buffer, {
@@ -121,15 +142,20 @@ exports.predictAndFetch = async (req, res) => {
     });
 
     // **4. Call Flask API for Prediction**
-    const flaskResponse = await axios.post(
-      process.env.FLASK_API_URL,
-      formData,
-      { headers: { ...formData.getHeaders() } }
-    );
+    const flaskResponse = await axios.post(flaskApiUrl, formData, {
+      headers: { ...formData.getHeaders() },
+    });
 
-    const diagnosisResult = flaskResponse.data.label; // Extract diagnosis label
+    let diagnosisResult;
+    if (diseaseType == "glaucoma") {
+      diagnosisResult = flaskResponse.data.predicted_class;
+    } else {
+      diagnosisResult = flaskResponse.data.label;
+    }
+    // Extract diagnosis label
     const confidence = flaskResponse.data.confidence; // Confidence scores
-
+    console.log(flaskResponse);
+    console.log(confidence);
     // **5. Return Data to Frontend**
     res.json({
       message: "Prediction Successful",
@@ -142,7 +168,6 @@ exports.predictAndFetch = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 exports.uploadImages = async (req, res) => {
   try {
@@ -401,7 +426,6 @@ exports.saveMultipleDiagnoses = async (req, res) => {
   }
 };
 
-
 exports.updatePatientDiagnosis = async (req, res) => {
   try {
     // Check for required fields
@@ -655,7 +679,6 @@ exports.getPatientsWithUncheckedDiagnoses = async (req, res) => {
   }
 };
 
-
 const VALID_STATUSES = ["Pre-Monitoring", "Monitoring", "Completed", "Review"];
 
 exports.getPatientsByOneStatus = async (req, res) => {
@@ -762,7 +785,6 @@ exports.getPatientsByOneStatus = async (req, res) => {
   }
 };
 
-
 // Update recommendations for a specific diagnosis in the patient's diagnoseHistory
 
 exports.updateDiagnosisRecommendations = async (req, res) => {
@@ -772,11 +794,9 @@ exports.updateDiagnosisRecommendations = async (req, res) => {
 
     // Validate required fields (allow empty payload for "Mark as Checked")
     if (medicine === undefined || tests === undefined || note === undefined) {
-      return res
-        .status(400)
-        .json({
-          error: "Medicine, tests, and note are required (can be empty)",
-        });
+      return res.status(400).json({
+        error: "Medicine, tests, and note are required (can be empty)",
+      });
     }
 
     // Find the patient by ID
@@ -793,12 +813,10 @@ exports.updateDiagnosisRecommendations = async (req, res) => {
 
     // Ensure the diagnosis is not already checked
     if (diagnosis.status === "Checked" || diagnosis.status === "Completed") {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Cannot update recommendations for a checked or completed diagnosis",
-        });
+      return res.status(400).json({
+        error:
+          "Cannot update recommendations for a checked or completed diagnosis",
+      });
     }
 
     // Convert medicine to string if it’s an array

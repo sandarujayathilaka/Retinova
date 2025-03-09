@@ -27,8 +27,8 @@ const DR = () => {
       console.log("Uploading image for prediction:", image.name);
 
       const formData = new FormData();
-      formData.append("file", image);
-
+      formData.append("file", image); // Matches backend's expected field
+      formData.append("diseaseType", "dr");
       const response = await axios.post("http://localhost:4000/api/patients/predict", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -121,7 +121,7 @@ const DR = () => {
     setIsSaving(false);
     setImageFile(null);
   };
-
+  console.log(patientData);
   return (
     <div>
       <Diagnose
