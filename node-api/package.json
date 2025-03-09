@@ -10,9 +10,9 @@
   "author": "IT21267772",
   "license": "ISC",
   "dependencies": {
-    "aws-sdk": "^2.1692.0",
-    "axios": "^1.8.1",
     "@aws-sdk/client-s3": "^3.758.0",
+    "aws-sdk": "^2.1692.0",
+    "axios": "^1.8.2",
     "bcryptjs": "^2.4.3",
     "colors": "^1.4.0",
     "cors": "^2.8.5",

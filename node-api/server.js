@@ -12,8 +12,8 @@ const patientRoutes = require("./routes/patientRoutes")
 const updatePatientAges = require("./config/cron.jobs");
 const userRoutes = require("./routes/user.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
-const patientRoutes = require("./routes/patient.routes");
-
+const patientNurseRoutes = require("./routes/patient.routes");
+const doctorNurseRoutes = require("./routes/doctor.routes");
 const app = express();
 
 app.use(express.json());
@@ -32,8 +32,8 @@ app.use("/api/patients", patientRoutes);
 
 app.use("/api/users", userRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/patients", patientRoutes);
-
+app.use("/api/v2/patients", patientNurseRoutes);
+app.use("/api/v2/doctors", doctorNurseRoutes);
 app.use(errorHandler);
 
 const port = process.env.PORT || 4000;

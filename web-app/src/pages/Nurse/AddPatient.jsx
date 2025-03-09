@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useState } from "react";
-import { api } from "../services/api.service";
+import { api } from "../../services/api.service";
 import { IdCardIcon,CalendarIcon, User2, Smartphone, Mail, Home, Circle } from "lucide-react";
 
 // UI Components
@@ -72,7 +72,7 @@ export default function AddPatient() {
 
   const onSubmit = async (data) => {
     try {
-      const response = await api.post("/patients/add", data);
+      const response = await api.post("/v2/patients/add", data);
       if(response){
  toast.success("Patient registered successfully", {
   position: "top-right",

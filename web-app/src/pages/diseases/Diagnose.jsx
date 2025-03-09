@@ -155,7 +155,7 @@ const Diagnose = ({
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <Title level={2} className="text-gray-800 mb-6 font-semibold">
-        Diagnose <span className="text-gray-600 font-medium">{disease}</span>
+        Diagnose {">"}<span className="text-gray-600 font-medium">{disease}</span>
       </Title>
 
       {/* Upload Section - Shown Initially */}
@@ -174,7 +174,7 @@ const Diagnose = ({
                 Upload Retinal Scan
               </Title>
               <Text className="text-white opacity-80">
-                Upload an image to detect Diabetic Retinopathy
+                Upload an image to detect {disease}
               </Text>
             </div>
             <div className="p-8 bg-white">
