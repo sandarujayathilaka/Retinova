@@ -77,7 +77,9 @@ const resetPassword = async (req, res) => {
     decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch (error) {
     if (error.name === "TokenExpiredError") {
-      return res.status(400).json({ error: "TokenExpiredError" });
+      return res
+        .status(400)
+        .json({ error: "Reset link has expired. Request a new one." });
     }
     return res.status(400).json({ error: "Invalid token" });
   }
@@ -87,7 +89,18 @@ const resetPassword = async (req, res) => {
     return res.status(400).json({ error: "Invalid token" });
   }
 
+  // Check if the token was issued before password reset
+  if (
+    user.passwordChangedAt &&
+    decoded.iat * 1000 < user.passwordChangedAt.getTime()
+  ) {
+    return res.status(400).json({
+      error: "Token is no longer valid. Please request a new reset link.",
+    });
+  }
+
   user.password = newPassword;
+  user.passwordChangedAt = new Date(); // Update timestamp
   await user.save();
 
   res.json({ message: "Password reset successful" });
@@ -116,8 +129,7 @@ const resendResetLink = async (req, res) => {
 };
 
 const getUser = async (req, res) => {
-  // Populate related fields, e.g. profile or role
-  const user = await User.findById(req.params.id).populate("profile"); // Assuming you have a profile field in User
+  const user = await User.findById(req.params.id).populate("profile");
 
   if (!user) {
     return res.status(404).json({ error: "User not found" });

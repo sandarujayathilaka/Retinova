@@ -11,6 +11,9 @@ const userSchema = new mongoose.Schema(
       enum: ["doctor", "nurse", "patient", "admin"],
       required: true,
     },
+    passwordChangedAt: {
+      type: Date,
+    },
     profile: {
       type: mongoose.Schema.Types.ObjectId,
       refPath: "onModel",
