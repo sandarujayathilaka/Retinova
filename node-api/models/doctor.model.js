@@ -39,6 +39,10 @@ const DoctorSchema = new mongoose.Schema(
       required: true,
       enum: ["Full time", "Part time"],
     },
+    status: {
+      type: Boolean,
+      default: false,
+    },
     specialty: {
       type: String,
       required: true,

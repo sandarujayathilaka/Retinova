@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Diagnose from "./Diagnose";
-import { api } from "@/services/api.service";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 const AMD = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -10,46 +10,76 @@ const AMD = () => {
     type: null,
     confidence: null,
   });
+  const [patientData, setPatientData] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const handleSubmission = async image => {
-    setIsSubmitting(true); // Start loading
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setPrediction({ disease: null, type: null, confidence: null }); // Reset prediction
+    setPatientData(null); // Reset patient data
 
     try {
-      console.log("Uploading image...");
-      console.log("image:", image);
+      console.log("Uploading image:", image.name);
 
-      // Create a FormData object
       const formData = new FormData();
-      formData.append("file", image); // Append the image to the form data
-
-      // Send the FormData to the backend
-      const response = await api.post("/api/predict/amd", formData, {
+      formData.append("file", image); // Matches backend's expected field
+      formData.append("diseaseType", "amd");
+      const response = await axios.post("http://localhost:4000/api/patients/predict", formData, {
         headers: {
-          "Content-Type": "multipart/form-data", // Ensure content-type is set correctly
+          "Content-Type": "multipart/form-data",
         },
       });
 
-      console.log("added:", response.data);
-      setPrediction({
-        disease: response.data?.disease,
-        type: response.data?.label,
-        confidence: response?.data.confidence,
-      }); // Set the prediction data
+      console.log("Response data:", response.data);
+
+      const { diagnosis, confidenceScores, patientData } = response.data;
+
+      if (!patientData) {
+        throw new Error("Patient data not returned from backend");
+      }
+
+      setPatientData(patientData);
+      // setPrediction({
+      //   disease: "Age Related Macular Degeneration",
+      //   type: diagnosis,
+      //   confidence: confidenceScores,
+      // });
+
+        // const highestConfidence = confidenceScores;
+        setPrediction({
+          disease: "Age Related Macular Degeneration",
+          type: diagnosis,
+          confidence: confidenceScores,
+        });
+      
     } catch (error) {
-      toast.error("Error uploading image");
       console.error("Error uploading image:", error);
+      const errorMsg = error.response?.data?.error || "Error uploading image. Please try again.";
+      setErrorMessage(errorMsg);
+      toast.error(errorMsg);
     } finally {
-      setIsSubmitting(false); // End loading
+      setIsSubmitting(false);
     }
+  };
+
+  const resetState = () => {
+    setPrediction({ disease: null, type: null, confidence: null });
+    setPatientData(null);
+    setErrorMessage(null);
+    setIsSubmitting(false);
   };
 
   return (
     <div>
       <Diagnose
-        disease={"AMD"}
+        disease="Age Related Macular Degeneration"
         handleSubmission={handleSubmission}
         isSubmitting={isSubmitting}
         prediction={prediction}
+        patientData={patientData}
+        errorMessage={errorMessage}
+        resetState={resetState}
       />
     </div>
   );

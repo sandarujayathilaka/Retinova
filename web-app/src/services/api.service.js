@@ -10,8 +10,8 @@ const createAxiosInstance = baseURL => {
 
 const apiURL = import.meta.env.VITE_API_URI
   ? `${import.meta.env.VITE_API_URI}`
-  : "http://127.0.0.1:4000/api/";
-
+  : "http://localhost:4000/api/";
+// "http://127.0.0.1:5000/";
 const api = createAxiosInstance(apiURL);
 
 export { api };
