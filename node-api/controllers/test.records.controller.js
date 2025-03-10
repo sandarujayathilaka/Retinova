@@ -114,16 +114,18 @@ const completeDiagnosis = asyncHandler(async (req, res) => {
     throw new Error("Not all tests are completed");
   }
 
-  // Update both statuses atomically
+  // Update both statuses atomicallyP
   diagnose.status = "TestCompleted";
-  patient.patientStatus = "ReviewReady";
+  // patient.patientStatus = "Published";
 
   await patient.save();
 
   res.status(200).json({
     success: true,
-    message: "Diagnosis completed and patient status updated",
-    data: { diagnose, patientStatus: patient.patientStatus },
+    message: "Diagnosis's tests are completed",
+    // data: { diagnose, patientStatus: patient.patientStatus },
+    data: { diagnose},
+
   });
 });
 
