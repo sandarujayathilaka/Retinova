@@ -8,29 +8,29 @@ from tensorflow.keras.applications.nasnet import preprocess_input
 model_AMD = get_amd_model()  
 
 
-model = get_model()  
+# model = get_model()  
 
-def predict_image(file):
+# def predict_image(file):
  
-    img_array = preprocess_image(file)
+#     img_array = preprocess_image(file)
 
-    predictions = model.predict(img_array)
+#     predictions = model.predict(img_array)
 
-    predicted_class = np.argmax(predictions[0])
+#     predicted_class = np.argmax(predictions[0])
 
-    print(predictions)
-    print(predicted_class)
+#     print(predictions)
+#     print(predicted_class)
 
-    class_labels = ["NPDR", "No_DR", "PDR"]
+#     class_labels = ["NPDR", "No_DR", "PDR"]
 
-    print(class_labels[predicted_class])
+#     print(class_labels[predicted_class])
 
-    predicted_label = class_labels[predicted_class]
+#     predicted_label = class_labels[predicted_class]
 
-    return {
-        "label": predicted_label,
-        "confidence": predictions[0].tolist()
-    }
+#     return {
+#         "label": predicted_label,
+#         "confidence": predictions[0].tolist()
+#     }
 
 
 def preprocess_image(file, target_size=(331, 331)):

@@ -1,26 +1,23 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const userSchema = mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
-    name: {
+    email: { type: String, unique: true, required: true },
+    password: { type: String, required: true },
+    name: { type: String },
+    role: {
       type: String,
+      enum: ["doctor", "nurse", "patient", "admin"],
       required: true,
     },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
+    passwordChangedAt: {
+      type: Date,
     },
-    password: {
-      type: String,
-      required: true,
+    profile: {
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: "onModel",
     },
-    favourites: [
-      {
-        type: String,
-      },
-    ],
   },
   {
     timestamps: true,
@@ -34,6 +31,12 @@ const userSchema = mongoose.Schema(
     },
   }
 );
+
+// Add a virtual property that converts role to model name
+userSchema.virtual("onModel").get(function () {
+  if (this.role === "admin") return undefined;
+  return this.role.charAt(0).toUpperCase() + this.role.slice(1);
+});
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);

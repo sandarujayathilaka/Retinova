@@ -46,6 +46,7 @@ const data = {
       url: "#",
       icon: dashboard,
       isActive: true,
+      isExpandable: true,
       items: [
         {
           title: "DR",
@@ -67,20 +68,30 @@ const data = {
     },
     {
       title: "Doctors",
-      url: "#",
+      url: "/doctors",
       icon: doctors,
+      isExpandable: false,
+    },
+    {
+      title: "Patients",
+      icon: doctors,
+      isExpandable: true,
       items: [
         {
-          title: "Genesis",
-          url: "#",
+          title: "Review",
+          url: "/review-patients",
         },
         {
-          title: "Explorer",
-          url: "#",
+          title: "Monitoring",
+          url: "/monitorpatients",
         },
         {
-          title: "Quantum",
-          url: "#",
+          title: "Pre-Monitoring",
+          url: "/pre-monitoring-patients",
+        },
+        {
+          title: "Completed",
+          url: "/completed-patients",
         },
       ],
     },
@@ -88,6 +99,7 @@ const data = {
       title: "Diseases",
       url: "#",
       icon: diseases,
+      isExpandable: true,
       items: [
         {
           title: "DR",
