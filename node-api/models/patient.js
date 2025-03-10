@@ -1,36 +1,75 @@
 const mongoose = require("mongoose");
 
-// Schema for past diagnoses
 const diagnoseSchema = new mongoose.Schema({
   imageUrl: String,
   diagnosis: { type: String, default: "Processing" },
   uploadedAt: { type: Date, default: Date.now },
-  confidenceScores: [Number], // Store confidence scores for transparency
+  status: {
+    type: String,
+    enum: ["Unchecked", "TestCompleted","Checked"],
+    default: "Unchecked",
+  },
+  confidenceScores: [Number],
+  recommend: {
+    medicine: String,
+    tests: [
+      {
+        testName: String,
+        status: {
+          type: String,
+          enum: ["Pending", "In Progress", "Completed"],
+          default: "Pending",
+        },
+        attachmentURL: String,
+      },
+    ],
+    note: { type: String },
+  },
 });
+
 
 // Schema for patient medical history
 const medicalHistorySchema = new mongoose.Schema({
-  condition: String, // Example: "Diabetes", "Hypertension"
+  condition: String,
   diagnosedAt: Date,
-  medications: [String], // Example: ["Metformin", "Insulin"]
+  medications: [String],
 });
 
-// Main Patient Schema
+// Main Patient Schema with Indexes
 const patientSchema = new mongoose.Schema(
   {
-    patientId: { type: String, required: true, unique: true },
-    fullName: { type: String, required: true },
-    age: { type: Number, required: true },
-    gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
+    patientId: { type: String, required: true, unique: true }, // Unique index automatically created
+    fullName: { type: String, required: true, index: true }, // Single field index for search
+    category: {
+      type: [String],
+      enum: ["DR", "AMD", "Glaucoma", "RVO", "Others"],
+      index: true,
+    }, // Index for filtering
+    age: { type: Number, required: true, index: true }, // Index for range queries
+    gender: {
+      type: String,
+      enum: ["Male", "Female", "Other"],
+      required: true,
+      index: true,
+    }, // Index for filtering
     contactNumber: { type: String, required: true },
     email: { type: String, required: false },
     address: { type: String, required: false },
-
-    medicalHistory: [medicalHistorySchema], // Array of medical history entries
-    diagnoseHistory: [diagnoseSchema], // Array of past diagnoses
+    medicalHistory: [medicalHistorySchema],
+    diagnoseHistory: [diagnoseSchema],
+    patientStatus: {
+      type: String,
+      enum: ["Pre-Monitoring", "ReviewReady", "Review", "Completed", "Monitoring"],
+      default: "Monitoring",
+    },
+    nextVisit: { type: Date },
   },
-  { timestamps: true }
-); // Automatically adds createdAt & updatedAt fields
+  { timestamps: true } // Automatically adds createdAt & updatedAt fields
+);
+
+// Compound index for common query combinations (optional)
+patientSchema.index({ category: 1, gender: 1 }); // For queries filtering by both category and gender
+patientSchema.index({ age: 1, createdAt: -1 }); // For sorting by age and creation date
 
 const Patient = mongoose.model("Patient", patientSchema);
 module.exports = Patient;
