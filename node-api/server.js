@@ -16,6 +16,11 @@ const patientNurseRoutes = require("./routes/patient.routes");
 const utilRoutes = require("./routes/util.routes");
 const doctorRoutes = require("./routes/doctor.routes");
 const updatePatientAges = require("./config/cron.jobs");
+const treatmentRoutes = require("./routes/treatment.routes");
+// const patientRoutes = require("./routes/patient.routes.temp");
+const testsRoutes = require("./routes/test.records.routes");
+
+
 
 const app = express();
 
@@ -38,6 +43,10 @@ app.use("/api/v2/patients", patientNurseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/util", utilRoutes);
 app.use("/api/doctors", doctorRoutes);
+app.use("/api/treatments", treatmentRoutes);
+app.use("/api/patients", patientRoutes);
+app.use("/api/patients", testsRoutes);
+
 
 app.use(errorHandler);
 
