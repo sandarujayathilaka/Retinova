@@ -412,7 +412,7 @@ const calculateAge = (birthDate) => {
           )}
 
           {activeTab === "treatment" && (
-            <CardContent className="p-8 bg-white">
+            <CardContent className="p-7 bg-white">
               <TestRecords patientId={patient.patientId}/>
             </CardContent>
           )}
