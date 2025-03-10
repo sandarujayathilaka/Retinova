@@ -6,8 +6,8 @@ import TestRecordCard from "../../components/testrecords/TestRecordCard";
 import TestRecordModal from "../../components/testrecords/TestRecordModal";
 import TestRecordConfirmModal from "../../components/testrecords/TestRecordConfirmModal";
 
-function TestRecords() {
-  const { patientId } = useParams();
+function TestRecords({patientId}) {
+  // const { patientId } = useParams();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -126,14 +126,14 @@ function TestRecords() {
   return (
     <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
-        <div className="bg-gradient-to-r from-sky-500 to-teal-500 text-white p-4 rounded-t-lg mb-4">
+        {/* <div className="bg-gradient-to-r from-sky-500 to-teal-500 text-white p-4 rounded-t-lg mb-4">
           <h2 className="text-2xl font-bold">Patient Details</h2>
           <div className="flex space-x-4 mt-2">
             <button className="text-white hover:text-sky-100">Personal Details</button>
             <button className="text-white hover:text-sky-100">Medical Records</button>
             <button className="text-sky-100 font-semibold">Treatment Plans</button>
           </div>
-        </div>
+        </div> */}
         <div className="bg-white rounded-b-lg shadow-lg p-6">
           <h3 className="text-xl font-semibold text-teal-700 mb-6">Test & Treatments Records</h3>
           {records.length > 0 ? (
