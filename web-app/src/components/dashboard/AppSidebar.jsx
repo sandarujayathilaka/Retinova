@@ -16,7 +16,7 @@ import dashboard from "@/assets/icons/dashboard.svg";
 import doctors from "@/assets/icons/doctors.svg";
 import diseases from "@/assets/icons/diseases.svg";
 
-// This is sample data.
+// Sample data
 const data = {
   user: {
     name: "Anil Kumar",
@@ -48,22 +48,10 @@ const data = {
       isActive: true,
       isExpandable: true,
       items: [
-        {
-          title: "DR",
-          url: "#",
-        },
-        {
-          title: "AMD",
-          url: "#",
-        },
-        {
-          title: "Glaucoma",
-          url: "#",
-        },
-        {
-          title: "RVO",
-          url: "#",
-        },
+        { title: "DR", url: "#" },
+        { title: "AMD", url: "#" },
+        { title: "Glaucoma", url: "#" },
+        { title: "RVO", url: "#" },
       ],
     },
     {
@@ -77,22 +65,10 @@ const data = {
       icon: doctors,
       isExpandable: true,
       items: [
-        {
-          title: "Review",
-          url: "/review-patients",
-        },
-        {
-          title: "Monitoring",
-          url: "/monitorpatients",
-        },
-        {
-          title: "Pre-Monitoring",
-          url: "/pre-monitoring-patients",
-        },
-        {
-          title: "Completed",
-          url: "/completed-patients",
-        },
+        { title: "Review", url: "/review-patients" },
+        { title: "Monitoring", url: "/monitorpatients" },
+        { title: "Pre-Monitoring", url: "/pre-monitoring-patients" },
+        { title: "Completed", url: "/completed-patients" },
       ],
     },
     {
@@ -101,22 +77,10 @@ const data = {
       icon: diseases,
       isExpandable: true,
       items: [
-        {
-          title: "DR",
-          url: "/diagnose/dr",
-        },
-        {
-          title: "AMD",
-          url: "/diagnose/amd",
-        },
-        {
-          title: "Glaucoma",
-          url: "/diagnose/glaucoma",
-        },
-        {
-          title: "RVO",
-          url: "/diagnose/rvo",
-        },
+        { title: "DR", url: "/diagnose/dr" },
+        { title: "AMD", url: "/diagnose/amd" },
+        { title: "Glaucoma", url: "/diagnose/glaucoma" },
+        { title: "RVO", url: "/diagnose/rvo" },
       ],
     },
   ],
@@ -124,17 +88,21 @@ const data = {
 
 export function AppSidebar({ ...props }) {
   return (
-    <Sidebar collapsible="icon" {...props} className="p-1 bg-white">
-      <SidebarHeader>
+    <Sidebar
+      collapsible="icon"
+      {...props}
+      className="p-2 bg-gradient-to-b from-gray-50 to-white border-r border-gray-200 shadow-xl transition-all duration-300 hover:shadow-2xl"
+    >
+      <SidebarHeader className="p-4 bg-gradient-to-r from-blue-600 to-indigo-500 rounded-lg shadow-md">
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
-      <SidebarContent className="bg-[#F4F4F6]">
+      <SidebarContent className="p-2 bg-white/90 backdrop-blur-sm">
         <NavMain items={data.navMain} />
       </SidebarContent>
-      <SidebarFooter className="bg-[#F4F4F6]">
+      <SidebarFooter className="p-2 bg-gradient-to-t from-gray-100 to-white rounded-lg shadow-inner">
         <NavUser user={data.user} />
       </SidebarFooter>
-      <SidebarRail />
+      <SidebarRail className="bg-gradient-to-r from-blue-100 to-indigo-100" />
     </Sidebar>
   );
 }

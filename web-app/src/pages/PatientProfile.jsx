@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom"; // Add useLocation
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import Header from "../components/PatientProfile/Header";
 import TabNavigation from "../components/PatientProfile/TabNavigation";
@@ -10,13 +10,12 @@ import ImageModal from "../components/PatientProfile/ImageModal";
 const PatientProfile = () => {
   const { patientId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation(); // Get location to access referrer
+  const location = useLocation();
   const [patient, setPatient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("basic");
   const [selectedImage, setSelectedImage] = useState(null);
 
-  // Check if the referrer is PreMonitoringPatientsPage
   const isFromPreMonitoring = location.state?.referrer === "PreMonitoringPatientsPage";
 
   useEffect(() => {
@@ -45,31 +44,46 @@ const PatientProfile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-        <div className="text-gray-600 text-lg animate-pulse">Loading Patient Profile...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-gray-100 to-white">
+        <div className="text-gray-600 text-lg animate-pulse flex items-center">
+          <svg
+            className="w-6 h-6 mr-2 animate-spin"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M4 12a8 8 0 018-8v8m0 0a8 8 0 01-8 8"
+            />
+          </svg>
+          Loading Patient Profile...
+        </div>
       </div>
     );
   }
 
   if (!patient) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-        <div className="text-red-500 text-lg font-semibold">Patient not found</div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-gray-100 to-white">
+        <div className="text-red-600 text-lg font-semibold">Patient not found</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto">
-        <Header patientId={patient.patientId} navigate={navigate} />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-gray-100 to-white py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto space-y-12">
+        <Header patientId={patientId} navigate={navigate} />
         <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
         <TabContent
           activeTab={activeTab}
           patient={patient}
           getMaxConfidence={getMaxConfidence}
           openImage={openImage}
-          isFromPreMonitoring={isFromPreMonitoring} // Pass the referrer flag
+          isFromPreMonitoring={isFromPreMonitoring}
         />
         <Footer patient={patient} />
         <ImageModal selectedImage={selectedImage} closeImage={closeImage} />

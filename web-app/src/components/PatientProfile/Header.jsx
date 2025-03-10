@@ -1,20 +1,17 @@
 import React from "react";
+import { ArrowLeft } from "lucide-react";
 
 const Header = ({ patientId, navigate }) => {
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8 transform transition-all hover:shadow-xl">
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold tracking-tight">Patient Profile</h1>
-          <button
-            onClick={() => navigate("/")}
-            className="px-4 py-2 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-200"
-          >
-            Back to List
-          </button>
-        </div>
-        <p className="mt-2 text-sm opacity-80">ID: {patientId}</p>
+    <div className="flex items-center justify-between border-b border-indigo-100 pb-4">
+      <div className="flex items-center text-2xl font-semibold text-gray-800">
+        <ArrowLeft
+          className="w-6 h-6 mr-2 text-indigo-600 cursor-pointer hover:text-indigo-700 transition-all duration-300"
+          onClick={() => navigate("/")}
+        />
+        Patient Profile
       </div>
+      <div className="text-sm text-gray-600">ID: {patientId}</div>
     </div>
   );
 };

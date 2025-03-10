@@ -28,9 +28,13 @@ import NotFound from "./pages/NotFound";
 const App = () => {
   return (
     <BrowserRouter>
-      <AdminLayout>
-        <Toaster position="top-right" />
-        <Routes>
+      {/* Toast notifications at the root level */}
+      <Toaster position="top-right" />
+      <ToastContainer />
+
+      <Routes>
+        {/* All routes under AdminLayout with Sidebar */}
+        <Route element={<AdminLayout />}>
           <Route path="/" element={<Diagnose />} />
           <Route path="/monitoringPatients" element={<MonitoringPatients />} />
           <Route path="/publishedPatients" element={<PublishedPatients />} />
@@ -56,9 +60,8 @@ const App = () => {
           {/* 404 Not Found Page */}
           <Route path="*" element={<NotFound />} />
           <Route path="/404" element={<NotFound />} />
-        </Routes>
-        <ToastContainer />
-      </AdminLayout>
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 };
