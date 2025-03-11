@@ -27,6 +27,9 @@ import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/auth/ResetPassword";
 import { Roles } from "./constants/roles";
 import ProtectedRoute from "./middleware/ProtectedRoute";
+// import PatientProfile from "./pages/testrecord/PatientProfile";
+import TestRecords from "./pages/testrecord/TestRecords";
+// import AllPatientList from "./pages/testrecord/AllPatientList";
 
 const App = () => {
   return (
@@ -66,10 +69,18 @@ const App = () => {
 
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* 404 Not Found Page */}
-        <Route path="*" element={<NotFound />} />
-        <Route path="/404" element={<NotFound />} />
-      </Routes>
+       
+
+
+
+          {/* <Route path="/allp" element={<AllPatientList />} /> */}
+          <Route path="/patients/:patientId" element={<PatientProfile />} />
+          <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
+
+          {/* 404 Not Found Page */}
+          <Route path="*" element={<NotFound />} />
+          <Route path="/404" element={<NotFound />} />
+        </Routes>
     </BrowserRouter>
   );
 };

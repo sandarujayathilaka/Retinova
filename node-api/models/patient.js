@@ -36,7 +36,7 @@ const diagnoseSchema = new mongoose.Schema({
   doctorId: { type: mongoose.Schema.Types.ObjectId, ref: "Doctor" },
   status: {
     type: String,
-    enum: ["Unchecked", "Completed", "Checked"],
+    enum: ["Unchecked", "Test Completed", "Checked"],
     default: "Unchecked",
   },
   confidenceScores: [Number],
@@ -47,7 +47,7 @@ const diagnoseSchema = new mongoose.Schema({
         testName: String,
         status: {
           type: String,
-          enum: ["Pending", "In Progress", "Completed", "TestCompleted"],
+          enum: ["Pending", "In Progress", "Completed"],
           default: "Pending",
         },
         attachmentURL: String,
