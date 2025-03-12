@@ -490,7 +490,7 @@ exports.updatePatientDiagnosis = async (req, res) => {
         !recommend.tests.every(
           (test) =>
             typeof test.testName === "string" &&
-            ["Pending", "In Progress", "Completed", "TestCompleted"].includes(
+            ["Pending", "In Progress", "Completed", "Test Completed"].includes(
               test.status
             ) &&
             typeof test.attachmentURL === "string"
