@@ -1,6 +1,6 @@
 const Doctor = require("../models/doctor.model");
 const UserService = require("../services/user.service");
-
+const Patient = require("../models/patient");
 const mongoose = require("mongoose");
 
 const addDoctor = async (req, res) => {
@@ -51,7 +51,7 @@ const getDoctors = async (req, res) => {
 
 const getDoctorById = async (req, res) => {
   const doctor = await Doctor.findById(req.params.id);
-
+  console.log("dfdsssf")
   if (!doctor) {
     return res.status(404).json({ error: "Doctor not found" });
   }
@@ -161,6 +161,76 @@ const getDoctorsByIds = async (req, res) => {
   }
 };
 
+const getDoctorPatientsSummary = async (req, res) => {
+  const { id } = req.params; // Changed from doctorId to id to match your usage
+  const { type } = req.query; // Expecting type=summary
+
+  console.log("doctorId:", id);
+  console.log("type:", type);
+
+  try {
+    if (type !== "summary") {
+      return res.status(400).json({ message: "Invalid query type. Use 'type=summary'." });
+    }
+
+    // Aggregate patients where the doctorId appears in diagnoseHistory
+    const patients = await Patient.find({
+      "diagnoseHistory.doctorId": id,
+    }).lean();
+
+    console.log("patients:", patients);
+
+    if (!patients || patients.length === 0) {
+      return res.status(404).json({ message: "No patients found for this doctor." });
+    }
+
+    // Process patient data for summary
+    const summary = {
+      totalPatients: patients.length,
+      patients: patients.map((patient) => {
+        // Filter diagnoseHistory for this doctor's entries only
+        const doctorDiagnoses = patient.diagnoseHistory.filter(
+          (diag) => diag.doctorId && diag.doctorId.toString() === id
+        );
+
+        // Determine if patient is new or existing based on doctor's diagnoses
+        const isNewPatient = doctorDiagnoses.length <= 1;
+
+        // Extract relevant fields
+        return {
+          patientId: patient.patientId,
+          fullName: patient.fullName,
+          category: patient.category, // Disease categories
+          diagnoseHistory: doctorDiagnoses.map((diag) => ({
+            diagnosis: diag.diagnosis,
+            uploadedAt: diag.uploadedAt,
+            status: diag.status,
+            eye: diag.eye,
+            confidenceScores: diag.confidenceScores,
+            recommend: diag.recommend,
+          })),
+          patientStatus: patient.patientStatus,
+          createdAt: patient.createdAt,
+          nextVisit: patient.nextVisit,
+        };
+      }),
+    };
+
+    // Send response
+    res.status(200).json({
+      message: "Patients summary retrieved successfully",
+      data: {
+        totalPatients: summary.totalPatients,
+        patients: summary.patients,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching doctor patients summary:", error);
+    res.status(500).json({ message: "Server error while fetching patients summary" });
+  }
+};
+
+
 module.exports = {
   addDoctor,
   getDoctors,
@@ -168,4 +238,5 @@ module.exports = {
   updateDoctor,
   deleteDoctor,
   getDoctorsByIds,
+  getDoctorPatientsSummary,
 };

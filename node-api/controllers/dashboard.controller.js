@@ -16,6 +16,8 @@ const getAllPatients = async (req, res) => {
             fullName: 1,
             birthDate: 1,
             createdAt: 1,
+            patientStatus: 1,
+            category: 1,
             "diagnoseHistory.diagnosis": 1, // Include diagnosis field
             "diagnoseHistory.status": 1,    // Include status field
             "diagnoseHistory.uploadedAt": 1, 
@@ -48,7 +50,7 @@ const getAllDoctors = async (req, res) => {
     let doctors;
     if (type === "summary") {
       doctors = await Doctor.find({})
-        .select("name status type specialty createdAt")
+        .select("name status type specialty createdAt workingHours daysOff")
         .lean();
     } else {
       doctors = await Doctor.find({})

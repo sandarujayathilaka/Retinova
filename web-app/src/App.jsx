@@ -22,13 +22,15 @@ import AddPatient from "./pages/Nurse/AddPatient";
 import View from "./pages/Nurse/View";
 import RVO from "./pages/diseases/RVO";
 import DoctorsList from "./pages/doctors/List";
-import Add from "./pages/doctors/New";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/auth/ResetPassword";
 import { Roles } from "./constants/roles";
 import ProtectedRoute from "./middleware/ProtectedRoute";
 import Login from "./pages/auth/Login";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+// import PatientProfile from "./pages/testrecord/PatientProfile";
+import TestRecords from "./pages/testrecord/TestRecords";
+// import AllPatientList from "./pages/testrecord/AllPatientList";
 
 const App = () => {
   return (
@@ -65,8 +67,11 @@ const App = () => {
           <Route path="/review-patients" element={<ReviewPatientsPage />} />
 
           <Route path="/doctors" element={<DoctorsList />} />
-          <Route path="/add" element={<Add />} />
         </Route>
+
+        {/* <Route path="/allp" element={<AllPatientList />} /> */}
+        <Route path="/patients/:patientId" element={<PatientProfile />} />
+        <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
 
         {/* 404 Not Found Page */}
         <Route path="*" element={<NotFound />} />

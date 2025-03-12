@@ -29,7 +29,15 @@ const getYears = () => {
   return Array.from({ length: 10 }, (_, i) => (currentYear - i).toString());
 };
 
-export function PieChartComponent({ data, config, title, description, showDatePicker = true, doctorsData }) {
+export function PieChartComponent({ 
+  data, 
+  config, 
+  title, 
+  description, 
+  showDatePicker = true, 
+  doctorsData, 
+  nursesData // New prop for nurse data
+}) {
   const months = getMonths();
   const years = getYears();
   const currentYear = new Date().getFullYear().toString();
@@ -43,7 +51,7 @@ export function PieChartComponent({ data, config, title, description, showDatePi
 
   const filteredData = data.map((item) => {
     if (!item.dates) {
-      // For cases like "Doctors Status" where no dates array exists, return the item as is
+      // For cases like "Status" where no dates array exists, return the item as is if no date picker
       return showDatePicker ? null : item;
     }
 
@@ -199,6 +207,30 @@ export function PieChartComponent({ data, config, title, description, showDatePi
                       <TableCell>{doctor.name}</TableCell>
                       <TableCell>{doctor.type}</TableCell>
                       <TableCell>{doctor.status ? "Online" : "Offline"}</TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+        {!showDatePicker && nursesData && (
+          <div className="w-full max-h-[120px] overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {nursesData
+                  .sort((a, b) => b.status - a.status)
+                  .map((nurse, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{nurse.name}</TableCell>
+                      <TableCell>{nurse.type}</TableCell>
+                      <TableCell>{nurse.status ? "Online" : "Offline"}</TableCell>
                     </TableRow>
                   ))}
               </TableBody>
