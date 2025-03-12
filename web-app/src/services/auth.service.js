@@ -10,8 +10,15 @@ export const useResetPassword = () => {
 };
 
 // Request new password reset link
-export const useResendResetLink = () => {
+export const useRequestPasswordResetLink = () => {
   return useMutation({
-    mutationFn: async email => api.post("/auth/resend-reset-link", { email }),
+    mutationFn: async email => api.post("/auth/request-password-reset-link", { email }),
+  });
+};
+
+// Login user
+export const useLogin = () => {
+  return useMutation({
+    mutationFn: async credentials => api.post("/auth/signin", credentials),
   });
 };

@@ -106,7 +106,7 @@ const resetPassword = async (req, res) => {
   res.json({ message: "Password reset successful" });
 };
 
-const resendResetLink = async (req, res) => {
+const requestPasswordResetLink = async (req, res) => {
   const { email } = req.body;
 
   const user = await User.findOne({ email });
@@ -120,7 +120,7 @@ const resendResetLink = async (req, res) => {
   const resetLink = generateResetLink(resetToken);
 
   // Send email with the new reset link
-  await sendEmail(email, "Password Reset Request", "password-reset", {
+  await sendEmail(email, "Password Reset Request", "password-reset-regular", {
     name: user.name || "User",
     resetLink,
   });
@@ -143,6 +143,6 @@ module.exports = {
   signIn,
   refreshToken,
   resetPassword,
-  resendResetLink,
+  requestPasswordResetLink,
   getUser,
 };

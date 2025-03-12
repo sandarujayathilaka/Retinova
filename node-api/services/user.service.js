@@ -38,7 +38,7 @@ class UserService {
     await sendEmail(
       email,
       "Reset Your Password",
-      "password-reset", // MJML template name
+      "password-reset-new", // MJML template name
       {
         name: name ?? "User",
         resetLink,
