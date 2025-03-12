@@ -5,6 +5,8 @@ const { s3 } = require("../config/aws");
 require("dotenv").config();
 const path = require("path");
 
+
+
 const getPatientCount = async (req, res) => {
   try {
     console.log("called");
@@ -223,16 +225,15 @@ const getPatientsByStatus = async (req, res) => {
 
     const skip = (page - 1) * limit;
     const patients = await Patient.find(query)
-      .lean()
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit))
       .select(
-        "patientId fullName nic age gender contactNumber email address diagnoseHistory"
+        "patientId fullName nic gender contactNumber email address diagnoseHistory birthDate age"
       );
 
     const total = await Patient.countDocuments(query);
-
+console.log(patients)
     res.status(200).json({
       patients,
       pagination: {
@@ -249,24 +250,31 @@ const getPatientsByStatus = async (req, res) => {
 // Add a new patient
 const addPatient = async (req, res) => {
   try {
-    const { fullName, birthDate, gender, nic, contactNumber, email, address } =
-      req.body;
+    const {
+      fullName,
+      birthDate,
+      gender,
+      nic,
+      contactNumber,
+      email,
+      address,
+      bloodType,        // New optional field
+      height,           // New optional field
+      weight,           // New optional field
+      allergies,        // New optional field
+      primaryPhysician, // New optional field
+      emergencyContact, // New optional field (object)
+    } = req.body;
 
-    if (
-      !fullName ||
-      !birthDate ||
-      !gender ||
-      !nic ||
-      !contactNumber ||
-      !email ||
-      !address
-    ) {
+    // Validate only required fields
+    if (!fullName || !birthDate || !gender || !nic || !contactNumber) {
       return res.status(400).json({
         errorCode: "MISSING_FIELDS",
-        message: "All fields are required",
+        message: "Required fields (fullName, birthDate, gender, nic, contactNumber) are missing",
       });
     }
 
+    // Check for duplicate NIC
     const existingPatient = await Patient.findOne({ nic });
     if (existingPatient) {
       return res.status(400).json({
@@ -274,47 +282,51 @@ const addPatient = async (req, res) => {
         message: "Patient with this NIC already exists",
       });
     }
-    const existingPatientEmail = await Patient.findOne({ email });
-    if (existingPatientEmail) {
-      return res.status(400).json({
-        errorCode: "DUPLICATE_EMAIL",
-        message: "Patient with this email already exists",
-      });
+
+    // Check for duplicate email only if provided
+    if (email) {
+      const existingPatientEmail = await Patient.findOne({ email });
+      if (existingPatientEmail) {
+        return res.status(400).json({
+          errorCode: "DUPLICATE_EMAIL",
+          message: "Patient with this email already exists",
+        });
+      }
     }
 
     // Get last patient and generate new patientId manually
-    const lastPatient = await Patient.findOne(
-      {},
-      {},
-      { sort: { patientId: -1 } }
-    );
-    console.log(lastPatient);
-    // Extract number correctly
+    const lastPatient = await Patient.findOne({}, {}, { sort: { patientId: -1 } });
     let newPatientId;
     if (lastPatient && lastPatient.patientId) {
-      const lastNumber =
-        parseInt(lastPatient.patientId.replace(/\D/g, ""), 10) || 0;
+      const lastNumber = parseInt(lastPatient.patientId.replace(/\D/g, ""), 10) || 0;
       newPatientId = `P${lastNumber + 1}`;
     } else {
       newPatientId = "P1"; // If no patient exists, start with P1
     }
 
-    console.log(newPatientId);
+    // Prepare the new patient object with all fields
     const newPatient = new Patient({
-      patientId: newPatientId, // ✅ Manually set patientId
+      patientId: newPatientId,
       fullName,
       birthDate: new Date(birthDate), // Ensure it's a Date object
       gender,
       nic,
       contactNumber,
-      email,
-      address,
+      email: email || undefined,             // Optional
+      address: address || undefined,         // Optional
+      bloodType: bloodType || undefined,     // Optional
+      height: height ? Number(height) : undefined, // Optional, convert to number
+      weight: weight ? Number(weight) : undefined, // Optional, convert to number
+      allergies: allergies || undefined,     // Optional
+      primaryPhysician: primaryPhysician || undefined, // Optional
+      emergencyContact: emergencyContact || undefined, // Optional object
     });
 
     await newPatient.save();
-    res
-      .status(201)
-      .json({ message: "Patient added successfully", patient: newPatient });
+    res.status(201).json({
+      message: "Patient added successfully",
+      patient: newPatient,
+    });
   } catch (error) {
     console.error("Error adding patient:", error);
     res.status(500).json({
@@ -324,11 +336,12 @@ const addPatient = async (req, res) => {
     });
   }
 };
-
 // Get a single patient by ID
 const getPatient = async (req, res) => {
   try {
     const patient = await Patient.findOne({ patientId: req.params.patientId });
+    console.log(patient)
+    console.log(patient.age)
     if (!patient) {
       return res
         .status(404)
@@ -348,8 +361,21 @@ const getPatient = async (req, res) => {
 const editPatient = async (req, res) => {
   try {
     const { patientId } = req.params;
-    const { nic, email, birthDate, fullName, gender, contactNumber, address } =
-      req.body;
+    const {
+      nic,
+      email,
+      birthDate,
+      fullName,
+      gender,
+      contactNumber,
+      address,
+      bloodType,        // New optional field
+      height,           // New optional field
+      weight,           // New optional field
+      allergies,        // New optional field
+      primaryPhysician, // New optional field
+      emergencyContact, // New optional field (object)
+    } = req.body;
 
     console.log("Request Params:", req.params);
     console.log("Request Body:", req.body);
@@ -374,29 +400,38 @@ const editPatient = async (req, res) => {
       });
     }
 
-    // Ensure email is unique except for the current patient
-    const duplicateEmail = await Patient.findOne({
-      email,
-      _id: { $ne: existingPatient._id },
-    });
-    if (duplicateEmail) {
-      return res.status(400).json({
-        errorCode: "DUPLICATE_EMAIL",
-        message: "Patient with this email already exists",
+    // Ensure email is unique except for the current patient, only if email is provided
+    if (email) {
+      const duplicateEmail = await Patient.findOne({
+        email,
+        _id: { $ne: existingPatient._id },
       });
+      if (duplicateEmail) {
+        return res.status(400).json({
+          errorCode: "DUPLICATE_EMAIL",
+          message: "Patient with this email already exists",
+        });
+      }
     }
 
-    // Update patient fields manually
+    // Update patient fields manually, only updating if new values are provided
     existingPatient.fullName = fullName || existingPatient.fullName;
     existingPatient.nic = nic || existingPatient.nic;
-    existingPatient.birthDate = birthDate || existingPatient.birthDate;
+    existingPatient.birthDate = birthDate ? new Date(birthDate) : existingPatient.birthDate;
     existingPatient.gender = gender || existingPatient.gender;
-    existingPatient.contactNumber =
-      contactNumber || existingPatient.contactNumber;
-    existingPatient.email = email || existingPatient.email;
-    existingPatient.address = address || existingPatient.address;
+    existingPatient.contactNumber = contactNumber || existingPatient.contactNumber;
+    existingPatient.email = email !== undefined ? email : existingPatient.email; // Allow empty string or null
+    existingPatient.address = address !== undefined ? address : existingPatient.address; // Allow empty string or null
+    existingPatient.bloodType = bloodType !== undefined ? bloodType : existingPatient.bloodType; // Optional
+    existingPatient.height = height !== undefined ? Number(height) : existingPatient.height; // Optional, convert to number
+    existingPatient.weight = weight !== undefined ? Number(weight) : existingPatient.weight; // Optional, convert to number
+    existingPatient.allergies = allergies !== undefined ? allergies : existingPatient.allergies; // Optional
+    existingPatient.primaryPhysician =
+      primaryPhysician !== undefined ? primaryPhysician : existingPatient.primaryPhysician; // Optional
+    existingPatient.emergencyContact =
+      emergencyContact !== undefined ? emergencyContact : existingPatient.emergencyContact; // Optional object
 
-    // Save the patient to trigger the pre-save hook
+    // Save the patient to trigger any pre-save hooks (e.g., age calculation)
     const updatedPatient = await existingPatient.save();
 
     console.log("Updated Patient:", updatedPatient);
@@ -465,11 +500,11 @@ const uploadMedicalHistoryImage = async (req, res) => {
     const s3Key = `medical-records/${patientId}/${fileName}`;
 
     const params = {
-      Bucket: process.env.AWS_S3_BUCKET_NAME,
+      Bucket: process.env.S3_BUCKET_NAME,
       Key: s3Key,
       Body: file.buffer,
       ContentType: file.mimetype,
-      ACL: "public-read",
+      // ACL: "public-read",
     };
 
     const s3Response = await s3.upload(params).promise();
@@ -603,11 +638,11 @@ const addmedicalHistory = async (req, res) => {
         const s3Key = `medical-records/${patientId}/${fileName}`;
 
         const params = {
-          Bucket: process.env.AWS_S3_BUCKET_NAME,
+          Bucket: process.env.S3_BUCKET_NAME,
           Key: s3Key,
           Body: file.buffer,
           ContentType: file.mimetype,
-          ACL: "public-read",
+          // ACL: "public-read",
         };
 
         const s3Response = await s3.upload(params).promise();
@@ -719,7 +754,7 @@ const updateMedicalHistory = async (req, res) => {
             console.log(`Attempting to delete S3 key: ${s3Key}`);
 
             const deleteParams = {
-              Bucket: process.env.AWS_S3_BUCKET_NAME,
+              Bucket: process.env.S3_BUCKET_NAME,
               Key: s3Key,
             };
 
@@ -759,11 +794,11 @@ const updateMedicalHistory = async (req, res) => {
       const fileName = `${Date.now()}_${file.originalname}`;
       const s3Key = `medical-records/${patientId}/${fileName}`;
       const params = {
-        Bucket: process.env.AWS_S3_BUCKET_NAME,
+        Bucket: process.env.S3_BUCKET_NAME,
         Key: s3Key,
         Body: file.buffer,
         ContentType: file.mimetype,
-        ACL: "public-read",
+        // ACL: "public-read",
       };
       const s3Response = await s3.upload(params).promise();
       record.filePaths.push(s3Response.Location);
@@ -807,7 +842,7 @@ const deletemedicalHistory = async (req, res) => {
       const deletePromises = record.filePaths.map(async (filePath) => {
         let s3Key;
         try {
-          const urlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
+          const urlPrefix = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
           s3Key = filePath.replace(urlPrefix, "");
           s3Key = decodeURIComponent(s3Key); // Decode %20 to space
         } catch (error) {
@@ -823,7 +858,7 @@ const deletemedicalHistory = async (req, res) => {
         console.log("Deleting S3 key:", s3Key);
 
         const params = {
-          Bucket: process.env.AWS_S3_BUCKET_NAME,
+          Bucket: process.env.S3_BUCKET_NAME,
           Key: s3Key,
         };
 
