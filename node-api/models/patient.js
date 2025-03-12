@@ -103,7 +103,7 @@ const patientSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    age: { type: Number, required: false, index: true }, // Index for range queries
+    // age: { type: Number, required: false, index: true }, // Index for range queries
     gender: {
       type: String,
       enum: ["Male", "Female", "Other"],
@@ -135,22 +135,35 @@ const patientSchema = new mongoose.Schema(
     nextVisit: { type: Date },
     doctorId: { type: mongoose.Schema.Types.ObjectId, ref: "Doctor" },
   },
-  { timestamps: true } // Automatically adds createdAt & updatedAt fields
+  { timestamps: true ,
+    toJSON: { virtuals: true }, 
+    toObject: { virtuals: true }
+  } // Automatically adds createdAt & updatedAt fields
 );
 
-patientSchema.index({ birthDate: 1 });
-patientSchema.pre("save", function (next) {
+
+// patientSchema.pre("save", function (next) {
+
+//   if (this.birthDate && !isNaN(new Date(this.birthDate))) {
+//     this.age = calculateAge(this.birthDate);
+//   } else {
+//     this.age = undefined; // or handle the error appropriately
+//   }
+//   next();
+// });
+
+patientSchema.virtual('age').get(function() {
   if (this.birthDate && !isNaN(new Date(this.birthDate))) {
-    this.age = calculateAge(this.birthDate);
-  } else {
-    this.age = undefined; // or handle the error appropriately
+    return calculateAge(this.birthDate);
   }
-  next();
+  return undefined;
 });
 
+patientSchema.index({ birthDate: 1 });
 // Compound index for common query combinations (optional)
 patientSchema.index({ category: 1, gender: 1 }); // For queries filtering by both category and gender
-patientSchema.index({ age: 1, createdAt: -1 }); // For sorting by age and creation date
+// patientSchema.index({ age: 1, createdAt: -1 }); // For sorting by age and creation date
+patientSchema.index({ createdAt: -1 }); // For sorting by age and creation date
 
 const Patient = mongoose.model("Patient", patientSchema);
 module.exports = Patient;
