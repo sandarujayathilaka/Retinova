@@ -32,12 +32,12 @@ import {
 
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useDeleteDoctor, useGetDoctors } from "@/services/doctor.service";
 import toast from "react-hot-toast";
-import { FaUserDoctor } from "react-icons/fa6";
-import DoctorForm from "./DoctorForm";
+import { useDeleteNurse, useGetNurses } from "@/services/nurse.service";
+import { FaUserNurse } from "react-icons/fa";
+import NurseForm from "./NurseForm";
 
-const List = () => {
+const NurseList = () => {
   const columns = [
     {
       id: "select",
@@ -148,7 +148,7 @@ const List = () => {
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => {
-                  setDoctorIdToEdit(row.original._id);
+                  setNurseIdToEdit(row.original._id);
                   setIsEditDialogOpen(true);
                 }}
               >
@@ -156,7 +156,7 @@ const List = () => {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
-                  setDoctorIdToDelete(row.original._id);
+                  setNurseIdToDelete(row.original._id);
                   setIsDeleteDialogOpen(true);
                 }}
               >
@@ -175,17 +175,17 @@ const List = () => {
   const [rowSelection, setRowSelection] = useState({});
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [doctorIdToDelete, setDoctorIdToDelete] = useState(null);
+  const [nurseIdToDelete, setNurseIdToDelete] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [doctorIdToEdit, setDoctorIdToEdit] = useState(null);
+  const [nurseIdToEdit, setNurseIdToEdit] = useState(null);
 
-  const { data: doctors, isLoading } = useGetDoctors();
-  const { mutate: deleteDoctorMutation } = useDeleteDoctor();
+  const { data: nurses, isLoading } = useGetNurses();
+  const { mutate: deleteNurseMutation } = useDeleteNurse();
 
-  console.log(doctors);
+  console.log(nurses);
 
   const table = useReactTable({
-    data: doctors,
+    data: nurses,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -209,16 +209,16 @@ const List = () => {
     },
   });
 
-  const handleDelete = doctorId => {
-    deleteDoctorMutation(doctorId, {
+  const handleDelete = nurseId => {
+    deleteNurseMutation(nurseId, {
       onSuccess: () => {
         setIsDeleteDialogOpen(false);
-        setDoctorIdToDelete(null);
-        toast.success("Doctor deleted successfully.");
+        setNurseIdToDelete(null);
+        toast.success("Nurse deleted successfully.");
       },
       onError: error => {
         console.error(error);
-        toast.error("An error occurred while deleting the doctor.");
+        toast.error("An error occurred while deleting the nurse.");
       },
     });
   };
@@ -232,10 +232,10 @@ const List = () => {
       <div className="w-full">
         <div className="flex items-center justify-between py-4">
           <div className="text-2xl font-medium text-black/70">
-            <FaUserDoctor className="inline-block size-10 mr-2 text-blue-500" />
-            {doctors?.length} Doctors
+            <FaUserNurse className="inline-block size-10 mr-2 text-blue-500" />
+            {nurses?.length} Nurses
           </div>
-          <DoctorForm mode="add" />
+          <NurseForm mode="add" />
         </div>
         <div className="flex items-center py-4">
           <Input
@@ -332,15 +332,15 @@ const List = () => {
           </div>
         </div>
       </div>
-      <DoctorForm
+      <NurseForm
         mode="edit"
-        doctorId={doctorIdToEdit}
+        nurseId={nurseIdToEdit}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
       />
       <ConfirmDialog
-        onSuccess={() => handleDelete(doctorIdToDelete)}
-        title="doctor"
+        onSuccess={() => handleDelete(nurseIdToDelete)}
+        title="nurse"
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
       />
@@ -348,4 +348,4 @@ const List = () => {
   );
 };
 
-export default List;
+export default NurseList;

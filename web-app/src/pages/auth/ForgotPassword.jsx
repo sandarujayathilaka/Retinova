@@ -1,6 +1,5 @@
 import { GalleryVerticalEnd } from "lucide-react";
 import { IMAGES } from "@/constants/images";
-import ResetPasswordForm from "./ResetPasswordForm";
 import ForgotPasswordForm from "./ForgotPasswordForm";
 
 export default function ForgotPassword() {

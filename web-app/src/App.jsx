@@ -21,7 +21,7 @@ import PublishedPatients from "./pages/Nurse/PublishedPatients";
 import AddPatient from "./pages/Nurse/AddPatient";
 import View from "./pages/Nurse/View";
 import RVO from "./pages/diseases/RVO";
-import DoctorsList from "./pages/doctors/List";
+import DoctorsList from "@/pages/admin/DoctorList.jsx";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/auth/ResetPassword";
 import { Roles } from "./constants/roles";
@@ -30,6 +30,7 @@ import Login from "./pages/auth/Login";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 // import PatientProfile from "./pages/testrecord/PatientProfile";
 import TestRecords from "./pages/testrecord/TestRecords";
+import NurseList from "@/pages/admin/NurseList";
 // import AllPatientList from "./pages/testrecord/AllPatientList";
 
 const App = () => {
@@ -67,6 +68,7 @@ const App = () => {
           <Route path="/review-patients" element={<ReviewPatientsPage />} />
 
           <Route path="/doctors" element={<DoctorsList />} />
+          <Route path="/nurses" element={<NurseList />} />
         </Route>
 
         {/* <Route path="/allp" element={<AllPatientList />} /> */}
