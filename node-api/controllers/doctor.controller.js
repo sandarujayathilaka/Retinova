@@ -211,6 +211,7 @@ const getDoctorPatientsSummary = async (req, res) => {
           })),
           patientStatus: patient.patientStatus,
           createdAt: patient.createdAt,
+          nextVisit: patient.nextVisit,
         };
       }),
     };
