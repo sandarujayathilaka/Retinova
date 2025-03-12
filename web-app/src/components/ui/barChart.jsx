@@ -102,12 +102,12 @@ export function PatientCategoryChart({ data }) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Disease Categories</CardTitle>
-        <CardDescription>Data Based on Records</CardDescription>
-        <div className="flex flex-wrap gap-4 mt-4">
+      <CardHeader className="relative overflow-hidden flex flex-col sm:flex-row items-start justify-end gap-2">
+        <div className="flex flex-wrap gap-4">
           <Select onValueChange={setSelectedMonth} value={selectedMonth}>
-            <SelectTrigger><SelectValue placeholder="All Months" /></SelectTrigger>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Months" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Months</SelectItem>
               {months.map((month) => (
@@ -117,7 +117,9 @@ export function PatientCategoryChart({ data }) {
           </Select>
 
           <Select onValueChange={setSelectedYear} value={selectedYear}>
-            <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Select Year" />
+            </SelectTrigger>
             <SelectContent>
               {years.map((year) => (
                 <SelectItem key={year} value={year}>{year}</SelectItem>
@@ -126,7 +128,7 @@ export function PatientCategoryChart({ data }) {
           </Select>
 
           <Select onValueChange={handleCategoryChange} value={selectedCategories.join(", ")}>
-            <SelectTrigger>
+            <SelectTrigger className="w-40">
               <SelectValue placeholder="All Categories">
                 {selectedCategories.includes("all") ? "All Categories" : selectedCategories.join(", ")}
               </SelectValue>
@@ -289,12 +291,12 @@ export function DiseaseStageChart({ data }) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Disease Stages</CardTitle>
-        <CardDescription>Data Based on Records</CardDescription>
-        <div className="flex flex-wrap gap-4 mt-4">
+      <CardHeader className="relative overflow-hidden flex flex-col sm:flex-row items-start justify-end gap-2">
+        <div className="flex flex-wrap gap-4">
           <Select onValueChange={setSelectedMonth} value={selectedMonth}>
-            <SelectTrigger><SelectValue placeholder="All Months" /></SelectTrigger>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Months" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Months</SelectItem>
               {months.map((month) => (
@@ -304,7 +306,9 @@ export function DiseaseStageChart({ data }) {
           </Select>
 
           <Select onValueChange={setSelectedYear} value={selectedYear}>
-            <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Select Year" />
+            </SelectTrigger>
             <SelectContent>
               {years.map((year) => (
                 <SelectItem key={year} value={year}>{year}</SelectItem>
@@ -313,7 +317,7 @@ export function DiseaseStageChart({ data }) {
           </Select>
 
           <Select onValueChange={handleStageChange} value={selectedStages.join(", ")}>
-            <SelectTrigger>
+            <SelectTrigger className="w-40">
               <SelectValue placeholder="All Stages">
                 {selectedStages.includes("all") ? "All Stages" : selectedStages.join(", ")}
               </SelectValue>
@@ -357,7 +361,7 @@ export function DiseaseStageChart({ data }) {
                     key={stage}
                     dataKey={stage}
                     name={stage}
-                    fill={`hsl(var(--chart-${index + 1}))`}
+                    fill={["#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#3B82F6", "#FBBF24", "#EC4899", "#14B8A6"][index % 8]}
                     radius={4}
                   />
                 ))}
@@ -374,7 +378,7 @@ export function DiseaseStageChart({ data }) {
               <div key={stage} className="flex items-center">
                 <div
                   className="w-4 h-4 rounded-full mr-2"
-                  style={{ backgroundColor: `hsl(var(--chart-${index + 1}))` }}
+                  style={{ backgroundColor: ["#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#3B82F6", "#FBBF24", "#EC4899", "#14B8A6"][index % 8] }}
                 />
                 <span>{stage}: {totals[stage]}</span>
               </div>
@@ -467,11 +471,7 @@ export function PatientsStatusBarChart({ data }) {
 
   return (
     <Card>
-      <CardHeader className="relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-2">
-        <div>
-          <CardTitle className="text-lg sm:text-xl">Patients Status</CardTitle>
-          <CardDescription className="text-sm sm:text-base">New vs Existing</CardDescription>
-        </div>
+      <CardHeader className="relative overflow-hidden flex flex-col sm:flex-row items-start justify-end gap-2">
         <div className="flex flex-wrap gap-4">
           <Select onValueChange={setSelectedMonth} value={selectedMonth}>
             <SelectTrigger className="w-40"><SelectValue placeholder="All Months" /></SelectTrigger>
@@ -494,23 +494,25 @@ export function PatientsStatusBarChart({ data }) {
         </div>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          {transformedData.every(item => item["New Patients"] === 0 && item["Existing Patients"] === 0) ? (
-            <div className="flex items-center justify-center h-full text-center text-gray-500 text-lg">
-              No records to show.
-            </div>
-          ) : (
-            <BarChart data={transformedData}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Bar dataKey="New Patients" fill="#3B82F6" name="New Patients" radius={4} />
-              <Bar dataKey="Existing Patients" fill="#FBBF24" name="Existing Patients" radius={4} />
-            </BarChart>
-          )}
-        </ResponsiveContainer>
+        <div style={{ width: "100%", height: "350px" }}>
+          <ResponsiveContainer>
+            {transformedData.every(item => item["New Patients"] === 0 && item["Existing Patients"] === 0) ? (
+              <div className="flex items-center justify-center h-full text-center text-gray-500 text-lg">
+                No records to show.
+              </div>
+            ) : (
+              <BarChart data={transformedData}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Bar dataKey="New Patients" fill="#3B82F6" name="New Patients" radius={4} />
+                <Bar dataKey="Existing Patients" fill="#FBBF24" name="Existing Patients" radius={4} />
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        </div>
       </CardContent>
       {totals.overall > 0 && (
         <CardFooter className="flex flex-col items-center gap-2 text-sm mt-4">
@@ -549,6 +551,500 @@ function transformPatientStatusData(rawData, selectedYear, selectedMonth) {
         groupedData[month][entry.name] += 1;
       }
     });
+  });
+
+  return Object.values(groupedData);
+}
+
+export function DoctorTypeAndSpecialtyBarChart({ data, view = "types" }) { // Add view prop
+  const months = getMonths();
+  const years = getYears();
+  const currentYear = new Date().getFullYear().toString();
+
+  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedSpecialty, setSelectedSpecialty] = useState("all");
+
+  const specialties = [
+    "ophthalmologist",
+    "optometrist",
+    "retina specialist",
+    "cornea specialist",
+    "glaucoma specialist",
+    "pediatric ophthalmologist",
+    "neuro-ophthalmologist",
+    "oculoplasticklore surgeon",
+    "ocular oncologist",
+    "contact lens specialist",
+  ];
+  const types = ["full time", "part time"];
+
+  // Filter the data based on selections
+  const filteredData = data.filter((doc) => {
+    const docDate = new Date(doc.createdAt);
+    const docMonth = docDate.toLocaleString("en-US", { month: "long" });
+    const docYear = docDate.getFullYear().toString();
+    const docType = doc.type ? doc.type.toLowerCase() : "";
+    const docSpecialty = doc.specialty ? doc.specialty.toLowerCase() : "";
+
+    const isMonthMatch = selectedMonth === "all" ? true : docMonth === selectedMonth;
+    const isYearMatch = docYear === selectedYear;
+    const isTypeMatch = selectedType === "all" ? true : docType === selectedType;
+    const isSpecialtyMatch = selectedSpecialty === "all" ? true : specialties.includes(docSpecialty) && docSpecialty === selectedSpecialty;
+
+    return isMonthMatch && isYearMatch && isTypeMatch && isSpecialtyMatch;
+  });
+
+  // Debug the filtered data
+  useEffect(() => {
+    console.log("Raw Data:", data);
+    console.log("Filtered Data:", filteredData);
+    console.log("Selected Filters:", { selectedMonth, selectedYear, selectedType, selectedSpecialty });
+  }, [data, selectedMonth, selectedYear, selectedType, selectedSpecialty, filteredData]);
+
+  const transformedData = transformDoctorData(filteredData, selectedYear, view);
+
+  // Debug the transformed data
+  console.log("Transformed Data:", transformedData);
+
+  const totals = transformedData.reduce(
+    (acc, item) => {
+      if (view === "types") {
+        acc["full time"] += item["full time"] || 0;
+        acc["part time"] += item["part time"] || 0;
+        acc.overall += (item["full time"] || 0) + (item["part time"] || 0);
+      } else {
+        specialties.forEach((specialty) => {
+          acc[specialty] = (acc[specialty] || 0) + (item[specialty] || 0);
+        });
+        acc.overall += specialties.reduce((sum, specialty) => sum + (item[specialty] || 0), 0);
+      }
+      return acc;
+    },
+    view === "types" ? { "full time": 0, "part time": 0, overall: 0 } : { overall: 0 }
+  );
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex flex-wrap gap-4 mb-4">
+          <Select onValueChange={setSelectedMonth} value={selectedMonth}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Months" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Months</SelectItem>
+              {months.map((month) => (
+                <SelectItem key={month} value={month}>{month}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select onValueChange={setSelectedYear} value={selectedYear}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Select Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((year) => (
+                <SelectItem key={year} value={year}>{year}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {view === "types" && (
+            <Select onValueChange={setSelectedType} value={selectedType}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {types.map((type) => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {view === "specialties" && (
+            <Select onValueChange={setSelectedSpecialty} value={selectedSpecialty}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All Specialties" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Specialties</SelectItem>
+                {specialties.map((specialty) => (
+                  <SelectItem key={specialty} value={specialty}>{specialty}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+
+        <div style={{ width: "100%", height: "350px" }}>
+          <ResponsiveContainer>
+            {transformedData.every(item =>
+              view === "types" ? (item["full time"] === 0 && item["part time"] === 0) :
+              specialties.every(specialty => item[specialty] === 0)
+            ) ? (
+              <div className="flex items-center justify-center h-full text-center text-gray-500 text-lg">
+                No records to show.
+              </div>
+            ) : (
+              <BarChart data={transformedData}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                {view === "types" ? (
+                  <>
+                    <Bar dataKey="full time" fill="#3B82F6" name="Full Time" radius={4} />
+                    <Bar dataKey="part time" fill="#FBBF24" name="Part Time" radius={4} />
+                  </>
+                ) : (
+                  specialties.map((specialty, index) => (
+                    <Bar
+                      key={specialty}
+                      dataKey={specialty}
+                      fill={["#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#3B82F6", "#FBBF24", "#EC4899", "#14B8A6"][index % 8]}
+                      name={specialty}
+                      radius={4}
+                    />
+                  ))
+                )}
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+      {totals.overall > 0 && (
+        <CardFooter className="flex flex-col items-center gap-2 text-sm mt-4">
+          <div className="font-semibold">Overall Total: {totals.overall}</div>
+          <div className="flex flex-wrap justify-center gap-4">
+            {view === "types" ? (
+              <>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: "#3B82F6" }} />
+                  <span>Full Time: {totals["full time"]}</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: "#FBBF24" }} />
+                  <span>Part Time: {totals["part time"]}</span>
+                </div>
+              </>
+            ) : (
+              specialties.map((specialty, index) => (
+                totals[specialty] > 0 && (
+                  <div key={specialty} className="flex items-center">
+                    <div
+                      className="w-4 h-4 rounded-full mr-2"
+                      style={{ backgroundColor: ["#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#3B82F6", "#FBBF24", "#EC4899", "#14B8A6"][index % 8] }}
+                    />
+                    <span>{specialty}: {totals[specialty]}</span>
+                  </div>
+                )
+              ))
+            )}
+          </div>
+        </CardFooter>
+      )}
+    </Card>
+  );
+}
+
+function transformDoctorData(rawData, selectedYear, view) {
+  const months = getMonths();
+  const groupedData = {};
+
+  // Initialize data structure for all months
+  months.forEach((month) => {
+    groupedData[month] = { month };
+    if (view === "types") {
+      groupedData[month]["full time"] = 0;
+      groupedData[month]["part time"] = 0;
+    } else {
+      const specialties = [
+        "ophthalmologist",
+        "optometrist",
+        "retina specialist",
+        "cornea specialist",
+        "glaucoma specialist",
+        "pediatric ophthalmologist",
+        "neuro-ophthalmologist",
+        "oculoplastic surgeon",
+        "ocular oncologist",
+        "contact lens specialist",
+      ];
+      specialties.forEach((specialty) => {
+        groupedData[month][specialty] = 0;
+      });
+    }
+  });
+
+  // Aggregate data
+  rawData.forEach((doc) => {
+    const docDate = new Date(doc.createdAt);
+    const month = docDate.toLocaleString("en-US", { month: "long" });
+    const year = docDate.getFullYear().toString();
+    const type = doc.type ? doc.type.toLowerCase() : "";
+    const specialty = doc.specialty ? doc.specialty.toLowerCase() : "";
+
+    if (year === selectedYear && groupedData[month]) {
+      if (view === "types" && (type === "full time" || type === "part time")) {
+        groupedData[month][type] += 1;
+      } else if (view === "specialties" && specialty) {
+        groupedData[month][specialty] += 1;
+      }
+    }
+  });
+
+  return Object.values(groupedData);
+}
+
+
+
+export function NurseTypeAndSpecialtyBarChart({ data, view = "types" }) { // Add view prop
+  const months = getMonths();
+  const years = getYears();
+  const currentYear = new Date().getFullYear().toString();
+
+  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedSpecialty, setSelectedSpecialty] = useState("all");
+
+  const specialties = [
+    "ophthalmologist",
+    "optometrist",
+    "retina specialist",
+    "cornea specialist",
+    "glaucoma specialist",
+    "pediatric ophthalmologist",
+    "neuro-ophthalmologist",
+    "oculoplasticklore surgeon",
+    "ocular oncologist",
+    "contact lens specialist",
+  ];
+  const types = ["full time", "part time"];
+
+  // Filter the data based on selections
+  const filteredData = data.filter((nurse) => {
+    const nurseDate = new Date(nurse.createdAt);
+    const nurseMonth = nurseDate.toLocaleString("en-US", { month: "long" });
+    const nurseYear = nurseDate.getFullYear().toString();
+    const nurseType = nurse.type ? nurse.type.toLowerCase() : "";
+    const nurseSpecialty = nurse.specialty ? nurse.specialty.toLowerCase() : "";
+
+    const isMonthMatch = selectedMonth === "all" ? true : nurseMonth === selectedMonth;
+    const isYearMatch = nurseYear === selectedYear;
+    const isTypeMatch = selectedType === "all" ? true : nurseType === selectedType;
+    const isSpecialtyMatch = selectedSpecialty === "all" ? true : specialties.includes(nurseSpecialty) && nurseSpecialty === selectedSpecialty;
+
+    return isMonthMatch && isYearMatch && isTypeMatch && isSpecialtyMatch;
+  });
+
+  // Debug the filtered data
+  useEffect(() => {
+    console.log("Raw Data:", data);
+    console.log("Filtered Data:", filteredData);
+    console.log("Selected Filters:", { selectedMonth, selectedYear, selectedType, selectedSpecialty });
+  }, [data, selectedMonth, selectedYear, selectedType, selectedSpecialty, filteredData]);
+
+  const transformedData = transformNurseData(filteredData, selectedYear, view);
+
+  // Debug the transformed data
+  console.log("Transformed Data:", transformedData);
+
+  const totals = transformedData.reduce(
+    (acc, item) => {
+      if (view === "types") {
+        acc["full time"] += item["full time"] || 0;
+        acc["part time"] += item["part time"] || 0;
+        acc.overall += (item["full time"] || 0) + (item["part time"] || 0);
+      } else {
+        specialties.forEach((specialty) => {
+          acc[specialty] = (acc[specialty] || 0) + (item[specialty] || 0);
+        });
+        acc.overall += specialties.reduce((sum, specialty) => sum + (item[specialty] || 0), 0);
+      }
+      return acc;
+    },
+    view === "types" ? { "full time": 0, "part time": 0, overall: 0 } : { overall: 0 }
+  );
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex flex-wrap gap-4 mb-4">
+          <Select onValueChange={setSelectedMonth} value={selectedMonth}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Months" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Months</SelectItem>
+              {months.map((month) => (
+                <SelectItem key={month} value={month}>{month}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select onValueChange={setSelectedYear} value={selectedYear}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Select Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((year) => (
+                <SelectItem key={year} value={year}>{year}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {view === "types" && (
+            <Select onValueChange={setSelectedType} value={selectedType}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {types.map((type) => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {view === "specialties" && (
+            <Select onValueChange={setSelectedSpecialty} value={selectedSpecialty}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All Specialties" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Specialties</SelectItem>
+                {specialties.map((specialty) => (
+                  <SelectItem key={specialty} value={specialty}>{specialty}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+
+        <div style={{ width: "100%", height: "350px" }}>
+          <ResponsiveContainer>
+            {transformedData.every(item =>
+              view === "types" ? (item["full time"] === 0 && item["part time"] === 0) :
+              specialties.every(specialty => item[specialty] === 0)
+            ) ? (
+              <div className="flex items-center justify-center h-full text-center text-gray-500 text-lg">
+                No records to show.
+              </div>
+            ) : (
+              <BarChart data={transformedData}>
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                {view === "types" ? (
+                  <>
+                    <Bar dataKey="full time" fill="#3B82F6" name="Full Time" radius={4} />
+                    <Bar dataKey="part time" fill="#FBBF24" name="Part Time" radius={4} />
+                  </>
+                ) : (
+                  specialties.map((specialty, index) => (
+                    <Bar
+                      key={specialty}
+                      dataKey={specialty}
+                      fill={["#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#3B82F6", "#FBBF24", "#EC4899", "#14B8A6"][index % 8]}
+                      name={specialty}
+                      radius={4}
+                    />
+                  ))
+                )}
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+      {totals.overall > 0 && (
+        <CardFooter className="flex flex-col items-center gap-2 text-sm mt-4">
+          <div className="font-semibold">Overall Total: {totals.overall}</div>
+          <div className="flex flex-wrap justify-center gap-4">
+            {view === "types" ? (
+              <>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: "#3B82F6" }} />
+                  <span>Full Time: {totals["full time"]}</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: "#FBBF24" }} />
+                  <span>Part Time: {totals["part time"]}</span>
+                </div>
+              </>
+            ) : (
+              specialties.map((specialty, index) => (
+                totals[specialty] > 0 && (
+                  <div key={specialty} className="flex items-center">
+                    <div
+                      className="w-4 h-4 rounded-full mr-2"
+                      style={{ backgroundColor: ["#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#3B82F6", "#FBBF24", "#EC4899", "#14B8A6"][index % 8] }}
+                    />
+                    <span>{specialty}: {totals[specialty]}</span>
+                  </div>
+                )
+              ))
+            )}
+          </div>
+        </CardFooter>
+      )}
+    </Card>
+  );
+}
+
+function transformNurseData(rawData, selectedYear, view) {
+  const months = getMonths();
+  const groupedData = {};
+
+  // Initialize data structure for all months
+  months.forEach((month) => {
+    groupedData[month] = { month };
+    if (view === "types") {
+      groupedData[month]["full time"] = 0;
+      groupedData[month]["part time"] = 0;
+    } else {
+      const specialties = [
+        "ophthalmologist",
+        "optometrist",
+        "retina specialist",
+        "cornea specialist",
+        "glaucoma specialist",
+        "pediatric ophthalmologist",
+        "neuro-ophthalmologist",
+        "oculoplastic surgeon",
+        "ocular oncologist",
+        "contact lens specialist",
+      ];
+      specialties.forEach((specialty) => {
+        groupedData[month][specialty] = 0;
+      });
+    }
+  });
+
+  // Aggregate data
+  rawData.forEach((nurse) => {
+    const nurseDate = new Date(nurse.createdAt);
+    const month = nurseDate.toLocaleString("en-US", { month: "long" });
+    const year = nurseDate.getFullYear().toString();
+    const type = nurse.type ? nurse.type.toLowerCase() : "";
+    const specialty = nurse.specialty ? nurse.specialty.toLowerCase() : "";
+
+    if (year === selectedYear && groupedData[month]) {
+      if (view === "types" && (type === "full time" || type === "part time")) {
+        groupedData[month][type] += 1;
+      } else if (view === "specialties" && specialty) {
+        groupedData[month][specialty] += 1;
+      }
+    }
   });
 
   return Object.values(groupedData);
