@@ -4,7 +4,7 @@ const { s3 } = require("../config/aws");
 // const axios = require("axios");
 require("dotenv").config();
 const path = require("path");
-
+const mongoose = require("mongoose");
 
 
 const getPatientCount = async (req, res) => {
@@ -258,15 +258,15 @@ const addPatient = async (req, res) => {
       contactNumber,
       email,
       address,
-      bloodType,        // New optional field
-      height,           // New optional field
-      weight,           // New optional field
-      allergies,        // New optional field
-      primaryPhysician, // New optional field
-      emergencyContact, // New optional field (object)
+      bloodType,
+      height,
+      weight,
+      allergies,
+      primaryPhysician,
+      emergencyContact,
     } = req.body;
-
-    // Validate only required fields
+console.log(req.body)
+    // Validate required fields
     if (!fullName || !birthDate || !gender || !nic || !contactNumber) {
       return res.status(400).json({
         errorCode: "MISSING_FIELDS",
@@ -282,8 +282,8 @@ const addPatient = async (req, res) => {
         message: "Patient with this NIC already exists",
       });
     }
-
-    // Check for duplicate email only if provided
+    console.log(existingPatient)
+    // Check for duplicate email if provided
     if (email) {
       const existingPatientEmail = await Patient.findOne({ email });
       if (existingPatientEmail) {
@@ -294,32 +294,47 @@ const addPatient = async (req, res) => {
       }
     }
 
-    // Get last patient and generate new patientId manually
-    const lastPatient = await Patient.findOne({}, {}, { sort: { patientId: -1 } });
-    let newPatientId;
-    if (lastPatient && lastPatient.patientId) {
-      const lastNumber = parseInt(lastPatient.patientId.replace(/\D/g, ""), 10) || 0;
-      newPatientId = `P${lastNumber + 1}`;
-    } else {
-      newPatientId = "P1"; // If no patient exists, start with P1
+    let physicianId;
+    if (primaryPhysician) {
+      if (!mongoose.Types.ObjectId.isValid(primaryPhysician)) {
+        return res.status(400).json({
+          errorCode: "INVALID_PHYSICIAN_ID",
+          message: "Invalid primaryPhysician ID format",
+        });
+      }
+      physicianId = new mongoose.Types.ObjectId(primaryPhysician);
     }
 
-    // Prepare the new patient object with all fields
+    const generatePatientId = async () => {
+      const lastPatient = await Patient.findOne()
+        .sort({ createdAt: -1 }) // Sort by insertion order
+        .select('patientId');
+      let newPatientId;
+      if (lastPatient && lastPatient.patientId) {
+        const lastNumber = parseInt(lastPatient.patientId.replace(/\D/g, ""), 10) || 0;
+        newPatientId = `P${lastNumber + 1}`;
+      } else {
+        newPatientId = "P1"; // If no patient exists, start with P1
+      }
+      return newPatientId;
+    };
+    let patientId = await generatePatientId();
+    // Prepare the new patient object
     const newPatient = new Patient({
-      patientId: newPatientId,
+      patientId,
       fullName,
-      birthDate: new Date(birthDate), // Ensure it's a Date object
+      birthDate: new Date(birthDate),
       gender,
       nic,
       contactNumber,
-      email: email || undefined,             // Optional
-      address: address || undefined,         // Optional
-      bloodType: bloodType || undefined,     // Optional
-      height: height ? Number(height) : undefined, // Optional, convert to number
-      weight: weight ? Number(weight) : undefined, // Optional, convert to number
-      allergies: allergies || undefined,     // Optional
-      primaryPhysician: primaryPhysician || undefined, // Optional
-      emergencyContact: emergencyContact || undefined, // Optional object
+      email: email || undefined,
+      address: address || undefined,
+      bloodType: bloodType || undefined,
+      height: height ? Number(height) : undefined,
+      weight: weight ? Number(weight) : undefined,
+      allergies: allergies || undefined,
+      primaryPhysician: physicianId || undefined,
+      emergencyContact: emergencyContact || undefined,
     });
 
     await newPatient.save();
@@ -336,6 +351,12 @@ const addPatient = async (req, res) => {
     });
   }
 };
+
+// Make sure your Patient schema has a unique index on patientId
+// In your Patient model file, add this if not already present:
+Patient.schema.index({ patientId: 1 }, { unique: true });
+
+module.exports = { addPatient };
 // Get a single patient by ID
 const getPatient = async (req, res) => {
   try {
