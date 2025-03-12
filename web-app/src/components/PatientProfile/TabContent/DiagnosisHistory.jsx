@@ -181,27 +181,27 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
       ) : (
         <div className="overflow-x-auto shadow-lg rounded-xl">
           <table className="min-w-full bg-white rounded-xl overflow-hidden">
-            <thead className="bg-gradient-to-r from-indigo-600 to-indigo-500">
+            <thead className="bg-gray-50">
               <tr>
-                <th className="py-3 px-4 text-left text-xs font-medium text-white uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Image
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-white uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Diagnosis
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-white uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Eye
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-white uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Date
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-white uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-white uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Confidence
                 </th>
-                <th className="py-3 px-4 text-center text-xs font-medium text-white uppercase tracking-wider">
+                <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
