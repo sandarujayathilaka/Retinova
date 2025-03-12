@@ -5,6 +5,9 @@ import { toast } from "react-hot-toast";
 import TestRecordCard from "../../components/testrecords/TestRecordCard";
 import TestRecordModal from "../../components/testrecords/TestRecordModal";
 import TestRecordConfirmModal from "../../components/testrecords/TestRecordConfirmModal";
+import {
+  TestTubes
+} from "lucide-react";
 
 function TestRecords({patientId}) {
   // const { patientId } = useParams();
@@ -124,18 +127,10 @@ function TestRecords({patientId}) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto">
-        {/* <div className="bg-gradient-to-r from-sky-500 to-teal-500 text-white p-4 rounded-t-lg mb-4">
-          <h2 className="text-2xl font-bold">Patient Details</h2>
-          <div className="flex space-x-4 mt-2">
-            <button className="text-white hover:text-sky-100">Personal Details</button>
-            <button className="text-white hover:text-sky-100">Medical Records</button>
-            <button className="text-sky-100 font-semibold">Treatment Plans</button>
-          </div>
-        </div> */}
-        <div className="bg-white rounded-b-lg shadow-lg p-6">
-          <h3 className="text-xl font-semibold text-teal-700 mb-6">Test & Treatments Records</h3>
+    <div className="min-h-screen bg-inherit py-6 px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-semibold text-teal-800 flex items-center gap-3 mb-6">
+          <TestTubes className="h-7 w-7 text-teal-600" /> Patient Tests Records
+        </h2>
           {records.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
               {records.map((record) => (
@@ -150,8 +145,8 @@ function TestRecords({patientId}) {
           ) : (
             <p className="text-center text-sky-500 text-sm">No test records found for this patient.</p>
           )}
-        </div>
-      </div>
+        {/* </div> */}
+      {/* </div> */}
       <TestRecordModal
         show={showModal && selectedDiagnose}
         onClose={() => setShowModal(false)}

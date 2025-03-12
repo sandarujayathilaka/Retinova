@@ -17,7 +17,14 @@ const getTestRecords = asyncHandler(async (req, res) => {
     throw new Error("Patient not found");
   }
 
-  const checkedRecords = patient.diagnoseHistory.filter((record) => record.status === "Checked");
+  // const checkedRecords = patient.diagnoseHistory.filter((record) => record.status === "Checked");
+  // Get records with checked status and non-empty test arrays
+  const checkedRecords = patient.diagnoseHistory.filter(
+    (record) => 
+      record.status === "Checked" && 
+      record.recommend.tests && 
+      record.recommend.tests.length > 0
+  );
   res.status(200).json({
     success: true,
     data: checkedRecords,
@@ -107,25 +114,41 @@ const completeDiagnosis = asyncHandler(async (req, res) => {
     throw new Error("Diagnosis not found");
   }
 
-  // Check if all tests are completed
-  const allTestsCompleted = diagnose.recommend.tests.every((test) => test.status === "Completed");
+  // Check if all tests for this diagnosis are completed
+  const allTestsCompleted = diagnose.recommend.tests.every(
+    (test) => test.status === "Completed"
+  );
   if (!allTestsCompleted) {
     res.status(400);
     throw new Error("Not all tests are completed");
   }
 
-  // Update both statuses atomicallyP
-  diagnose.status = "TestCompleted";
-  // patient.patientStatus = "Published";
+  // Count diagnoses with "Checked" status
+  const checkedDiagnosesCount = patient.diagnoseHistory.filter(
+    (d) => d.status === "Checked"
+  ).length;
 
+  // Logic based on the number of "Checked" diagnoses
+  if (checkedDiagnosesCount > 1) {
+    // If there are multiple "Checked" diagnoses, only update the specific diagnosis status
+    diagnose.status = "Test Completed";
+  } else if (checkedDiagnosesCount === 1) {
+    // If there is only one "Checked" diagnosis, update both diagnosis and patient status
+    diagnose.status = "Test Completed";
+    patient.patientStatus = "Published";
+  } else {
+    // If no diagnoses are "Checked," return an error or handle as needed
+    res.status(400);
+    throw new Error("No diagnoses with 'Checked' status found to complete");
+  }
+
+  // Save the changes
   await patient.save();
 
   res.status(200).json({
     success: true,
-    message: "Diagnosis's tests are completed",
-    // data: { diagnose, patientStatus: patient.patientStatus },
-    data: { diagnose},
-
+    message: "Diagnosis and patient  updated",
+    data: { diagnose, patientStatus: patient.patientStatus },
   });
 });
 

@@ -10,7 +10,6 @@ import { Separator } from "@/components/ui/separator";
 import {IdCard,IdCardIcon, UserCircle2Icon,UserCircle,UserCircle2,UserCircleIcon,CalendarIcon, User2, Loader2,Smartphone, Mail, Home, Circle, ArrowLeft, Pencil, Save, X } from "lucide-react";
 import MedicalHistory from "./MedicalHistory";
 import { Input } from "@/components/ui/input";
-// import TreatmentPlans from "../TreatmentPlans";
 import TestRecords from "../testrecord/TestRecords"
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -175,7 +174,7 @@ const calculateAge = (birthDate) => {
                         : "text-white hover:bg-white/20"
                     } transition-all duration-200`}
                   >
-                    {tab === "personal" ? "Personal Details" : tab === "medical" ? "Medical Records" : "Treatment Plans"}
+                    {tab === "personal" ? "Personal Details" : tab === "medical" ? "Medical Records" : "Test Records"}
                   </Button>
                 ))}
               </div>
@@ -412,7 +411,7 @@ const calculateAge = (birthDate) => {
           )}
 
           {activeTab === "treatment" && (
-            <CardContent className="p-7 bg-white">
+            <CardContent className="p-8 bg-white">
               <TestRecords patientId={patient.patientId}/>
             </CardContent>
           )}
