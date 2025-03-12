@@ -70,6 +70,14 @@ const medicalHistorySchema = mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+     isChronicCondition: {
+      type: Boolean,
+      default: false, // False means it's an acute condition
+    },
+    notes: {
+      type: String,
+      default: "No additional notes",
+    },
     filePaths: {
       type: [String],
       default: [],
@@ -87,6 +95,12 @@ const calculateAge = (birthDate) => {
   }
   return age;
 };
+
+const emergencyContactSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  relationship: { type: String, required: true },
+  phone: { type: String, required: true }
+});
 
 // Main Patient Schema with Indexes
 const patientSchema = new mongoose.Schema(
@@ -117,6 +131,11 @@ const patientSchema = new mongoose.Schema(
     },
     contactNumber: { type: String, required: true },
     email: { type: String, required: false },
+    bloodType: { type: String, required: false },
+    height: { type: Number, required: false },
+    weight: { type: Number, required: false },
+    allergies: { type: [String], required: false },
+    primaryPhysician : { type: String, required: false },
     address: { type: String, required: false },
     medicalHistory: [medicalHistorySchema],
     diagnoseHistory: [diagnoseSchema],
@@ -133,6 +152,7 @@ const patientSchema = new mongoose.Schema(
       index: true,
     },
     nextVisit: { type: Date },
+    emergencyContact: { type: emergencyContactSchema, required: false },
     doctorId: { type: mongoose.Schema.Types.ObjectId, ref: "Doctor" },
   },
   { timestamps: true } // Automatically adds createdAt & updatedAt fields
