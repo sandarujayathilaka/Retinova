@@ -36,6 +36,7 @@ import { useDeleteDoctor, useGetDoctors } from "@/services/doctor.service";
 import toast from "react-hot-toast";
 import { FaUserDoctor } from "react-icons/fa6";
 import DoctorForm from "./DoctorForm";
+import ViewDoctor from "./ViewDoctor";
 
 const DoctorList = () => {
   const columns = [
@@ -148,6 +149,14 @@ const DoctorList = () => {
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => {
+                  setDoctorIdToView(row.original._id);
+                  setIsViewDialogOpen(true);
+                }}
+              >
+                View
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
                   setDoctorIdToEdit(row.original._id);
                   setIsEditDialogOpen(true);
                 }}
@@ -178,6 +187,8 @@ const DoctorList = () => {
   const [doctorIdToDelete, setDoctorIdToDelete] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [doctorIdToEdit, setDoctorIdToEdit] = useState(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [doctorIdToView, setDoctorIdToView] = useState(null);
 
   const { data: doctors, isLoading } = useGetDoctors();
   const { mutate: deleteDoctorMutation } = useDeleteDoctor();
@@ -343,6 +354,12 @@ const DoctorList = () => {
         title="doctor"
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
+      />
+      <ViewDoctor
+        doctorId={doctorIdToView}
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}
+        trigger={"View"}
       />
     </>
   );

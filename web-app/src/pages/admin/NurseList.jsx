@@ -36,6 +36,7 @@ import toast from "react-hot-toast";
 import { useDeleteNurse, useGetNurses } from "@/services/nurse.service";
 import { FaUserNurse } from "react-icons/fa";
 import NurseForm from "./NurseForm";
+import ViewNurse from "./ViewNurse";
 
 const NurseList = () => {
   const columns = [
@@ -148,6 +149,14 @@ const NurseList = () => {
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => {
+                  setNurseIdToView(row.original._id);
+                  setIsViewDialogOpen(true);
+                }}
+              >
+                View
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
                   setNurseIdToEdit(row.original._id);
                   setIsEditDialogOpen(true);
                 }}
@@ -178,6 +187,8 @@ const NurseList = () => {
   const [nurseIdToDelete, setNurseIdToDelete] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [nurseIdToEdit, setNurseIdToEdit] = useState(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [nurseIdToView, setNurseIdToView] = useState(null);
 
   const { data: nurses, isLoading } = useGetNurses();
   const { mutate: deleteNurseMutation } = useDeleteNurse();
@@ -343,6 +354,12 @@ const NurseList = () => {
         title="nurse"
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
+      />
+      <ViewNurse
+        nurseId={nurseIdToView}
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}
+        trigger={"View"}
       />
     </>
   );
