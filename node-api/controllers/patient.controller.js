@@ -352,11 +352,7 @@ console.log(req.body)
   }
 };
 
-// Make sure your Patient schema has a unique index on patientId
-// In your Patient model file, add this if not already present:
-Patient.schema.index({ patientId: 1 }, { unique: true });
 
-module.exports = { addPatient };
 // Get a single patient by ID
 const getPatient = async (req, res) => {
   try {
@@ -638,7 +634,7 @@ const addmedicalHistory = async (req, res) => {
     const newRecords = [];
 
     for (const [index, record] of records.entries()) {
-      const { condition, diagnosedAt, medications = [] } = record;
+      const { condition, diagnosedAt, medications = [], notes, isChronicCondition } = record;
 
       if (!condition) {
         return res.status(400).json({
@@ -690,6 +686,8 @@ const addmedicalHistory = async (req, res) => {
         diagnosedAt: diagnosedAtDate,
         medications: processedMedications,
         filePaths,
+        notes: notes || "No additional notes",
+        isChronicCondition: isChronicCondition === "true",
       });
     }
 
@@ -737,6 +735,8 @@ const updateMedicalHistory = async (req, res) => {
       ? new Date(req.body.diagnosedAt)
       : record.diagnosedAt;
 
+    record.notes = req.body.notes || record.notes;
+    record.isChronicCondition = req.body.isChronicCondition === "true";
     // Safely parse medications
     if (req.body.medications) {
       try {
