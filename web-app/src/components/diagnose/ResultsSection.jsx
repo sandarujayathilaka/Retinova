@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Card, Typography, Progress, Button, Form, Input, Tabs, Space, Tooltip } from "antd";
 import { motion } from "framer-motion";
 import PatientTabs from "./PatientTabs";
+import PatientReport from "../reports/PatientReport"; 
+import DiagnosisHistory from "../PatientProfile/TabContent/DiagnosisHistory"; // Import DiagnosisHistory
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -18,71 +20,119 @@ const ResultsSection = ({
 }) => {
   const [form] = Form.useForm();
   const [activeTab, setActiveTab] = useState("currentResults");
+  const [isReportVisible, setIsReportVisible] = useState(false);
+
+  // Helper function for getMaxConfidence (required by DiagnosisHistory)
+  const getMaxConfidence = (confidenceScores) => {
+    if (!confidenceScores || confidenceScores.length === 0) return "N/A";
+    return `${(Math.max(...confidenceScores) * 100).toFixed(1)}%`;
+  };
+
+  // Helper function for openImage (required by DiagnosisHistory)
+  const openImage = (url) => {
+    setSelectedImage(url); // Use the setSelectedImage prop to open the image
+  };
 
   const getPredictionDetails = (type) => {
     switch (type) {
       case "advanced":
-        return { 
-          color: "red", 
+        return {
+          color: "red",
           bgColor: "bg-red-50",
           borderColor: "border-red-200",
           textColor: "text-red-700",
           icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-red-600">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-5 h-5 text-red-600"
+            >
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
               <line x1="12" y1="9" x2="12" y2="13"></line>
               <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
           ),
           progressColor: "#ef4444",
-          message: "Advanced diabetic retinopathy detected. Immediate specialist consultation recommended."
+          message: "Advanced diabetic retinopathy detected. Immediate specialist consultation recommended.",
         };
       case "early":
-        return { 
-          color: "orange", 
+        return {
+          color: "orange",
           bgColor: "bg-amber-50",
           borderColor: "border-amber-200",
           textColor: "text-amber-700",
           icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-amber-600">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-5 h-5 text-amber-600"
+            >
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
           ),
           progressColor: "#f59e0b",
-          message: "Early signs of diabetic retinopathy. Regular monitoring and lifestyle changes advised."
+          message: "Early signs of diabetic retinopathy. Regular monitoring and lifestyle changes advised.",
         };
       case "normal":
-        return { 
-          color: "green", 
+        return {
+          color: "green",
           bgColor: "bg-green-50",
           borderColor: "border-green-200",
           textColor: "text-green-700",
           icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-green-600">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-5 h-5 text-green-600"
+            >
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
           ),
           progressColor: "#22c55e",
-          message: "No signs of diabetic retinopathy detected. Continue with regular check-ups."
+          message: "No signs of diabetic retinopathy detected. Continue with regular check-ups.",
         };
       default:
-        return { 
-          color: "gray", 
+        return {
+          color: "gray",
           bgColor: "bg-gray-50",
           borderColor: "border-gray-200",
           textColor: "text-gray-700",
           icon: (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-gray-600">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-5 h-5 text-gray-600"
+            >
               <circle cx="12" cy="12" r="10"></circle>
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
               <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
           ),
           progressColor: "#6b7280",
-          message: "Assessment completed. Please consult with your healthcare provider for interpretation."
+          message: "Assessment completed. Please consult with your healthcare provider for interpretation.",
         };
     }
   };
@@ -92,14 +142,17 @@ const ResultsSection = ({
   const predictionDetails = getPredictionDetails(prediction.type);
   const confidencePercent = Math.round(prediction.confidence * 100);
 
-  // Handle quick submit with no prescription
   const handleQuickSave = () => {
     const emptyPrescription = {
       medicine: "",
       tests: [],
-      note: ""
+      note: "",
     };
     handleSavePrescription(emptyPrescription);
+  };
+
+  const handleExportPDF = ({ patientData, prediction, setSelectedImage }) => {
+    setIsReportVisible(true);
   };
 
   return (
@@ -108,24 +161,31 @@ const ResultsSection = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Card 
-        className="rounded-xl shadow-md border border-indigo-100 overflow-hidden"
-      >
+      <Card className="rounded-xl shadow-md border border-indigo-100 overflow-hidden">
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
           type="card"
           className="diagnosis-tabs"
         >
-          <TabPane 
+          <TabPane
             tab={
               <span className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4 mr-2"
+                >
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                 </svg>
                 Diagnosis Results
               </span>
-            } 
+            }
             key="currentResults"
           >
             <div className="p-6">
@@ -134,7 +194,10 @@ const ResultsSection = ({
                 <div className="space-y-6">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="md:w-1/3">
-                      <div className="relative group cursor-pointer overflow-hidden rounded-lg" onClick={() => handleImageClick(imageUrl)}>
+                      <div
+                        className="relative group cursor-pointer overflow-hidden rounded-lg"
+                        onClick={() => handleImageClick(imageUrl)}
+                      >
                         <img
                           src={imageUrl}
                           alt="Retinal scan"
@@ -144,15 +207,26 @@ const ResultsSection = ({
                           <div className="absolute bottom-0 w-full p-2 text-center text-white text-xs font-medium">
                             Click to enlarge
                           </div>
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-white transform group-hover:scale-110 transition-transform duration-300">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="w-8 h-8 text-white transform group-hover:scale-110 transition-transform duration-300"
+                          >
                             <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>
                           </svg>
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="md:w-2/3">
-                      <div className={`rounded-lg p-5 ${predictionDetails.bgColor} ${predictionDetails.borderColor} border shadow-sm`}>
+                      <div
+                        className={`rounded-lg p-5 ${predictionDetails.bgColor} ${predictionDetails.borderColor} border shadow-sm`}
+                      >
                         <div className="flex items-center gap-3 mb-3">
                           <div className="p-2 rounded-full bg-white bg-opacity-60 shadow-sm">
                             {predictionDetails.icon}
@@ -162,18 +236,20 @@ const ResultsSection = ({
                               AI Assessment
                             </Text>
                             <Text strong className={`text-lg block capitalize ${predictionDetails.textColor}`}>
-                              {prediction.type} DR
+                              {prediction.type}
                             </Text>
                           </div>
                         </div>
-                        
+
                         <div className="mt-4">
                           <div className="flex justify-between text-sm mb-1">
                             <span className={`font-medium ${predictionDetails.textColor}`}>Confidence Level</span>
-                            <span className={`${predictionDetails.textColor} font-semibold`}>{confidencePercent}%</span>
+                            <span className={`${predictionDetails.textColor} font-semibold`}>
+                              {confidencePercent}%
+                            </span>
                           </div>
-                          <Progress 
-                            percent={confidencePercent} 
+                          <Progress
+                            percent={confidencePercent}
                             showInfo={false}
                             strokeColor={predictionDetails.progressColor}
                             trailColor="#e5e7eb"
@@ -181,11 +257,9 @@ const ResultsSection = ({
                             className="rounded-full"
                           />
                         </div>
-                        
+
                         <div className="mt-4 text-sm">
-                          <p className={`${predictionDetails.textColor}`}>
-                            {predictionDetails.message}
-                          </p>
+                          <p className={`${predictionDetails.textColor}`}>{predictionDetails.message}</p>
                         </div>
                       </div>
                     </div>
@@ -197,7 +271,16 @@ const ResultsSection = ({
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="w-5 h-5 text-white"
+                        >
                           <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
                           <path d="M3.22 12H9.5l.5-1 .5 1h6.28"></path>
                         </svg>
@@ -206,7 +289,7 @@ const ResultsSection = ({
                         Doctor's Prescription
                       </Title>
                     </div>
-                    
+
                     <Tooltip title="Save without prescription">
                       <Button
                         onClick={handleQuickSave}
@@ -214,14 +297,23 @@ const ResultsSection = ({
                         className="bg-gray-100 hover:bg-gray-200 text-gray-600 border-gray-200 rounded text-xs py-1 px-2 flex items-center h-auto"
                         disabled={isSaving}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 mr-1">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="w-3 h-3 mr-1"
+                        >
                           <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                         Quick Save
                       </Button>
                     </Tooltip>
                   </div>
-                  
+
                   <Form
                     form={form}
                     layout="vertical"
@@ -242,29 +334,41 @@ const ResultsSection = ({
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <Text strong className="text-gray-700">Recommended Tests</Text>
-                        <Button 
+                        <Button
                           type="default"
                           onClick={() => {
-                            const tests = form.getFieldValue('tests') || [];
+                            const tests = form.getFieldValue("tests") || [];
                             form.setFieldsValue({
-                              tests: [...tests, { testName: '' }]
+                              tests: [...tests, { testName: "" }],
                             });
                           }}
                           className="text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50 rounded-md flex items-center h-8 shadow-sm"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-1">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="w-4 h-4 mr-1"
+                          >
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                           </svg>
                           Add Test
                         </Button>
                       </div>
-                      
+
                       <Form.List name="tests">
                         {(fields, { add, remove }) => (
                           <div className="space-y-3">
                             {fields.map(({ key, name, ...restField }, index) => (
-                              <div key={key} className="flex items-center gap-2 animate__animated animate__fadeIn">
+                              <div
+                                key={key}
+                                className="flex items-center gap-2 animate__animated animate__fadeIn"
+                              >
                                 <div className="flex-grow relative">
                                   <Form.Item
                                     {...restField}
@@ -278,7 +382,16 @@ const ResultsSection = ({
                                     />
                                   </Form.Item>
                                   <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-gray-400">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      className="w-4 h-4 text-gray-400"
+                                    >
                                       <path d="M14 11h7"></path>
                                       <path d="M14 1h7"></path>
                                       <path d="M3 13v10h18V13"></path>
@@ -286,7 +399,7 @@ const ResultsSection = ({
                                     </svg>
                                   </div>
                                 </div>
-                                
+
                                 {fields.length > 1 && (
                                   <Tooltip title="Remove test">
                                     <Button
@@ -294,7 +407,16 @@ const ResultsSection = ({
                                       onClick={() => remove(name)}
                                       className="flex items-center justify-center hover:bg-red-50 transition-colors rounded-full w-8 h-8 text-red-500"
                                       icon={
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          className="w-4 h-4"
+                                        >
                                           <line x1="18" y1="6" x2="6" y2="18"></line>
                                           <line x1="6" y1="6" x2="18" y2="18"></line>
                                         </svg>
@@ -309,10 +431,7 @@ const ResultsSection = ({
                       </Form.List>
                     </div>
 
-                    <Form.Item 
-                      label={<Text strong className="text-gray-700">Clinical Notes</Text>} 
-                      name="note"
-                    >
+                    <Form.Item label={<Text strong className="text-gray-700">Clinical Notes</Text>} name="note">
                       <TextArea
                         rows={4}
                         placeholder="Add important notes about the diagnosis, treatment plan, or follow-up instructions..."
@@ -329,7 +448,16 @@ const ResultsSection = ({
                         className="w-full h-12 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-lg shadow-md flex items-center justify-center"
                       >
                         {!isSaving && (
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mr-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="w-5 h-5 mr-2"
+                          >
                             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                             <polyline points="17 21 17 13 7 13 7 21"></polyline>
                             <polyline points="7 3 7 8 15 8"></polyline>
@@ -344,32 +472,44 @@ const ResultsSection = ({
             </div>
           </TabPane>
 
-          {/* Patient Information Tab */}
-          <TabPane 
+          <TabPane
             tab={
               <span className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4 mr-2"
+                >
                   <path d="M18 20a6 6 0 0 0-12 0"></path>
                   <circle cx="12" cy="10" r="4"></circle>
                   <circle cx="12" cy="12" r="10"></circle>
                 </svg>
                 Patient Info
               </span>
-            } 
+            }
             key="patientInfo"
           >
-            <PatientTabs
-              patientData={patientData}
-              setSelectedImage={setSelectedImage}
-              activeTab="patientInfo"
-            />
+            <PatientTabs patientData={patientData} setSelectedImage={setSelectedImage} activeTab="patientInfo" />
           </TabPane>
 
-          {/* Medical History Tab */}
-          <TabPane 
+          <TabPane
             tab={
               <span className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4 mr-2"
+                >
                   <path d="M3 2v1c0 1 2 1 2 2S3 6 3 7s2 1 2 2-2 1-2 2 2 1 2 2"></path>
                   <path d="M18 6h.01"></path>
                   <path d="M6 18h12a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2h-5"></path>
@@ -378,21 +518,25 @@ const ResultsSection = ({
                 </svg>
                 Medical History
               </span>
-            } 
+            }
             key="medicalHistory"
           >
-            <PatientTabs
-              patientData={patientData}
-              setSelectedImage={setSelectedImage}
-              activeTab="medicalHistory"
-            />
+            <PatientTabs patientData={patientData} setSelectedImage={setSelectedImage} activeTab="medicalHistory" />
           </TabPane>
 
-          {/* Diagnosis History Tab */}
-          <TabPane 
+          <TabPane
             tab={
               <span className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4 mr-2"
+                >
                   <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
                   <polyline points="14 2 14 8 20 8"></polyline>
                   <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -401,66 +545,89 @@ const ResultsSection = ({
                 </svg>
                 Past Diagnoses
               </span>
-            } 
+            }
             key="diagnosisHistory"
           >
-            <PatientTabs
-              patientData={patientData}
-              setSelectedImage={setSelectedImage}
-              activeTab="diagnosisHistory"
+            <DiagnosisHistory
+              patient={patientData} 
+              getMaxConfidence={getMaxConfidence}
+              openImage={openImage}
+              isFromPreMonitoring={false} 
             />
           </TabPane>
 
-          {/* Trend Analysis Tab */}
-          <TabPane 
+          <TabPane
             tab={
               <span className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4 mr-2"
+                >
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                 </svg>
                 Trend Analysis
               </span>
-            } 
+            }
             key="charts"
           >
-            <PatientTabs
-              patientData={patientData}
-              setSelectedImage={setSelectedImage}
-              activeTab="charts"
-            />
+            <PatientTabs patientData={patientData} setSelectedImage={setSelectedImage} activeTab="charts" />
           </TabPane>
 
-          {/* Export Tab */}
-          <TabPane 
+          <TabPane
             tab={
               <span className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4 mr-2"
+                >
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
                 Export
               </span>
-            } 
+            }
             key="export"
           >
             <PatientTabs
               patientData={patientData}
               setSelectedImage={setSelectedImage}
+              prediction={prediction}
               activeTab="export"
+              onExportPDF={handleExportPDF}
             />
           </TabPane>
         </Tabs>
       </Card>
 
-      {/* Upload Another Image Button */}
       <div className="mt-6 text-center">
         <Button
           onClick={resetForNewUpload}
           className="px-6 py-2 h-auto bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-lg shadow-sm transition-colors"
         >
           <span className="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mr-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-4 h-4 mr-2"
+            >
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -469,6 +636,14 @@ const ResultsSection = ({
           </span>
         </Button>
       </div>
+
+      <PatientReport
+        patientData={patientData}
+        prediction={prediction}
+        imageUrl={imageUrl}
+        visible={isReportVisible}
+        onClose={() => setIsReportVisible(false)}
+      />
     </motion.div>
   );
 };

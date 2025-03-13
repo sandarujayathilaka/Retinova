@@ -1,7 +1,18 @@
-import React from "react";
-import { ArrowLeft, UserCircle, Calendar, Mail, Phone } from "lucide-react";
+import React, { useState } from "react";
+import { ArrowLeft, UserCircle, Mail } from "lucide-react";
+import PatientSummaryModal from "../reports/PatientSummaryModal";
 
 const Header = ({ patientId, navigate, patient }) => {
+  const [isSummaryModalVisible, setIsSummaryModalVisible] = useState(false);
+
+  const showSummaryModal = () => {
+    setIsSummaryModalVisible(true);
+  };
+
+  const handleSummaryModalClose = () => {
+    setIsSummaryModalVisible(false);
+  };
+
   return (
     <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between">
       <div className="flex items-center">
@@ -25,15 +36,13 @@ const Header = ({ patientId, navigate, patient }) => {
       
       {patient && (
         <div className="mt-4 sm:mt-0 flex flex-wrap gap-3">
-          {patient.contactNumber && (
-            <a
-              href={`tel:${patient.contactNumber}`}
-              className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-            >
-              <Phone className="w-4 h-4 mr-2 text-blue-900" />
-              Call Patient
-            </a>
-          )}
+          <button
+            onClick={showSummaryModal}
+            className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+          >
+            <UserCircle className="w-4 h-4 mr-2 text-blue-900" />
+            Generate Report
+          </button>
           
           {patient.email && (
             <a
@@ -46,6 +55,13 @@ const Header = ({ patientId, navigate, patient }) => {
           )}
         </div>
       )}
+
+      {/* Patient Summary Modal */}
+      <PatientSummaryModal
+        visible={isSummaryModalVisible}
+        onClose={handleSummaryModalClose}
+        patientData={patient}
+      />
     </div>
   );
 };

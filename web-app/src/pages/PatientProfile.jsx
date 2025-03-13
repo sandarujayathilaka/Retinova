@@ -5,7 +5,7 @@ import Header from "../components/PatientProfile/Header";
 import TabNavigation from "../components/PatientProfile/TabNavigation";
 import TabContent from "../components/PatientProfile/TabContent";
 import Footer from "../components/PatientProfile/Footer";
-import ImageModal from "../components/PatientProfile/ImageModal";
+import ImageModal from "../components/diagnose/ImageModal";
 import { BadgeAlert, Activity } from "lucide-react";
 
 const PatientProfile = () => {
@@ -16,6 +16,8 @@ const PatientProfile = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("basic");
   const [selectedImage, setSelectedImage] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(1);  // Added for ImageModal
+  const [rotation, setRotation] = useState(0);    // Added for ImageModal
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const isFromPreMonitoring = location.state?.referrer === "PreMonitoringPatientsPage";
@@ -36,7 +38,6 @@ const PatientProfile = () => {
     fetchPatient();
   }, [patientId, navigate, refreshTrigger]);
 
-  // Function to trigger a refresh of the patient data
   const refreshPatientData = () => {
     setRefreshTrigger(prev => prev + 1);
   };
@@ -48,7 +49,6 @@ const PatientProfile = () => {
   };
 
   const openImage = imageUrl => setSelectedImage(imageUrl);
-  const closeImage = () => setSelectedImage(null);
 
   if (loading) {
     return (
@@ -81,7 +81,6 @@ const PatientProfile = () => {
     );
   }
 
-  // Count urgent items (unchecked diagnoses)
   const urgentItems = patient.diagnoseHistory 
     ? patient.diagnoseHistory.filter(d => d.status === "Unchecked").length 
     : 0;
@@ -91,7 +90,6 @@ const PatientProfile = () => {
       <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
         <Header patientId={patientId} navigate={navigate} patient={patient} />
         
-        {/* Patient summary card */}
         <div className="mb-6 bg-white rounded-xl shadow-sm overflow-hidden border border-indigo-100">
           <div className="p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row justify-between">
@@ -146,7 +144,14 @@ const PatientProfile = () => {
         </div>
       </div>
       
-      <ImageModal selectedImage={selectedImage} closeImage={closeImage} />
+      <ImageModal
+        selectedImage={selectedImage}
+        setSelectedImage={setSelectedImage}
+        zoomLevel={zoomLevel}
+        setZoomLevel={setZoomLevel}
+        rotation={rotation}
+        setRotation={setRotation}
+      />
     </div>
   );
 };
