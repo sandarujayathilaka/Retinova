@@ -130,7 +130,7 @@ const patientSchema = new mongoose.Schema(
       unique: true,
     },
     contactNumber: { type: String, required: true },
-    email: { type: String, required: false },
+    email: { type: String, required: true },
     bloodType: { type: String, required: false },
     height: { type: Number, required: false },
     weight: { type: Number, required: false },
@@ -184,6 +184,8 @@ patientSchema.index({ birthDate: 1 });
 patientSchema.index({ category: 1, gender: 1 }); // For queries filtering by both category and gender
 // patientSchema.index({ age: 1, createdAt: -1 }); // For sorting by age and creation date
 patientSchema.index({ createdAt: -1 }); // For sorting by age and creation date
+
+patientSchema.index({ patientId: 1 }, { unique: true });
 
 const Patient = mongoose.model("Patient", patientSchema);
 module.exports = Patient;
