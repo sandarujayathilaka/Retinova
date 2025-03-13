@@ -1,4 +1,3 @@
-// src/pages/MultiDiagnosePage.jsx
 import React, { useState } from "react";
 import MultiDiagnose from "../../components/MultiDiagnose/MultiDiagnose";
 import toast from "react-hot-toast";
@@ -173,7 +172,10 @@ const MultiDiagnosePage = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <Spin spinning={processingProgress > 0 && processingProgress < 100} tip={`Processing... ${processingProgress}%`}>
+      <Spin
+        spinning={isSaving} 
+        tip={`Saving... ${processingProgress}%`}
+      >
         <MultiDiagnose
           disease="Diabetic Retinopathy"
           handleSubmission={handleSubmission}

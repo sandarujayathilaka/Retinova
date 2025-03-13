@@ -4,7 +4,7 @@ import { Tabs } from "antd";
 import MultiUploadSection from "./MultiUploadSection";
 import PredictionCard from "./PredictionCard";
 import ConfirmationModal from "./ConfirmationModal";
-import ImagePreviewModal from "./ImagePreviewModal";
+import ImageModal from "../diagnose/ImageModal"; 
 import { PushSpinner } from "react-spinners-kit";
 import { Button } from "antd";
 import { FaSave } from "react-icons/fa";
@@ -29,9 +29,9 @@ const MultiDiagnose = ({
   const [imageUrls, setImageUrls] = useState([]);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("upload");
-  const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [rotation, setRotation] = useState(0);
+  const [zoomLevel, setZoomLevel] = useState(1);  // Added for ImageModal
+  const [rotation, setRotation] = useState(0);    // Required by ImageModal
   const [expandedCards, setExpandedCards] = useState({});
 
   const onSubmit = () => {
@@ -109,7 +109,6 @@ const MultiDiagnose = ({
                       toggleExpand={toggleExpandCard}
                       index={index}
                       setSelectedImage={setSelectedImage}
-                      setIsModalVisible={setIsModalVisible}
                     />
                   ))}
                 </div>
@@ -134,16 +133,13 @@ const MultiDiagnose = ({
         }}
       />
 
-      <ImagePreviewModal
-        isModalVisible={isModalVisible}
+      <ImageModal
         selectedImage={selectedImage}
+        setSelectedImage={setSelectedImage}
+        zoomLevel={zoomLevel}
+        setZoomLevel={setZoomLevel}
         rotation={rotation}
         setRotation={setRotation}
-        handleCancel={() => {
-          setIsModalVisible(false);
-          setSelectedImage(null);
-          setRotation(0);
-        }}
       />
     </div>
   );
