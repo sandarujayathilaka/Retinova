@@ -230,6 +230,26 @@ const getDoctorPatientsSummary = async (req, res) => {
   }
 };
 
+const getDoctorNames = async (req, res) => {
+  try {
+    const doctors = await Doctor.find({}, "name _id"); // Select only name and _id
+
+    res.status(200).json({
+      message: "Doctors fetched successfully",
+      doctors: doctors.map((doc) => ({
+        _id: doc._id,
+        name: doc.name,
+      })),
+    });
+  } catch (error) {
+    console.error("Error fetching doctor names:", error);
+    res.status(500).json({
+      errorCode: "SERVER_ERROR",
+      message: "Error fetching doctor names",
+      error: error.message,
+    });
+  }
+};
 
 module.exports = {
   addDoctor,
@@ -239,4 +259,5 @@ module.exports = {
   deleteDoctor,
   getDoctorsByIds,
   getDoctorPatientsSummary,
+  getDoctorNames,
 };

@@ -11,8 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api.service";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
+// import "react-toastify/dist/ReactToastify.css";
 import { PieChartComponent } from "@/components/ui/pieChart";
 import { DiseaseStageChart, PatientCategoryChart, PatientsStatusBarChart, DoctorTypeAndSpecialtyBarChart, NurseTypeAndSpecialtyBarChart } from "@/components/ui/barChart";
 import { User2, Stethoscope, Activity } from "lucide-react";
@@ -277,10 +277,7 @@ const Dashboard = () => {
   const patientStatus = [...new Set(
     patients.map(p => p.patientStatus ? p.patientStatus.toLowerCase() : "Unknown")
   )];
-  console.log(patients)
-  console.log(diseaseCategories);
-  console.log(diseaseStages);
-  console.log(patientStatus);
+console.log("patientsStatusData",patientsStatusData)
 
   const getPatientCount = () => {
     if (patientFilter === "total") return totalPatients;
@@ -364,8 +361,8 @@ const Dashboard = () => {
         <span>{day}</span>
         {(isWorking || isOff) && (
           <span className="absolute bottom-0 right-0 text-xs">
-            {isWorking && !isOff && '✓'}
-            {isOff && '✗'}
+            {isWorking && !isOff && ''}
+            {isOff && ''}
           </span>
         )}
       </div>
@@ -374,7 +371,7 @@ const Dashboard = () => {
 
 return (
   <div className="bg-gray-100">
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="mx-auto space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-extrabold text-teal-700 flex items-center gap-2">
           <Activity className="h-8 w-8" /> Hospital Dashboard
