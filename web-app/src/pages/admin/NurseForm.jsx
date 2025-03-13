@@ -364,7 +364,7 @@ function NurseForm({ mode = "add", nurseId = null, trigger, open, onOpenChange }
               <div className="space-y-4">
                 {stepper.switch({
                   staffInfo: () => <StaffInfoComponent />,
-                  contactInfo: () => <ContactInfoComponent />,
+                  contactInfo: () => <ContactInfoComponent mode={mode} />,
                   workingHours: () => <WorkingHoursComponent />,
                   daysOff: () => <DaysOffComponent />,
                 })}

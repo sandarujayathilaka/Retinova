@@ -19,7 +19,7 @@ export const contactInfoSchema = z.object({
     .max(200, "Address can't be longer than 200 characters"),
 });
 
-export default function ContactInfoComponent() {
+export default function ContactInfoComponent({ mode }) {
   const {
     register,
     setValue,
@@ -56,6 +56,7 @@ export default function ContactInfoComponent() {
             id={register("email").name}
             {...register("email")}
             className="block w-full p-2 pl-10 border rounded-md"
+            readOnly={mode === "edit"}
           />
         </div>
         {errors.email && <span className="text-sm text-destructive">{errors.email.message}</span>}

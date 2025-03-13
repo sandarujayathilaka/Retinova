@@ -51,7 +51,7 @@ const getDoctors = async (req, res) => {
 
 const getDoctorById = async (req, res) => {
   const doctor = await Doctor.findById(req.params.id);
-  console.log("dfdsssf")
+  console.log("dfdsssf");
   if (!doctor) {
     return res.status(404).json({ error: "Doctor not found" });
   }
@@ -66,17 +66,24 @@ const updateDoctor = async (req, res) => {
     return res.status(404).json({ error: "Doctor not found" });
   }
 
-  if (doctor.email !== req.body.email) {
-    const existingDoctor = await Doctor.findOne({
-      email: req.body.email,
-    });
+  // if (doctor.email !== req.body.email) {
+  //   const existingDoctor = await Doctor.findOne({
+  //     email: req.body.email,
+  //   });
 
-    if (existingDoctor) {
-      return res
-        .status(400)
-        .json({ error: "Doctor with this email already exists" });
-    }
+  //   if (existingDoctor) {
+  //     return res
+  //       .status(400)
+  //       .json({ error: "Doctor with this email already exists" });
+  //   }
+  // }
+
+  // Prevent email update by removing it from req.body
+  if (req.body.email && req.body.email !== doctor.email) {
+    return res.status(400).json({ error: "Email cannot be changed" });
   }
+
+  delete req.body.email; // Ensure email is not updated
 
   const updatedDoctor = await Doctor.findByIdAndUpdate(
     req.params.id,
@@ -170,7 +177,9 @@ const getDoctorPatientsSummary = async (req, res) => {
 
   try {
     if (type !== "summary") {
-      return res.status(400).json({ message: "Invalid query type. Use 'type=summary'." });
+      return res
+        .status(400)
+        .json({ message: "Invalid query type. Use 'type=summary'." });
     }
 
     // Aggregate patients where the doctorId appears in diagnoseHistory
@@ -181,7 +190,9 @@ const getDoctorPatientsSummary = async (req, res) => {
     console.log("patients:", patients);
 
     if (!patients || patients.length === 0) {
-      return res.status(404).json({ message: "No patients found for this doctor." });
+      return res
+        .status(404)
+        .json({ message: "No patients found for this doctor." });
     }
 
     // Process patient data for summary
@@ -194,13 +205,16 @@ const getDoctorPatientsSummary = async (req, res) => {
         );
 
         // Determine if patient is new or existing based on doctor's diagnoses
-        const totalDiagnoseHistoryLength = patient.diagnoseHistory ? patient.diagnoseHistory.length : 0;
+        const totalDiagnoseHistoryLength = patient.diagnoseHistory
+          ? patient.diagnoseHistory.length
+          : 0;
 
         // Determine if the patient has a nextVisit scheduled
-        const hasNextVisit = patient.nextVisit && !isNaN(new Date(patient.nextVisit).getTime());
+        const hasNextVisit =
+          patient.nextVisit && !isNaN(new Date(patient.nextVisit).getTime());
 
         // Determine if the patient is new or existing based on total diagnoses and nextVisit
-        const isNew = (totalDiagnoseHistoryLength <= 2) && !hasNextVisit;
+        const isNew = totalDiagnoseHistoryLength <= 2 && !hasNextVisit;
         // Extract relevant fields
         return {
           patientId: patient.patientId,
@@ -233,7 +247,9 @@ const getDoctorPatientsSummary = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching doctor patients summary:", error);
-    res.status(500).json({ message: "Server error while fetching patients summary" });
+    res
+      .status(500)
+      .json({ message: "Server error while fetching patients summary" });
   }
 };
 
