@@ -194,13 +194,19 @@ const getDoctorPatientsSummary = async (req, res) => {
         );
 
         // Determine if patient is new or existing based on doctor's diagnoses
-        const isNewPatient = doctorDiagnoses.length <= 1;
+        const totalDiagnoseHistoryLength = patient.diagnoseHistory ? patient.diagnoseHistory.length : 0;
 
+        // Determine if the patient has a nextVisit scheduled
+        const hasNextVisit = patient.nextVisit && !isNaN(new Date(patient.nextVisit).getTime());
+
+        // Determine if the patient is new or existing based on total diagnoses and nextVisit
+        const isNew = (totalDiagnoseHistoryLength <= 2) && !hasNextVisit;
         // Extract relevant fields
         return {
           patientId: patient.patientId,
           fullName: patient.fullName,
           category: patient.category, // Disease categories
+          totalDiagnoseHistoryLength,
           diagnoseHistory: doctorDiagnoses.map((diag) => ({
             diagnosis: diag.diagnosis,
             uploadedAt: diag.uploadedAt,
@@ -212,6 +218,7 @@ const getDoctorPatientsSummary = async (req, res) => {
           patientStatus: patient.patientStatus,
           createdAt: patient.createdAt,
           nextVisit: patient.nextVisit,
+          isNew,
         };
       }),
     };
