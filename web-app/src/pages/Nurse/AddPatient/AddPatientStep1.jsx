@@ -1,8 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { useState, useEffect } from "react";
-import { IdCardIcon, CalendarIcon, User2, Smartphone, Home, Circle, Mail } from "lucide-react";
+import { IdCardIcon, CalendarIcon, User2, Smartphone, Home, Circle, Mail, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -21,37 +20,9 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { step1Schema, step2Schema } from "../CommonFiles/patientSchemas";
 
-// Step 1 schema
-const step1Schema = z.object({
-  fullName: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  birthDate: z.string().min(1, { message: "Date of birth is required." }),
-  nic: z.string().min(10, { message: "NIC must be at least 10 characters." }),
-  gender: z.enum(["Male", "Female", "Other"], { message: "Gender is required." }),
-  contactNumber: z
-    .string()
-    .min(1, { message: "Number is required." })
-    .regex(/^\d{10}$/, { message: "Number is invalid." }),
-  address: z.string().min(5, { message: "Address must be at least 5 characters." }),
-  email: z
-    .string()
-    .min(1, { message: "Email is required." }) // First check for empty string
-    .email({ message: "Invalid email address." }), // Then validate email format
-});
-
-// Step 2 schema for validation (required fields only)
-const step2SchemaRequired = z.object({
-  emergencyContact: z.object({
-    name: z.string().min(1, { message: "Name is required" }),
-    relationship: z.string().min(1, { message: "Relationship is required" }),
-    phone: z
-      .string()
-      .min(1, { message: "Number is required." })
-      .regex(/^\d{10}$/, { message: "Number is invalid." }),
-  }),
-});
-
-export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Data }) {
+export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Data, isSubmitting, formErrors, setResetForm }) {
   const [age, setAge] = useState(0);
   const [isStep2Valid, setIsStep2Valid] = useState(false);
 
@@ -83,21 +54,48 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
     setAge(calculatedAge);
   };
 
+  // Update form values when initialData changes (e.g., after reset)
   useEffect(() => {
+    form.reset({
+      fullName: initialData?.fullName || "",
+      birthDate: initialData?.birthDate || "",
+      nic: initialData?.nic || "",
+      gender: initialData?.gender || "",
+      contactNumber: initialData?.contactNumber || "",
+      address: initialData?.address || "",
+      email: initialData?.email || "",
+    });
     if (initialData?.birthDate) {
       calculateAge(initialData.birthDate);
+    } else {
+      setAge(0);
     }
-  }, [initialData]);
+  }, [initialData, form]);
 
   useEffect(() => {
-    // Validate Step 2 data whenever it changes
     if (step2Data) {
-      const result = step2SchemaRequired.safeParse(step2Data);
+      const result = step2Schema.safeParse(step2Data);
       setIsStep2Valid(result.success);
     } else {
       setIsStep2Valid(false);
     }
   }, [step2Data]);
+
+  useEffect(() => {
+    // Pass the reset function to the parent component
+    setResetForm(() => () => {
+      form.reset({
+        fullName: "",
+        birthDate: "",
+        nic: "",
+        gender: "",
+        contactNumber: "",
+        address: "",
+        email: "",
+      });
+      setAge(0); // Reset age as well
+    });
+  }, [form, setResetForm]);
 
   const isStep1Valid = form.formState.isValid;
 
@@ -105,8 +103,13 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
     onNext(data);
   };
 
-  const handleSubmit = (data) => {
-    onSubmit(data);
+  const handleSubmit = async (data) => {
+    try {
+      await onSubmit(data); // Call the parent's onSubmit and wait for it to resolve
+      // Reset will be handled by AddPatientWizard on success
+    } catch (error) {
+      console.log("Submission failed, form not reset:", error);
+    }
   };
 
   return (
@@ -133,7 +136,7 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
                       <FormItem>
                         <FormLabel className="text-gray-700 font-medium flex items-center gap-2">
                           <User2 className="h-5 w-5 text-teal-500" />
-                          Full Name
+                          Full Name<span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -153,7 +156,7 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
                       <FormItem>
                         <FormLabel className="text-gray-700 font-medium flex items-center gap-2">
                           <IdCardIcon className="h-5 w-5 text-teal-500" />
-                          NIC Number
+                          NIC Number<span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -163,6 +166,7 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
                           />
                         </FormControl>
                         <FormMessage className="text-red-500 font-medium" />
+                        {formErrors?.nic && <p className="text-red-500 font-medium">{formErrors.nic}</p>}
                       </FormItem>
                     )}
                   />
@@ -173,7 +177,7 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
                       <FormItem>
                         <FormLabel className="text-gray-700 font-medium flex items-center gap-2">
                           <CalendarIcon className="h-5 w-5 text-teal-500" />
-                          Date of Birth
+                          Date of Birth<span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
                           <div className="relative">
@@ -203,7 +207,7 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
                       <FormItem>
                         <FormLabel className="text-gray-700 font-medium flex items-center gap-2">
                           <Circle className="h-5 w-5 text-teal-500" />
-                          Gender
+                          Gender<span className="text-red-500">*</span>
                         </FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
@@ -240,7 +244,7 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
                       <FormItem>
                         <FormLabel className="text-gray-700 font-medium flex items-center gap-2">
                           <Smartphone className="h-5 w-5 text-teal-500" />
-                          Phone Number
+                          Phone Number<span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -265,7 +269,7 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
                       <FormItem>
                         <FormLabel className="text-gray-700 font-medium flex items-center gap-2">
                           <Mail className="h-5 w-5 text-teal-500" />
-                          Email Address
+                          Email Address<span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -275,6 +279,7 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
                           />
                         </FormControl>
                         <FormMessage className="text-red-500 font-medium" />
+                        {formErrors?.email && <p className="text-red-500 font-medium">{formErrors.email}</p>}
                       </FormItem>
                     )}
                   />
@@ -285,7 +290,7 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
                       <FormItem className="md:col-span-2">
                         <FormLabel className="text-gray-700 font-medium flex items-center gap-2">
                           <Home className="h-5 w-5 text-teal-500" />
-                          Full Address
+                          Full Address<span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -300,22 +305,41 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
                   />
                 </div>
                 <div className="flex justify-center gap-4">
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="h-14 px-12 rounded-full bg-gray-500 hover:bg-gray-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    Next Step
+                    {/* {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Next Step"
+                    )} */}
+                  </Button>
                   {isStep1Valid && isStep2Valid && (
                     <Button
                       type="button"
                       onClick={form.handleSubmit(handleSubmit)}
+                      disabled={isSubmitting}
                       className="h-14 px-12 rounded-full bg-teal-500 hover:bg-teal-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                     >
-                      <User2 className="h-5 w-5 mr-2" />
-                      Register Patient
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <User2 className="h-5 w-5 mr-2" />
+                          Register Patient
+                        </>
+                      )}
                     </Button>
                   )}
-                  <Button
-                    type="submit"
-                    className="h-14 px-12 rounded-full bg-gray-500 hover:bg-gray-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                  >
-                    Next Step
-                  </Button>
                 </div>
               </form>
             </Form>

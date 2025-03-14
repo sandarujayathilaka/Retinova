@@ -8,6 +8,10 @@ export default function AddPatientWizard() {
   const [step, setStep] = useState(1);
   const [step1Data, setStep1Data] = useState(null);
   const [step2Data, setStep2Data] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const [resetStep1Form, setResetStep1Form] = useState(null);
+  const [resetStep2Form, setResetStep2Form] = useState(null);
 
   const handleStep1Next = (data) => {
     setStep1Data(data);
@@ -15,6 +19,8 @@ export default function AddPatientWizard() {
   };
 
   const handleStep1Submit = async (data) => {
+    setIsSubmitting(true);
+    setFormErrors({});
     try {
       const formattedData = {
         ...data,
@@ -24,13 +30,34 @@ export default function AddPatientWizard() {
         allergies: step2Data?.allergies?.length > 0 ? step2Data.allergies : undefined,
         emergencyContact: step2Data?.emergencyContact?.name ? step2Data.emergencyContact : undefined,
       };
+
       const response = await api.post("/patients/add", formattedData);
-      if (response) {
-        toast.success("Patient registered successfully");
-        resetForm();
-      }
+      await toast.promise(Promise.resolve(response), {
+        loading: "Saving patient...",
+        success: "Patient registered successfully!",
+        error: (error) => handleError(error),
+      });
+
+      // Only reset on success
+      resetForm();
+      return response; // Return the response to indicate success
     } catch (error) {
-      handleError(error);
+      if (error.response) {
+        const { errorCode } = error.response.data;
+        if (errorCode === "DUPLICATE_NIC") {
+          setFormErrors({ nic: "A patient with this NIC already exists." });
+        } else if (errorCode === "DUPLICATE_EMAIL") {
+          setFormErrors({ email: "A patient with this email already exists." });
+        } else {
+          setFormErrors({ general: "An unexpected error occurred." });
+        }
+      } else {
+        setFormErrors({ general: "No response from the server. Please try again later." });
+      }
+      toast.error(formErrors.general || handleError(error)); // Show toast for errors
+      throw error; // Re-throw to indicate failure to the caller
+    } finally {
+      setIsSubmitting(false); // Ensure isSubmitting is reset in all cases
     }
   };
 
@@ -40,6 +67,8 @@ export default function AddPatientWizard() {
   };
 
   const handleFinalSubmit = async (data) => {
+    setIsSubmitting(true);
+    setFormErrors({});
     try {
       const formattedData = {
         ...step1Data,
@@ -49,13 +78,34 @@ export default function AddPatientWizard() {
         allergies: data.allergies?.length > 0 ? data.allergies : undefined,
         emergencyContact: data.emergencyContact?.name ? data.emergencyContact : undefined,
       };
+
       const response = await api.post("/patients/add", formattedData);
-      if (response) {
-        toast.success("Patient registered successfully");
-        resetForm();
-      }
+      await toast.promise(Promise.resolve(response), {
+        loading: "Saving patient...",
+        success: "Patient registered successfully!",
+        error: (error) => handleError(error),
+      });
+
+      // Only reset on success
+      resetForm();
+      return response; // Return the response to indicate success
     } catch (error) {
-      handleError(error);
+      if (error.response) {
+        const { errorCode } = error.response.data;
+        if (errorCode === "DUPLICATE_NIC") {
+          setFormErrors({ nic: "A patient with this NIC already exists." });
+        } else if (errorCode === "DUPLICATE_EMAIL") {
+          setFormErrors({ email: "A patient with this email already exists." });
+        } else {
+          setFormErrors({ general: "An unexpected error occurred." });
+        }
+      } else {
+        setFormErrors({ general: "No response from the server. Please try again later." });
+      }
+      toast.error(formErrors.general || handleError(error)); // Show toast for errors
+      throw error; // Re-throw to indicate failure to the caller
+    } finally {
+      setIsSubmitting(false); // Ensure isSubmitting is reset in all cases
     }
   };
 
@@ -63,24 +113,27 @@ export default function AddPatientWizard() {
     setStep(1);
     setStep1Data(null);
     setStep2Data(null);
+    setFormErrors({});
+    if (resetStep1Form) resetStep1Form(); // Trigger Step 1 reset
+    if (resetStep2Form) resetStep2Form(); // Trigger Step 2 reset
   };
 
   const handleError = (error) => {
     if (error.response) {
       const { errorCode, message } = error.response.data;
       if (errorCode === "MISSING_FIELDS") {
-        toast.error("Please fill in all required fields.");
+        return "Please fill in all required fields.";
       } else if (errorCode === "DUPLICATE_NIC") {
-        toast.error("A patient with this NIC already exists.");
+        return "A patient with this NIC already exists.";
       } else if (errorCode === "DUPLICATE_EMAIL") {
-        toast.error("A patient with this email already exists.");
+        return "A patient with this email already exists.";
       } else {
-        toast.error(`Error: ${message}`);
+        return `Error: ${message}`;
       }
     } else if (error.request) {
-      toast.error("No response from the server. Please try again later.");
+      return "No response from the server. Please try again later.";
     } else {
-      toast.error("An unexpected error occurred.");
+      return "An unexpected error occurred.";
     }
   };
 
@@ -92,6 +145,9 @@ export default function AddPatientWizard() {
           onSubmit={handleStep1Submit}
           initialData={step1Data}
           step2Data={step2Data}
+          isSubmitting={isSubmitting}
+          formErrors={formErrors}
+          setResetForm={(resetFn) => setResetStep1Form(() => resetFn)}
         />
       )}
       {step === 2 && (
@@ -100,6 +156,9 @@ export default function AddPatientWizard() {
           initialData={step2Data}
           onPrevious={handleStep2Previous}
           onSubmit={handleFinalSubmit}
+          isSubmitting={isSubmitting}
+          formErrors={formErrors}
+          setResetForm={(resetFn) => setResetStep2Form(() => resetFn)}
         />
       )}
     </>
