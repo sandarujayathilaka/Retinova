@@ -1,9 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { useState, useEffect } from "react";
 import { api } from "../../../services/api.service";
-import { User2, Smartphone, Droplet, Ruler, Scale, AlertTriangle, Stethoscope, Phone } from "lucide-react";
+import { User2, Smartphone, Droplet, Ruler, Scale, AlertTriangle, Stethoscope, Phone, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -24,25 +23,9 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "react-hot-toast";
+import { step2Schema } from "../CommonFiles/patientSchemas";
 
-// Step 2 schema with required emergency contact fields
-const step2Schema = z.object({
-  bloodType: z.string().optional(),
-  height: z.number().min(0, { message: "Height cannot be negative" }).optional().or(z.literal("")),
-  weight: z.number().min(0, { message: "Weight cannot be negative" }).optional().or(z.literal("")),
-  allergies: z.array(z.string()).optional(),
-  primaryPhysician: z.string().optional(),
-  emergencyContact: z.object({
-    name: z.string().min(1, { message: "Name is required" }),
-    relationship: z.string().min(1, { message: "Relationship is required" }),
-    phone: z
-      .string()
-      .min(1, { message: "Number is required." })
-      .regex(/^\d{10}$/, { message: "Number is invalid." }),
-  }),
-});
-
-export default function AddPatientStep2({ step1Data, initialData, onPrevious, onSubmit }) {
+export default function AddPatientStep2({ step1Data, initialData, onPrevious, onSubmit, isSubmitting, formErrors, setResetForm }) {
   const [doctors, setDoctors] = useState([]);
   const [filteredDoctors, setFilteredDoctors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -51,6 +34,7 @@ export default function AddPatientStep2({ step1Data, initialData, onPrevious, on
       ? initialData.allergies.map((value, index) => ({ id: Date.now() + index, value }))
       : [{ id: Date.now(), value: "" }]
   );
+  const [hasShownToast, setHasShownToast] = useState(false); // Flag to prevent duplicate toasts
 
   const form = useForm({
     resolver: zodResolver(step2Schema),
@@ -69,17 +53,54 @@ export default function AddPatientStep2({ step1Data, initialData, onPrevious, on
   });
 
   useEffect(() => {
+    let isMounted = true; // Flag to prevent state updates on unmounted component
+    setLoading(true); // Assuming setLoading is defined (added below)
+    setHasShownToast(false); // Reset toast flag on new effect run
+
     const fetchDoctors = async () => {
       try {
         const response = await api.get("/doctors/names");
-        setDoctors(response.data.doctors);
-        setFilteredDoctors(response.data.doctors);
+        if (isMounted) {
+          setDoctors(response.data.doctors);
+          setFilteredDoctors(response.data.doctors);
+        }
       } catch (error) {
-        toast.error("Failed to fetch doctors list.");
+        console.error("Fetch Error:", error);
+        if (isMounted && !hasShownToast) {
+          toast.error("Failed to fetch doctors list.");
+          setHasShownToast(true); // Mark toast as shown
+        }
+      } finally {
+        if (isMounted) setLoading(false); // Assuming setLoading is defined
       }
     };
+
     fetchDoctors();
-  }, []);
+
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array since this runs only on mount
+
+  useEffect(() => {
+    // Pass the reset function to the parent component
+    setResetForm(() => () => {
+      form.reset({
+        bloodType: "",
+        height: "",
+        weight: "",
+        allergies: [],
+        primaryPhysician: "",
+        emergencyContact: {
+          name: "",
+          relationship: "",
+          phone: "",
+        },
+      });
+      setAllergyFields([{ id: Date.now(), value: "" }]); // Reset allergy fields
+    });
+  }, [form, setResetForm]);
 
   const handleDoctorSearch = (e) => {
     const term = e.target.value.toLowerCase();
@@ -115,12 +136,21 @@ export default function AddPatientStep2({ step1Data, initialData, onPrevious, on
     onPrevious(currentData);
   };
 
-  const handleSubmit = (data) => {
-    onSubmit(data);
+  const handleSubmit = async (data) => {
+    try {
+      await onSubmit(data); // Call the parent's onSubmit and wait for it to resolve
+      // Let AddPatientWizard handle the reset on success
+    } catch (error) {
+      // If onSubmit rejects (error), do nothing—form retains values
+      console.log("Submission failed, form not reset:", error);
+    }
   };
 
   const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-  const relationships = ["Father","Mother","Sister","Brother","Son", "Daughter", "Friend","Relative", "Other"];
+  const relationships = ["Father", "Mother", "Sister", "Brother", "Son", "Daughter", "Friend", "Relative", "Other"];
+
+  // Assuming setLoading is intended to be used (added to state)
+  const [loading, setLoading] = useState(false); // Added missing loading state
 
   return (
     <div className="bg-gray-100 p-6">
@@ -315,7 +345,7 @@ export default function AddPatientStep2({ step1Data, initialData, onPrevious, on
                       <FormItem>
                         <FormLabel className="text-gray-700 font-medium flex items-center gap-2">
                           <User2 className="h-5 w-5 text-teal-500" />
-                          Emergency Contact Name
+                          Emergency Contact Name<span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -335,7 +365,7 @@ export default function AddPatientStep2({ step1Data, initialData, onPrevious, on
                       <FormItem>
                         <FormLabel className="text-gray-700 font-medium flex items-center gap-2">
                           <User2 className="h-5 w-5 text-teal-500" />
-                          Relationship to Patient
+                          Relationship to Patient<span className="text-red-500">*</span>
                         </FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
@@ -366,7 +396,7 @@ export default function AddPatientStep2({ step1Data, initialData, onPrevious, on
                       <FormItem>
                         <FormLabel className="text-gray-700 font-medium flex items-center gap-2">
                           <Phone className="h-5 w-5 text-teal-500" />
-                          Emergency Contact Phone
+                          Emergency Contact Phone<span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -392,16 +422,28 @@ export default function AddPatientStep2({ step1Data, initialData, onPrevious, on
                   <Button
                     type="button"
                     onClick={handlePrevious}
+                    disabled={isSubmitting}
                     className="h-14 px-12 rounded-full bg-gray-500 hover:bg-gray-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                   >
                     Previous Page
+                    
                   </Button>
                   <Button
                     type="submit"
+                    disabled={isSubmitting}
                     className="h-14 px-12 rounded-full bg-teal-500 hover:bg-teal-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                   >
-                    <User2 className="h-5 w-5 mr-2" />
-                    Register Patient
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <User2 className="h-5 w-5 mr-2" />
+                        Register Patient
+                      </>
+                    )}
                   </Button>
                 </div>
               </form>

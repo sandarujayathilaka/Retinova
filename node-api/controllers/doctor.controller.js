@@ -2,6 +2,8 @@ const Doctor = require("../models/doctor.model");
 const UserService = require("../services/user.service");
 const Patient = require("../models/patient");
 const mongoose = require("mongoose");
+const logger = require("../utils/logger");
+const { isValidDate } = require("../utils/dateUtils");
 
 const addDoctor = async (req, res) => {
   const {
@@ -156,21 +158,30 @@ const getDoctorsByIds = async (req, res) => {
 
     res.status(200).json({ doctors: transformedDoctors });
   } catch (error) {
-    console.error("Error fetching doctors:", error);
+    logger.error("Error in getDoctorsByIds:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
 const getDoctorPatientsSummary = async (req, res) => {
-  const { id } = req.params; // Changed from doctorId to id to match your usage
-  const { type } = req.query; // Expecting type=summary
-
-  console.log("doctorId:", id);
-  console.log("type:", type);
+ 
 
   try {
+    const { id } = req.params;
+    const { type } = req.query;
+  
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        errorCode: "INVALID_DOCTOR_ID",
+        message: "Invalid doctor ID format",
+      });
+    }
     if (type !== "summary") {
-      return res.status(400).json({ message: "Invalid query type. Use 'type=summary'." });
+      return res.status(400).json({
+        errorCode: "INVALID_QUERY_TYPE",
+        message: "Invalid query type. Use 'type=summary'.",
+      });
     }
 
     // Aggregate patients where the doctorId appears in diagnoseHistory
@@ -180,32 +191,33 @@ const getDoctorPatientsSummary = async (req, res) => {
 
     console.log("patients:", patients);
 
+    // If no patients are found, return a 200 with an empty array
     if (!patients || patients.length === 0) {
-      return res.status(404).json({ message: "No patients found for this doctor." });
+      return res.status(200).json({
+        message: "No patients found for this doctor.",
+        data: {
+          totalPatients: 0,
+          patients: [],
+        },
+      });
     }
 
     // Process patient data for summary
     const summary = {
       totalPatients: patients.length,
       patients: patients.map((patient) => {
-        // Filter diagnoseHistory for this doctor's entries only
         const doctorDiagnoses = patient.diagnoseHistory.filter(
           (diag) => diag.doctorId && diag.doctorId.toString() === id
         );
 
-        // Determine if patient is new or existing based on doctor's diagnoses
         const totalDiagnoseHistoryLength = patient.diagnoseHistory ? patient.diagnoseHistory.length : 0;
-
-        // Determine if the patient has a nextVisit scheduled
         const hasNextVisit = patient.nextVisit && !isNaN(new Date(patient.nextVisit).getTime());
+        const isNew = totalDiagnoseHistoryLength <= 2 && !hasNextVisit;
 
-        // Determine if the patient is new or existing based on total diagnoses and nextVisit
-        const isNew = (totalDiagnoseHistoryLength <= 2) && !hasNextVisit;
-        // Extract relevant fields
         return {
           patientId: patient.patientId,
           fullName: patient.fullName,
-          category: patient.category, // Disease categories
+          category: patient.category,
           totalDiagnoseHistoryLength,
           diagnoseHistory: doctorDiagnoses.map((diag) => ({
             diagnosis: diag.diagnosis,
@@ -223,7 +235,6 @@ const getDoctorPatientsSummary = async (req, res) => {
       }),
     };
 
-    // Send response
     res.status(200).json({
       message: "Patients summary retrieved successfully",
       data: {
@@ -232,15 +243,24 @@ const getDoctorPatientsSummary = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching doctor patients summary:", error);
-    res.status(500).json({ message: "Server error while fetching patients summary" });
+    logger.error("Error in getDoctorPatientsSummary:", error);
+    res.status(500).json({
+      errorCode: "SERVER_ERROR",
+      message: "Error fetching doctor patients summary",
+      error: error.message,
+    });
   }
 };
-
 const getDoctorNames = async (req, res) => {
   try {
     const doctors = await Doctor.find({}, "name _id"); // Select only name and _id
-
+    
+    if (!doctors.length) {
+      return res.status(200).json({
+        message: "No doctors found",
+        data: { doctors: [] },
+      });
+    }
     res.status(200).json({
       message: "Doctors fetched successfully",
       doctors: doctors.map((doc) => ({
@@ -249,7 +269,7 @@ const getDoctorNames = async (req, res) => {
       })),
     });
   } catch (error) {
-    console.error("Error fetching doctor names:", error);
+    logger.error("Error in getDoctorNames:", error);
     res.status(500).json({
       errorCode: "SERVER_ERROR",
       message: "Error fetching doctor names",
