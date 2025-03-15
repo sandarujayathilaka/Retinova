@@ -53,7 +53,7 @@ const getDoctors = async (req, res) => {
 
 const getDoctorById = async (req, res) => {
   const doctor = await Doctor.findById(req.params.id);
-  console.log("dfdsssf")
+
   if (!doctor) {
     return res.status(404).json({ error: "Doctor not found" });
   }

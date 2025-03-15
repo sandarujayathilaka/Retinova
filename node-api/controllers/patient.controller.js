@@ -32,8 +32,11 @@ const deleteFileFromS3 = async (filePath) => {
 
 // Get patient count for a specific day
 const getPatientCount = async (req, res) => {
+  console.log(req.query)
   try {
+    console.log("ree")
     const { patientStatus, nextVisit, doctorId } = req.query;
+    console.log(patientStatus, nextVisit, doctorId)
     if (!patientStatus || !nextVisit || !doctorId) {
       return res.status(400).json({
         errorCode: "MISSING_QUERY_PARAMS",
@@ -46,12 +49,15 @@ const getPatientCount = async (req, res) => {
         message: "Invalid nextVisit date",
       });
     }
+    console.log(patientStatus, nextVisit, doctorId)
     const { start, end } = getStartEndOfDay(nextVisit);
+    console.log(start, end )
     const count = await Patient.countDocuments({
       patientStatus,
       nextVisit: { $gte: start, $lte: end },
       doctorId,
     });
+    console.log(count )
     res.status(200).json({ message: "Patient count retrieved", data: { count } });
   } catch (error) {
     logger.error("Error in getPatientCount:", error);
@@ -62,6 +68,51 @@ const getPatientCount = async (req, res) => {
     });
   }
 };
+
+
+// const getPatientCount = async (req, res) => {
+//     try {
+//       console.log("getPatientCount")
+//       console.log(req.params)
+//       const { patientStatus, nextVisit, doctorId } = req.query;
+//   console.log(patientStatus, nextVisit, doctorId)
+//       // Validate required parameters
+//       if (!patientStatus || !nextVisit || !doctorId) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "Missing required query parameters: patientStatus, nextVisit, doctorId",
+//         });
+//       }
+  
+//       // Convert nextVisit to start and end of day for accurate matching
+//       const startOfDay = new Date(nextVisit);
+//       startOfDay.setUTCHours(0, 0, 0, 0);
+//       const endOfDay = new Date(nextVisit);
+//       endOfDay.setUTCHours(23, 59, 59, 999);
+  
+//       // Query the database for patients with matching status, nextVisit, and doctorId in diagnoseHistory
+//       const count = await Patient.countDocuments({
+//         patientStatus,
+//         nextVisit: {
+//           $gte: startOfDay,
+//           $lte: endOfDay,
+//         },
+//         "diagnoseHistory.doctorId": doctorId, // Match doctorId in diagnoseHistory array
+//       });
+  
+//       res.status(200).json({
+//         success: true,
+//         count,
+//       });
+//     } catch (error) {
+//       console.error("Error fetching patient count:", error);
+//       res.status(500).json({
+//         success: false,
+//         message: "Server error while fetching patient count",
+//         error: error.message,
+//       });
+//     }
+//   };
 
 // Update patient revisit details
 const updatePatientRevisit = async (req, res) => {
@@ -252,7 +303,7 @@ const addPatient = async (req, res) => {
       primaryPhysician,
       emergencyContact,
     } = req.body;
-    if (!fullName || !birthDate || !gender || !nic || !contactNumber || !email || !address || !emergencyContact) {
+    if (!fullName || !birthDate || !gender || !nic || !contactNumber || !email || !address) {
       return res.status(400).json({
         errorCode: "MISSING_FIELDS",
         message: "Required fields are missing",
@@ -328,6 +379,7 @@ const addPatient = async (req, res) => {
 // Get a single patient by ID
 const getPatient = async (req, res) => {
   try {
+    console.log(req)
     const { patientId } = req.params;
     const patient = await Patient.findOne({ patientId }).lean();
     if (!patient) {
@@ -366,6 +418,14 @@ const editPatient = async (req, res) => {
       primaryPhysician,
       emergencyContact,
     } = req.body;
+    
+    if (!fullName || !birthDate || !gender || !nic || !contactNumber || !email || !address) {
+      return res.status(400).json({
+        errorCode: "MISSING_FIELDS",
+        message: "Required fields are missing",
+      });
+    }
+  
     const patient = await Patient.findOne({ patientId });
     if (!patient) {
       return res.status(404).json({
