@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
   Activity,
@@ -13,10 +13,12 @@ import {
   Pill,
   Clipboard,
   AlertCircle,
+  Calendar,
+  RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-const getFileType = url => {
+const getFileType = (url) => {
   if (!url) return null;
   const extension = url.split(".").pop().toLowerCase();
   if (["jpg", "jpeg", "png", "gif"].includes(extension)) return "image";
@@ -32,15 +34,25 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const [currentPdfUrl, setCurrentPdfUrl] = useState(null);
   const [expandedDiagnosis, setExpandedDiagnosis] = useState({});
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewFormData, setReviewFormData] = useState({
+    recommendedMedicine: "",
+    notes: "",
+    revisitTimeFrame: "Monthly",
+    additionalTests: [{ testName: "", attachmentURL: "" }],
+    doctorStatus: "Monitoring",
+  });
+  const [reviewDiagnosisId, setReviewDiagnosisId] = useState(null);
+  const [diagnoseHistory, setDiagnoseHistory] = useState(patient.diagnoseHistory || []);
 
-  const initializeFormData = diagnosisId => ({
+  const initializeFormData = (diagnosisId) => ({
     medicine: "",
     tests: [{ testName: "", status: "Pending" }],
     note: "",
   });
 
   const handleInputChange = (diagnosisId, field, value, testIndex = null) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const diagnosisForm = prev[diagnosisId] || initializeFormData(diagnosisId);
       if (field === "tests" && testIndex !== null) {
         const updatedTests = [...diagnosisForm.tests];
@@ -51,8 +63,19 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
     });
   };
 
-  const addTestField = diagnosisId => {
-    setFormData(prev => {
+  const handleReviewInputChange = (field, value, testIndex = null) => {
+    setReviewFormData((prev) => {
+      if (field === "additionalTests" && testIndex !== null) {
+        const updatedTests = [...prev.additionalTests];
+        updatedTests[testIndex] = { ...updatedTests[testIndex], testName: value };
+        return { ...prev, additionalTests: updatedTests };
+      }
+      return { ...prev, [field]: value };
+    });
+  };
+
+  const addTestField = (diagnosisId) => {
+    setFormData((prev) => {
       const diagnosisForm = prev[diagnosisId] || initializeFormData(diagnosisId);
       return {
         ...prev,
@@ -64,8 +87,15 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
     });
   };
 
+  const addReviewTestField = () => {
+    setReviewFormData((prev) => ({
+      ...prev,
+      additionalTests: [...prev.additionalTests, { testName: "", attachmentURL: "" }],
+    }));
+  };
+
   const removeTestField = (diagnosisId, testIndex) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const diagnosisForm = prev[diagnosisId] || initializeFormData(diagnosisId);
       return {
         ...prev,
@@ -77,7 +107,14 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
     });
   };
 
-  const openModal = diagnosisId => {
+  const removeReviewTestField = (testIndex) => {
+    setReviewFormData((prev) => ({
+      ...prev,
+      additionalTests: prev.additionalTests.filter((_, idx) => idx !== testIndex),
+    }));
+  };
+
+  const openModal = (diagnosisId) => {
     setSelectedDiagnosisId(diagnosisId);
     setIsModalOpen(true);
   };
@@ -86,14 +123,31 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
     setIsModalOpen(false);
     setSelectedDiagnosisId(null);
     if (selectedDiagnosisId) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         [selectedDiagnosisId]: initializeFormData(selectedDiagnosisId),
       }));
     }
   };
 
-  const openPdfViewer = url => {
+  const openReviewModal = (diagnosisId) => {
+    setReviewDiagnosisId(diagnosisId);
+    setIsReviewModalOpen(true);
+  };
+
+  const closeReviewModal = () => {
+    setIsReviewModalOpen(false);
+    setReviewDiagnosisId(null);
+    setReviewFormData({
+      recommendedMedicine: "",
+      notes: "",
+      revisitTimeFrame: "Monthly",
+      additionalTests: [{ testName: "", attachmentURL: "" }],
+      doctorStatus: "Monitoring",
+    });
+  };
+
+  const openPdfViewer = (url) => {
     setCurrentPdfUrl(url);
     setPdfViewerOpen(true);
   };
@@ -103,21 +157,21 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
     setCurrentPdfUrl(null);
   };
 
-  const toggleRecommendation = diagnosisId => {
-    setExpandedDiagnosis(prev => ({
+  const toggleRecommendation = (diagnosisId) => {
+    setExpandedDiagnosis((prev) => ({
       ...prev,
       [diagnosisId]: !prev[diagnosisId],
     }));
   };
 
-  const handleSubmit = async diagnosisId => {
+  const handleSubmit = async (diagnosisId) => {
     const data = formData[diagnosisId];
     if (!data || !data.medicine || !data.tests.length || !data.note) {
       toast.error("Please fill in all fields (medicine, at least one test, and note).");
       return;
     }
 
-    setSubmitting(prev => ({ ...prev, [diagnosisId]: true }));
+    setSubmitting((prev) => ({ ...prev, [diagnosisId]: true }));
     try {
       await axios.put(
         `http://localhost:4000/api/patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
@@ -125,22 +179,92 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
           medicine: data.medicine,
           tests: data.tests,
           note: data.note,
-        },
+        }
       );
       toast.success("Recommendations updated successfully!");
       closeModal();
-      // Suggestion: Replace with a refresh prop
+      refreshDiagnosisHistory();
     } catch (error) {
       console.error("Error updating recommendations:", error.response?.data || error.message);
       toast.error(
-        `Failed to update recommendations: ${error.response?.data?.error || error.message}`,
+        `Failed to update recommendations: ${error.response?.data?.error || error.message}`
       );
     }
-    setSubmitting(prev => ({ ...prev, [diagnosisId]: false }));
+    setSubmitting((prev) => ({ ...prev, [diagnosisId]: false }));
   };
 
-  const handleMarkAsChecked = async diagnosisId => {
-    setSubmitting(prev => ({ ...prev, [diagnosisId]: true }));
+  const handleReviewSubmit = async () => {
+    if (!reviewFormData.recommendedMedicine && !reviewFormData.notes) {
+      toast.error("Please provide at least one of recommended medicine or notes.");
+      return;
+    }
+
+    setSubmitting((prev) => ({ ...prev, [reviewDiagnosisId]: true }));
+    try {
+      const filteredTests = reviewFormData.additionalTests.filter((test) => test.testName.trim());
+      const response = await axios.put(
+        `http://localhost:4000/api/patients/${patient._id}/diagnoses/${reviewDiagnosisId}/review`,
+        {
+          reviewInfo: {
+            recommendedMedicine: reviewFormData.recommendedMedicine,
+            notes: reviewFormData.notes,
+          },
+          additionalTests: filteredTests,
+          doctorStatus: reviewFormData.doctorStatus,
+          ...(reviewFormData.revisitTimeFrame && { "reviewInfo.revisitTimeFrame": reviewFormData.revisitTimeFrame }),
+        }
+      );
+
+      toast.success("Review information and tests added successfully!");
+
+      setDiagnoseHistory((prevHistory) =>
+        prevHistory.map((diag) => {
+          if (diag._id === reviewDiagnosisId) {
+            const newReview = {
+              recommendedMedicine: reviewFormData.recommendedMedicine,
+              notes: reviewFormData.notes,
+              updatedAt: new Date(),
+            };
+
+            const updatedTests = filteredTests.map((test) => ({
+              testName: test.testName,
+              status: "Pending",
+              attachmentURL: test.attachmentURL || "",
+              addedAt: new Date(),
+            }));
+
+            return {
+              ...diag,
+              status: "Checked",
+              revisitTimeFrame: reviewFormData.revisitTimeFrame || diag.revisitTimeFrame,
+              reviewInfo: [...(diag.reviewInfo || []), newReview],
+              recommend: {
+                ...diag.recommend,
+                tests: [...(diag.recommend?.tests || []), ...updatedTests],
+              },
+            };
+          }
+          return diag;
+        })
+      );
+
+      setExpandedDiagnosis((prev) => ({
+        ...prev,
+        [reviewDiagnosisId]: true,
+      }));
+
+      closeReviewModal();
+    } catch (error) {
+      console.error("Error adding review information:", error.response?.data || error.message);
+      toast.error(
+        `Failed to add review information: ${error.response?.data?.error || error.message}`
+      );
+    }
+    setSubmitting((prev) => ({ ...prev, [reviewDiagnosisId]: false }));
+  };
+
+  const handleMarkAsChecked = async (diagnosisId) => {
+    setSubmitting((prev) => ({ ...prev, [diagnosisId]: true }));
     try {
       await axios.put(
         `http://localhost:4000/api/patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
@@ -148,15 +272,61 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
           medicine: "",
           tests: [],
           note: "",
-        },
+        }
       );
       toast.success("Diagnosis marked as checked successfully!");
-      // Suggestion: Replace with a refresh prop
+      refreshDiagnosisHistory();
     } catch (error) {
       console.error("Error marking diagnosis as checked:", error.response?.data || error.message);
       toast.error(`Failed to mark as checked: ${error.response?.data?.error || error.message}`);
     }
-    setSubmitting(prev => ({ ...prev, [diagnosisId]: false }));
+    setSubmitting((prev) => ({ ...prev, [diagnosisId]: false }));
+  };
+
+  const handleMarkAsReviewed = async (diagnosisId, testId) => {
+    setSubmitting((prev) => ({ ...prev, [testId]: true }));
+    try {
+      const response = await axios.put(
+        `http://localhost:4000/api/patients/${patient._id}/diagnoses/${diagnosisId}/tests/${testId}/status`,
+        { status: "Reviewed" }
+      );
+      toast.success("Test marked as reviewed successfully!");
+
+      // Update local state immediately
+      setDiagnoseHistory((prevHistory) =>
+        prevHistory.map((diag) => {
+          if (diag._id === diagnosisId) {
+            const updatedTests = diag.recommend.tests.map((test) =>
+              test._id === testId ? { ...test, status: "Reviewed" } : test
+            );
+            return {
+              ...diag,
+              recommend: {
+                ...diag.recommend,
+                tests: updatedTests,
+              },
+            };
+          }
+          return diag;
+        })
+      );
+    } catch (error) {
+      console.error("Error marking test as reviewed:", error.response?.data || error.message);
+      toast.error(
+        `Failed to mark test as reviewed: ${error.response?.data?.error || error.message}`
+      );
+    }
+    setSubmitting((prev) => ({ ...prev, [testId]: false }));
+  };
+
+  const refreshDiagnosisHistory = async () => {
+    try {
+      const response = await axios.get(`http://localhost:4000/api/patients/${patient._id}`);
+      setDiagnoseHistory(response.data.diagnoseHistory || []);
+    } catch (error) {
+      console.error("Error refreshing diagnosis history:", error);
+      toast.error("Failed to refresh diagnosis data");
+    }
   };
 
   const handleFileClick = (url, fileType) => {
@@ -167,7 +337,13 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
     }
   };
 
-  const diagnoseHistory = patient.diagnoseHistory || [];
+  const areAllTestsReviewed = (tests) => {
+    return tests.length > 0 && tests.every((test) => test.status === "Reviewed");
+  };
+
+  useEffect(() => {
+    setDiagnoseHistory(patient.diagnoseHistory || []);
+  }, [patient]);
 
   return (
     <div className="space-y-6">
@@ -210,7 +386,9 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
               {diagnoseHistory.map((diag, index) => (
                 <React.Fragment key={index}>
                   <tr
-                    className={`hover:bg-indigo-50/50 transition-colors duration-200 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
+                    className={`hover:bg-indigo-50/50 transition-colors duration-200 ${
+                      index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                    }`}
                   >
                     <td className="py-3 px-4">
                       <div className="flex-shrink-0 w-20 h-20 flex items-center justify-center">
@@ -220,7 +398,7 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
                             alt="Diagnosis"
                             className="w-full h-full object-cover rounded-lg cursor-pointer shadow-sm hover:shadow-md transition-shadow duration-200"
                             onClick={() => openImage(diag.imageUrl)}
-                            onError={e => {
+                            onError={(e) => {
                               e.target.src = "/placeholder-image.jpg";
                             }}
                           />
@@ -246,8 +424,12 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
                     <td className="py-3 px-4">
                       <span
                         className={`inline-block px-2 py-1 text-xs rounded-full ${
-                          diag.status === "Checked"
+                          diag.status === "Checked" || diag.status === "Completed"
                             ? "bg-green-100 text-green-700"
+                            : diag.status === "Review"
+                            ? "bg-purple-100 text-purple-700"
+                            : diag.status === "Test Completed"
+                            ? "bg-blue-100 text-blue-700"
                             : "bg-yellow-100 text-yellow-700"
                         }`}
                       >
@@ -280,7 +462,16 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
                             </button>
                           </>
                         )}
-                        {diag.recommend && (
+                        {areAllTestsReviewed(diag.recommend?.tests || []) && (
+                          <button
+                            onClick={() => openReviewModal(diag._id)}
+                            className="flex items-center px-2 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-all duration-300 text-xs shadow-sm"
+                          >
+                            <RefreshCw className="w-3 h-3 mr-1" />
+                            Add Review
+                          </button>
+                        )}
+                        {(diag.recommend || diag.reviewInfo?.length > 0) && (
                           <button
                             onClick={() => toggleRecommendation(diag._id)}
                             className={`flex items-center px-2 py-1 text-white rounded-md transition-all duration-300 text-xs shadow-sm ${
@@ -305,170 +496,244 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
                     </td>
                   </tr>
 
-                  {/* Recommendation panel - only visible when expanded */}
-                  {diag.recommend && expandedDiagnosis[diag._id] && (
+                  {(diag.recommend || diag.reviewInfo?.length > 0) && expandedDiagnosis[diag._id] && (
                     <tr>
                       <td colSpan="7" className="p-0">
                         <div className="bg-gradient-to-br from-indigo-50 to-white animate-fadeIn p-6 border-t border-b border-indigo-100">
-                          <div className="text-lg font-semibold text-indigo-800 mb-4 flex items-center">
-                            <FileText className="w-5 h-5 mr-2" />
-                            Medical Recommendations
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {/* Medicine section */}
-                            <div className="bg-white p-5 rounded-xl shadow-sm border border-indigo-100 transition-all duration-300 hover:shadow-md">
-                              <div className="flex items-center mb-3">
-                                <Pill className="w-5 h-5 text-indigo-600 mr-2" />
-                                <h3 className="text-md font-medium text-gray-800">
-                                  Prescribed Medicine
-                                </h3>
+                          {diag.recommend && (
+                            <>
+                              <div className="text-lg font-semibold text-indigo-800 mb-4 flex items-center">
+                                <FileText className="w-5 h-5 mr-2" />
+                                Medical Recommendations
                               </div>
-                              <p className="text-gray-700 pl-7">
-                                {diag.recommend.medicine || "No medicine prescribed"}
-                              </p>
-                            </div>
-
-                            {/* Note section */}
-                            <div className="bg-white p-5 rounded-xl shadow-sm border border-indigo-100 transition-all duration-300 hover:shadow-md">
-                              <div className="flex items-center mb-3">
-                                <AlertCircle className="w-5 h-5 text-indigo-600 mr-2" />
-                                <h3 className="text-md font-medium text-gray-800">Doctor's Note</h3>
-                              </div>
-                              <p className="text-gray-700 pl-7">
-                                {diag.recommend.note || "No notes added"}
-                              </p>
-                            </div>
-
-                            {/* Tests overview */}
-                            <div className="bg-white p-5 rounded-xl shadow-sm border border-indigo-100 transition-all duration-300 hover:shadow-md">
-                              <div className="flex items-center mb-3">
-                                <Clipboard className="w-5 h-5 text-indigo-600 mr-2" />
-                                <h3 className="text-md font-medium text-gray-800">
-                                  Tests Overview
-                                </h3>
-                              </div>
-                              <p className="text-gray-700 pl-7 mb-2">
-                                {diag.recommend.tests && diag.recommend.tests.length > 0
-                                  ? `${diag.recommend.tests.length} test${diag.recommend.tests.length > 1 ? "s" : ""} prescribed`
-                                  : "No tests prescribed"}
-                              </p>
-                              {diag.recommend.tests && diag.recommend.tests.length > 0 && (
-                                <div className="flex flex-wrap gap-2 pl-7">
-                                  {diag.recommend.tests.map((test, idx) => (
-                                    <span
-                                      key={idx}
-                                      className={`px-2 py-1 text-xs rounded-full ${
-                                        test.status === "Pending"
-                                          ? "bg-yellow-100 text-yellow-700"
-                                          : "bg-green-100 text-green-700"
-                                      }`}
-                                    >
-                                      {test.testName}
-                                    </span>
-                                  ))}
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="bg-white p-5 rounded-xl shadow-sm border border-indigo-100 transition-all duration-300 hover:shadow-md">
+                                  <div className="flex items-center mb-3">
+                                    <Pill className="w-5 h-5 text-indigo-600 mr-2" />
+                                    <h3 className="text-md font-medium text-gray-800">
+                                      Prescribed Medicine
+                                    </h3>
+                                  </div>
+                                  <p className="text-gray-700 pl-7">
+                                    {diag.recommend.medicine || "No medicine prescribed"}
+                                  </p>
                                 </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Tests detailed table */}
-                          {diag.recommend.tests && diag.recommend.tests.length > 0 && (
-                            <div className="mt-6">
-                              <div className="overflow-hidden rounded-xl border border-indigo-100 shadow-sm">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                  <thead className="bg-indigo-50">
-                                    <tr>
-                                      <th className="py-3 px-6 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                        Test Name
-                                      </th>
-                                      <th className="py-3 px-6 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                        Status
-                                      </th>
-                                      <th className="py-3 px-6 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                        Attachment
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="bg-white divide-y divide-gray-200">
-                                    {diag.recommend.tests.map((test, idx) => (
-                                      <tr
-                                        key={idx}
-                                        className={`${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-indigo-50/30 transition-colors duration-200`}
-                                      >
-                                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                                          {test.testName || "N/A"}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                          <span
-                                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                                              test.status === "Pending"
-                                                ? "bg-yellow-100 text-yellow-800"
-                                                : "bg-green-100 text-green-800"
-                                            }`}
+                                <div className="bg-white p-5 rounded-xl shadow-sm border border-indigo-100 transition-all duration-300 hover:shadow-md">
+                                  <div className="flex items-center mb-3">
+                                    <AlertCircle className="w-5 h-5 text-indigo-600 mr-2" />
+                                    <h3 className="text-md font-medium text-gray-800">Doctor's Note</h3>
+                                  </div>
+                                  <p className="text-gray-700 pl-7">
+                                    {diag.recommend.note || "No notes added"}
+                                  </p>
+                                </div>
+                                <div className="bg-white p-5 rounded-xl shadow-sm border border-indigo-100 transition-all duration-300 hover:shadow-md">
+                                  <div className="flex items-center mb-3">
+                                    <Calendar className="w-5 h-5 text-indigo-600 mr-2" />
+                                    <h3 className="text-md font-medium text-gray-800">
+                                      Revisit Time Frame
+                                    </h3>
+                                  </div>
+                                  <p className="text-gray-700 pl-7">
+                                    {diag.revisitTimeFrame || "No revisit schedule set"}
+                                  </p>
+                                </div>
+                              </div>
+                              {diag.recommend.tests?.length > 0 && (
+                                <div className="mt-6">
+                                  <div className="text-md font-semibold text-indigo-700 mb-3">
+                                    Tests
+                                  </div>
+                                  <div className="overflow-hidden rounded-xl border border-indigo-100 shadow-sm">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                      <thead className="bg-indigo-50">
+                                        <tr>
+                                          <th className="py-3 px-6 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                            Test Name
+                                          </th>
+                                          <th className="py-3 px-6 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                            Status
+                                          </th>
+                                          <th className="py-3 px-6 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                            Attachment
+                                          </th>
+                                          <th className="py-3 px-6 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                            Added At
+                                          </th>
+                                          <th className="py-3 px-6 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                            Actions
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="bg-white divide-y divide-gray-200">
+                                        {diag.recommend.tests.map((test, idx) => (
+                                          <tr
+                                            key={test._id}
+                                            className={`${
+                                              idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                                            } hover:bg-indigo-50/30 transition-colors duration-200`}
                                           >
-                                            {test.status === "Pending" ? (
-                                              <svg
-                                                className="w-2 h-2 mr-1.5 text-yellow-400"
-                                                fill="currentColor"
-                                                viewBox="0 0 8 8"
+                                            <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                                              {test.testName || "N/A"}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                              <span
+                                                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                                                  test.status === "Pending"
+                                                    ? "bg-yellow-100 text-yellow-800"
+                                                    : test.status === "In Progress"
+                                                    ? "bg-orange-100 text-orange-800"
+                                                    : test.status === "Completed"
+                                                    ? "bg-blue-100 text-blue-800"
+                                                    : "bg-green-100 text-green-800"
+                                                }`}
                                               >
-                                                <circle cx="4" cy="4" r="3" />
-                                              </svg>
-                                            ) : (
-                                              <svg
-                                                className="w-2 h-2 mr-1.5 text-green-400"
-                                                fill="currentColor"
-                                                viewBox="0 0 8 8"
-                                              >
-                                                <circle cx="4" cy="4" r="3" />
-                                              </svg>
-                                            )}
-                                            {test.status || "N/A"}
-                                          </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                          {test.attachmentURL ? (
-                                            <button
-                                              onClick={() =>
-                                                handleFileClick(
-                                                  test.attachmentURL,
-                                                  getFileType(test.attachmentURL),
-                                                )
-                                              }
-                                              className="inline-flex items-center px-3 py-1.5 bg-white border border-indigo-300 rounded-md text-indigo-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all duration-200 shadow-sm"
-                                            >
-                                              {getFileType(test.attachmentURL) === "image" ? (
-                                                <>
-                                                  <Image className="w-4 h-4 mr-1.5" />
-                                                  <span className="text-xs font-medium">
-                                                    View Image
-                                                  </span>
-                                                </>
-                                              ) : getFileType(test.attachmentURL) === "pdf" ? (
-                                                <>
-                                                  <File className="w-4 h-4 mr-1.5" />
-                                                  <span className="text-xs font-medium">
-                                                    View PDF
-                                                  </span>
-                                                </>
+                                                {test.status === "Pending" ? (
+                                                  <svg
+                                                    className="w-2 h-2 mr-1.5 text-yellow-400"
+                                                    fill="currentColor"
+                                                    viewBox="0 0 8 8"
+                                                  >
+                                                    <circle cx="4" cy="4" r="3" />
+                                                  </svg>
+                                                ) : test.status === "In Progress" ? (
+                                                  <svg
+                                                    className="w-2 h-2 mr-1.5 text-orange-400"
+                                                    fill="currentColor"
+                                                    viewBox="0 0 8 8"
+                                                  >
+                                                    <circle cx="4" cy="4" r="3" />
+                                                  </svg>
+                                                ) : test.status === "Completed" ? (
+                                                  <svg
+                                                    className="w-2 h-2 mr-1.5 text-blue-400"
+                                                    fill="currentColor"
+                                                    viewBox="0 0 8 8"
+                                                  >
+                                                    <circle cx="4" cy="4" r="3" />
+                                                  </svg>
+                                                ) : (
+                                                  <svg
+                                                    className="w-2 h-2 mr-1.5 text-green-400"
+                                                    fill="currentColor"
+                                                    viewBox="0 0 8 8"
+                                                  >
+                                                    <circle cx="4" cy="4" r="3" />
+                                                  </svg>
+                                                )}
+                                                {test.status || "N/A"}
+                                              </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                              {test.attachmentURL ? (
+                                                <button
+                                                  onClick={() =>
+                                                    handleFileClick(
+                                                      test.attachmentURL,
+                                                      getFileType(test.attachmentURL)
+                                                    )
+                                                  }
+                                                  className="inline-flex items-center px-3 py-1.5 bg-white border border-indigo-300 rounded-md text-indigo-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all duration-200 shadow-sm"
+                                                >
+                                                  {getFileType(test.attachmentURL) === "image" ? (
+                                                    <>
+                                                      <Image className="w-4 h-4 mr-1.5" />
+                                                      <span className="text-xs font-medium">
+                                                        View Image
+                                                      </span>
+                                                    </>
+                                                  ) : getFileType(test.attachmentURL) === "pdf" ? (
+                                                    <>
+                                                      <File className="w-4 h-4 mr-1.5" />
+                                                      <span className="text-xs font-medium">
+                                                        View PDF
+                                                      </span>
+                                                    </>
+                                                  ) : (
+                                                    <span className="text-xs font-medium">
+                                                      View File
+                                                    </span>
+                                                  )}
+                                                </button>
                                               ) : (
-                                                <span className="text-xs font-medium">
-                                                  View File
+                                                <span className="text-xs text-gray-500">
+                                                  No attachment
                                                 </span>
                                               )}
-                                            </button>
-                                          ) : (
-                                            <span className="text-xs text-gray-500">
-                                              No attachment
-                                            </span>
-                                          )}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                              {test.addedAt
+                                                ? new Date(test.addedAt).toLocaleString()
+                                                : "N/A"}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                              {test.status === "Completed" || test.status === "Reviewed" ? (
+                                                <button
+                                                  onClick={() => handleMarkAsReviewed(diag._id, test._id)}
+                                                  disabled={test.status === "Reviewed" || submitting[test._id]}
+                                                  className={`flex items-center px-3 py-1.5 text-xs font-medium rounded-md shadow-sm transition-all duration-300 ${
+                                                    test.status === "Reviewed"
+                                                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                                      : "bg-green-600 text-white hover:bg-green-700"
+                                                  } ${submitting[test._id] ? "opacity-50 cursor-not-allowed" : ""}`}
+                                                >
+                                                  <Check className="w-4 h-4 mr-1" />
+                                                  Mark as Reviewed
+                                                </button>
+                                              ) : null}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )}
+
+                          {diag.reviewInfo?.length > 0 && (
+                            <div
+                              className={`${diag.recommend ? "mt-8 pt-6 border-t border-indigo-100" : ""}`}
+                            >
+                              <div className="text-lg font-semibold text-purple-800 mb-4 flex items-center">
+                                <RefreshCw className="w-5 h-5 mr-2" />
+                                Review History
                               </div>
+                              {diag.reviewInfo.map((review, reviewIdx) => (
+                                <div
+                                  key={reviewIdx}
+                                  className="mb-6 p-4 bg-white rounded-xl shadow-sm border border-purple-100"
+                                >
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                      <div className="flex items-center mb-3">
+                                        <Pill className="w-5 h-5 text-purple-600 mr-2" />
+                                        <h3 className="text-md font-medium text-gray-800">
+                                          Recommended Medicine
+                                        </h3>
+                                      </div>
+                                      <p className="text-gray-700 pl-7">
+                                        {review.recommendedMedicine || "No medicine recommended"}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center mb-3">
+                                        <Clipboard className="w-5 h-5 text-purple-600 mr-2" />
+                                        <h3 className="text-md font-medium text-gray-800">
+                                          Notes
+                                        </h3>
+                                      </div>
+                                      <p className="text-gray-700 pl-7">
+                                        {review.notes || "No notes recorded"}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="mt-4 text-right text-xs text-gray-500">
+                                    Last updated: {new Date(review.updatedAt).toLocaleString()}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>
@@ -482,7 +747,6 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
         </div>
       )}
 
-      {/* Modal for adding recommendations */}
       {isModalOpen && selectedDiagnosisId && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative animate-fadeIn">
@@ -506,50 +770,50 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
                 <input
                   type="text"
                   value={formData[selectedDiagnosisId]?.medicine || ""}
-                  onChange={e => handleInputChange(selectedDiagnosisId, "medicine", e.target.value)}
+                  onChange={(e) => handleInputChange(selectedDiagnosisId, "medicine", e.target.value)}
                   className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300"
                   placeholder="Enter medicine prescription"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Tests</label>
-                {(
-                  formData[selectedDiagnosisId]?.tests || [{ testName: "", status: "Pending" }]
-                ).map((test, idx) => (
-                  <div key={idx} className="flex items-center space-x-2 mt-1">
-                    <input
-                      type="text"
-                      value={test.testName}
-                      onChange={e =>
-                        handleInputChange(selectedDiagnosisId, "tests", e.target.value, idx)
-                      }
-                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300"
-                      placeholder={`Test ${idx + 1}`}
-                    />
-                    {idx === (formData[selectedDiagnosisId]?.tests.length || 1) - 1 && (
-                      <button
-                        onClick={() => addTestField(selectedDiagnosisId)}
-                        className="px-2 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-all duration-300"
-                      >
-                        +
-                      </button>
-                    )}
-                    {idx > 0 && (
-                      <button
-                        onClick={() => removeTestField(selectedDiagnosisId, idx)}
-                        className="px-2 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all duration-300"
-                      >
-                        -
-                      </button>
-                    )}
-                  </div>
-                ))}
+                {(formData[selectedDiagnosisId]?.tests || [{ testName: "", status: "Pending" }]).map(
+                  (test, idx) => (
+                    <div key={idx} className="flex items-center space-x-2 mt-1">
+                      <input
+                        type="text"
+                        value={test.testName}
+                        onChange={(e) =>
+                          handleInputChange(selectedDiagnosisId, "tests", e.target.value, idx)
+                        }
+                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300"
+                        placeholder={`Test ${idx + 1}`}
+                      />
+                      {idx === (formData[selectedDiagnosisId]?.tests.length || 1) - 1 && (
+                        <button
+                          onClick={() => addTestField(selectedDiagnosisId)}
+                          className="px-2 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-all duration-300"
+                        >
+                          +
+                        </button>
+                      )}
+                      {idx > 0 && (
+                        <button
+                          onClick={() => removeTestField(selectedDiagnosisId, idx)}
+                          className="px-2 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all duration-300"
+                        >
+                          -
+                        </button>
+                      )}
+                    </div>
+                  )
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Note</label>
                 <textarea
                   value={formData[selectedDiagnosisId]?.note || ""}
-                  onChange={e => handleInputChange(selectedDiagnosisId, "note", e.target.value)}
+                  onChange={(e) => handleInputChange(selectedDiagnosisId, "note", e.target.value)}
                   className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300"
                   placeholder="Enter note"
                   rows="3"
@@ -577,7 +841,129 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
         </div>
       )}
 
-      {/* PDF Viewer */}
+      {isReviewModalOpen && reviewDiagnosisId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative animate-fadeIn">
+            <button
+              onClick={closeReviewModal}
+              className="absolute top-3 right-3 text-gray-600 hover:text-gray-800 transition-all duration-300"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <h3 className="text-lg font-semibold text-purple-800 mb-4 flex items-center">
+              <RefreshCw className="w-5 h-5 mr-2 text-purple-600" />
+              Add Review Information
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Recommended Medicine</label>
+                <input
+                  type="text"
+                  value={reviewFormData.recommendedMedicine}
+                  onChange={(e) => handleReviewInputChange("recommendedMedicine", e.target.value)}
+                  className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                  placeholder="Enter recommended medicine"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Notes</label>
+                <textarea
+                  value={reviewFormData.notes}
+                  onChange={(e) => handleReviewInputChange("notes", e.target.value)}
+                  className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                  placeholder="Enter review notes"
+                  rows="3"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Revisit Time Frame</label>
+                <select
+                  value={reviewFormData.revisitTimeFrame}
+                  onChange={(e) => handleReviewInputChange("revisitTimeFrame", e.target.value)}
+                  className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                >
+                  <option value="Monthly">Monthly</option>
+                  <option value="Quarterly">Quarterly</option>
+                  <option value="Bi-annually">Bi-annually</option>
+                  <option value="Annually">Annually</option>
+                  <option value="As needed">As needed</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Additional Tests</label>
+                {reviewFormData.additionalTests.map((test, idx) => (
+                  <div key={idx} className="flex items-center space-x-2 mt-1">
+                    <input
+                      type="text"
+                      value={test.testName}
+                      onChange={(e) =>
+                        handleReviewInputChange("additionalTests", e.target.value, idx)
+                      }
+                      className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                      placeholder={`Test ${idx + 1}`}
+                    />
+                    {idx === reviewFormData.additionalTests.length - 1 && (
+                      <button
+                        onClick={addReviewTestField}
+                        className="px-2 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-all duration-300"
+                      >
+                        +
+                      </button>
+                    )}
+                    {idx > 0 && (
+                      <button
+                        onClick={() => removeReviewTestField(idx)}
+                        className="px-2 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all duration-300"
+                      >
+                        -
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Doctor Status</label>
+                <select
+                  value={reviewFormData.doctorStatus}
+                  onChange={(e) => handleReviewInputChange("doctorStatus", e.target.value)}
+                  className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                >
+                  <option value="Pre-Monitoring">Pre-Monitoring</option>
+                  <option value="Published">Published</option>
+                  <option value="Review">Review</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Monitoring">Monitoring</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={closeReviewModal}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-all duration-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReviewSubmit}
+                  disabled={submitting[reviewDiagnosisId]}
+                  className={`px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-all duration-300 ${
+                    submitting[reviewDiagnosisId] ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {submitting[reviewDiagnosisId] ? "Submitting..." : "Submit"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {pdfViewerOpen && currentPdfUrl && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-4/5 p-2 relative">

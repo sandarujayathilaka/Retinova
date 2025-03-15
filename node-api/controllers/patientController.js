@@ -918,3 +918,174 @@ exports.updateDiagnosisRecommendations = async (req, res) => {
       .json({ error: "Internal Server Error", details: error.message });
   }
 };
+
+
+exports.updateDiagnosisReviewRecommendations = async (req, res) => {
+  try {
+    const { patientId, diagnosisId } = req.params;
+    const { reviewInfo, additionalTests, doctorStatus } = req.body;
+
+    // Validate required fields (optional depending on your needs)
+    if (!reviewInfo || (!reviewInfo.recommendedMedicine && !reviewInfo.notes)) {
+      return res.status(400).json({
+        error: "At least one of recommendedMedicine or notes is required in reviewInfo",
+      });
+    }
+
+    // Find the patient by ID
+    const patient = await Patient.findById(patientId);
+    if (!patient) {
+      return res.status(404).json({ error: "Patient not found" });
+    }
+
+    // Find the diagnosis in the diagnoseHistory array
+    const diagnosisIndex = patient.diagnoseHistory.findIndex(
+      (diag) => diag._id.toString() === diagnosisId
+    );
+
+    if (diagnosisIndex === -1) {
+      return res.status(404).json({ error: "Diagnosis not found" });
+    }
+
+    const diagnosis = patient.diagnoseHistory[diagnosisIndex];
+
+    // Only allow review when patientStatus is "Review"
+    if (patient.patientStatus !== "Review") {
+      return res.status(403).json({
+        error: "Review can only be added when patient status is 'Review'",
+      });
+    }
+
+    // Prepare new review object for reviewInfo
+    const newReview = {
+      recommendedMedicine: reviewInfo.recommendedMedicine || "",
+      notes: reviewInfo.notes || "",
+      updatedAt: new Date(),
+    };
+
+    // Append new review to reviewInfo array
+    diagnosis.reviewInfo.push(newReview);
+
+    // Add new tests to recommend.tests if provided
+    if (additionalTests && Array.isArray(additionalTests)) {
+      const newTests = additionalTests.map((test) => ({
+        testName: test.testName,
+        status: "Pending",
+        attachmentURL: test.attachmentURL || "",
+        addedAt: new Date(),
+      }));
+      diagnosis.recommend.tests.push(...newTests);
+    }
+
+    // Update revisitTimeFrame if provided (overwrites existing value)
+    if (reviewInfo.revisitTimeFrame) {
+      diagnosis.revisitTimeFrame = reviewInfo.revisitTimeFrame;
+    }
+
+    // Update diagnosis status
+    diagnosis.status = "Checked";
+
+    // Check for pending tests in recommend.tests
+    const hasPendingTests = diagnosis.recommend.tests.some(
+      (test) => test.status === "Pending"
+    );
+
+    // Update patient status
+    if (hasPendingTests) {
+      patient.patientStatus = "Monitoring";
+    } else if (
+      doctorStatus &&
+      ["Pre-Monitoring", "Published", "Review", "Completed", "Monitoring"].includes(
+        doctorStatus
+      )
+    ) {
+      patient.patientStatus = doctorStatus; // Use doctor-provided status if no pending tests
+    } else {
+      patient.patientStatus = "Completed"; // Default to Completed if no pending tests and no doctor status
+    }
+
+    // Save the updated patient
+    await patient.save();
+
+    res.json({
+      message: "Review information and tests added successfully",
+      data: patient.diagnoseHistory[diagnosisIndex],
+      patientStatus: patient.patientStatus,
+    });
+  } catch (error) {
+    console.error("Error updating diagnosis review:", error);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
+  }
+};
+
+
+exports.updateTestStatus = async (req, res) => {
+  try {
+    const { patientId, diagnosisId, testId } = req.params;
+    const { status } = req.body;
+
+    // Validate the status
+    const validStatuses = ["Pending", "In Progress", "Completed", "Reviewed"];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({
+        error: "Invalid status. Must be one of: Pending, In Progress, Completed, Reviewed",
+      });
+    }
+
+    // Find the patient by ID
+    const patient = await Patient.findById(patientId);
+    if (!patient) {
+      return res.status(404).json({ error: "Patient not found" });
+    }
+
+    // Find the diagnosis in the diagnoseHistory array
+    const diagnosisIndex = patient.diagnoseHistory.findIndex(
+      (diag) => diag._id.toString() === diagnosisId
+    );
+    if (diagnosisIndex === -1) {
+      return res.status(404).json({ error: "Diagnosis not found" });
+    }
+
+    const diagnosis = patient.diagnoseHistory[diagnosisIndex];
+
+    // Find the test in the recommend.tests array
+    const testIndex = diagnosis.recommend.tests.findIndex(
+      (test) => test._id.toString() === testId
+    );
+    if (testIndex === -1) {
+      return res.status(404).json({ error: "Test not found" });
+    }
+
+    // Update the test status
+    diagnosis.recommend.tests[testIndex].status = status;
+
+    // Check for pending tests in recommend.tests
+    const hasPendingTests = diagnosis.recommend.tests.some(
+      (test) => test.status === "Pending"
+    );
+
+    // Update patient status based on test status
+    if (hasPendingTests) {
+      patient.patientStatus = "Monitoring";
+    } else {
+      patient.patientStatus = "Completed"; // Default to Completed if no pending tests
+    }
+
+    // Save the updated patient
+    await patient.save();
+
+    res.json({
+      message: "Test status updated successfully",
+      data: {
+        test: diagnosis.recommend.tests[testIndex],
+        diagnosis: patient.diagnoseHistory[diagnosisIndex],
+        patientStatus: patient.patientStatus,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating test status:", error);
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
+  }
+};

@@ -1,42 +1,15 @@
-// // Main Patient Schema
-// const patientSchema = new mongoose.Schema(
-//   {
-//     patientId: { type: String, required: true, unique: true },
-//     fullName: { type: String, required: true },
-//     category: { type: [String], enum: ["DR", "AMD", "Glaucoma", "RVO", "Others"] },
-//     birthDate: {
-//       type: Date,
-//       required: true,
-//     },
-//     age: {
-//       type: Number, // Added age field to store pre-computed age
-//     },
-//     gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
-//     contactNumber: { type: String, required: true },
-//     email: { type: String, required: false, lowercase: true },
-//     address: { type: String, required: true },
-//     nic: {
-//       type: String,
-//       required: true,
-//       unique: true,
-//     },
-//     medicalHistory: [medicalHistorySchema], // Array of medical history entries
-//     diagnoseHistory: [diagnoseSchema], // Array of past diagnoses
-//   },
-//   { timestamps: true }
-// ); // Automatically adds createdAt & updatedAt fields
-
 const mongoose = require("mongoose");
 
 const diagnoseSchema = new mongoose.Schema({
   imageUrl: String,
-  diagnosis: { type: String, default: "Processing" },
+  diagnosis: { type: String, default: "N/A" },
+  doctorDiagnosis: { type: String, default: "N/A" },
   eye: { type: String, enum: ["LEFT", "RIGHT"] },
   uploadedAt: { type: Date, default: Date.now },
   doctorId: { type: mongoose.Schema.Types.ObjectId, ref: "Doctor" },
   status: {
     type: String,
-    enum: ["Unchecked", "Completed", "Checked"],
+    enum: ["Unchecked", "Completed", "Checked", "Test Completed"],
     default: "Unchecked",
   },
   confidenceScores: [Number],
@@ -47,14 +20,25 @@ const diagnoseSchema = new mongoose.Schema({
         testName: String,
         status: {
           type: String,
-          enum: ["Pending", "In Progress", "Completed", "Test Completed"],
+          enum: ["Pending", "In Progress", "Completed", "Reviewed"],
           default: "Pending",
         },
         attachmentURL: String,
+        addedAt: { type: Date, default: Date.now } 
       },
     ],
     note: { type: String },
   },
+  revisitTimeFrame: {
+    type: String,
+    enum: ["Monthly", "Quarterly", "Bi-annually", "Annually", "As needed"],
+    default: "Monthly"
+  },
+  reviewInfo: [{
+    recommendedMedicine: String,
+    notes: String,
+    updatedAt: { type: Date, default: Date.now },
+  }]
 });
 
 // Schema for patient medical history
