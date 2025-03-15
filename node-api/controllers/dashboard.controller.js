@@ -1,7 +1,7 @@
 // controllers
 const Patient = require("../models/patient");
 const Doctor = require("../models/doctor.model");
-const logger = require("../utils/logger");
+const logger = require("../config/logger");
 
 
 

@@ -3,7 +3,7 @@ const { s3 } = require("../config/aws");
 require("dotenv").config();
 const mongoose = require("mongoose");
 const validator = require("validator");
-const logger = require("../utils/logger"); // Hypothetical logger (e.g., Winston)
+const logger = require("../config/logger"); // Hypothetical logger (e.g., Winston)
 const { isValidDate, getStartEndOfDay, getStartEndOfMonth } = require("../utils/dateUtils"); // Hypothetical date utilities
 
 // Utility function to upload files to S3

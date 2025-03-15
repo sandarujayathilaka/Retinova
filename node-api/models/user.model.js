@@ -1,11 +1,23 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+const ImageSchema = new mongoose.Schema(
+  {
+    ETag: { type: String },
+    ServerSideEncryption: { type: String },
+    Location: { type: String, required: true },
+    key: { type: String, required: true },
+    Key: { type: String, required: true },
+    Bucket: { type: String },
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     email: { type: String, unique: true, required: true },
     password: { type: String, required: true },
-    name: { type: String },
+    name: { type: String, required: true },
     role: {
       type: String,
       enum: ["doctor", "nurse", "patient", "admin"],
@@ -14,6 +26,7 @@ const userSchema = new mongoose.Schema(
     passwordChangedAt: {
       type: Date,
     },
+    image: { type: ImageSchema },
     profile: {
       type: mongoose.Schema.Types.ObjectId,
       refPath: "onModel",

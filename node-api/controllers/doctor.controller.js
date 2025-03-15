@@ -2,7 +2,7 @@ const Doctor = require("../models/doctor.model");
 const UserService = require("../services/user.service");
 const Patient = require("../models/patient");
 const mongoose = require("mongoose");
-const logger = require("../utils/logger");
+const logger = require("../config/logger");
 const { isValidDate } = require("../utils/dateUtils");
 
 const addDoctor = async (req, res) => {
@@ -53,7 +53,7 @@ const getDoctors = async (req, res) => {
 
 const getDoctorById = async (req, res) => {
   const doctor = await Doctor.findById(req.params.id);
-  console.log("dfdsssf")
+  console.log("dfdsssf");
   if (!doctor) {
     return res.status(404).json({ error: "Doctor not found" });
   }
@@ -68,17 +68,24 @@ const updateDoctor = async (req, res) => {
     return res.status(404).json({ error: "Doctor not found" });
   }
 
-  if (doctor.email !== req.body.email) {
-    const existingDoctor = await Doctor.findOne({
-      email: req.body.email,
-    });
+  // if (doctor.email !== req.body.email) {
+  //   const existingDoctor = await Doctor.findOne({
+  //     email: req.body.email,
+  //   });
 
-    if (existingDoctor) {
-      return res
-        .status(400)
-        .json({ error: "Doctor with this email already exists" });
-    }
+  //   if (existingDoctor) {
+  //     return res
+  //       .status(400)
+  //       .json({ error: "Doctor with this email already exists" });
+  //   }
+  // }
+
+  // Prevent email update by removing it from req.body
+  if (req.body.email && req.body.email !== doctor.email) {
+    return res.status(400).json({ error: "Email cannot be changed" });
   }
+
+  delete req.body.email; // Ensure email is not updated
 
   const updatedDoctor = await Doctor.findByIdAndUpdate(
     req.params.id,
@@ -164,12 +171,9 @@ const getDoctorsByIds = async (req, res) => {
 };
 
 const getDoctorPatientsSummary = async (req, res) => {
- 
-
   try {
     const { id } = req.params;
     const { type } = req.query;
-  
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -210,8 +214,11 @@ const getDoctorPatientsSummary = async (req, res) => {
           (diag) => diag.doctorId && diag.doctorId.toString() === id
         );
 
-        const totalDiagnoseHistoryLength = patient.diagnoseHistory ? patient.diagnoseHistory.length : 0;
-        const hasNextVisit = patient.nextVisit && !isNaN(new Date(patient.nextVisit).getTime());
+        const totalDiagnoseHistoryLength = patient.diagnoseHistory
+          ? patient.diagnoseHistory.length
+          : 0;
+        const hasNextVisit =
+          patient.nextVisit && !isNaN(new Date(patient.nextVisit).getTime());
         const isNew = totalDiagnoseHistoryLength <= 2 && !hasNextVisit;
 
         return {
@@ -251,10 +258,11 @@ const getDoctorPatientsSummary = async (req, res) => {
     });
   }
 };
+
 const getDoctorNames = async (req, res) => {
   try {
     const doctors = await Doctor.find({}, "name _id"); // Select only name and _id
-    
+
     if (!doctors.length) {
       return res.status(200).json({
         message: "No doctors found",

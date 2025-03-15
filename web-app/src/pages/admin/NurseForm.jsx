@@ -17,18 +17,24 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import { useAddDoctor, useGetDoctorById, useUpdateDoctor } from "@/services/doctor.service";
-import { PlusIcon } from "lucide-react";
+import { Loader2, PlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FaUserPen } from "react-icons/fa6";
 import { PiClockClockwiseBold } from "react-icons/pi";
 import { TbClockX } from "react-icons/tb";
 import { PushSpinner } from "react-spinners-kit";
-import ContactInfoComponent, { contactInfoSchema } from "./stepper/ContactInfoComponent";
-import DaysOffComponent from "./stepper/DaysOffComponent";
-import StaffInfoComponent, { staffInfoSchema } from "./stepper/StaffInfoComponent";
-import WorkingHoursComponent, { workingHoursSchema } from "./stepper/WorkingHoursComponent";
+import ContactInfoComponent, {
+  contactInfoSchema,
+} from "@/pages/admin/nurse-stepper/ContactInfoComponent";
+import DaysOffComponent from "@/pages/admin/nurse-stepper/DaysOffComponent";
+import StaffInfoComponent, {
+  staffInfoSchema,
+} from "@/pages/admin/nurse-stepper/StaffInfoComponent";
+import WorkingHoursComponent, {
+  workingHoursSchema,
+} from "@/pages/admin/nurse-stepper/WorkingHoursComponent";
+import { useAddNurse, useGetNurseById, useUpdateNurse } from "@/services/nurse.service";
 
 const { useStepper, steps, utils } = defineStepper(
   { id: "staffInfo", label: "Staff Info", icon: <FaUserPen />, schema: staffInfoSchema },
@@ -42,17 +48,17 @@ const { useStepper, steps, utils } = defineStepper(
   { id: "daysOff", label: "Days Off", icon: <TbClockX className="w-40" />, schema: z.object({}) },
 );
 
-function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange }) {
+function NurseForm({ mode = "add", nurseId = null, trigger, open, onOpenChange }) {
   const [isOpen, setIsOpen] = useState(false); // Track the dialog state
 
   const stepper = useStepper();
   const currentIndex = utils.getIndex(stepper.current.id);
 
-  // Fetch doctor data if in edit mode
-  const { data: doctor, isLoading } = useGetDoctorById(doctorId, {
-    enabled: mode === "edit" && Boolean(doctorId) && (mode === "edit" ? open : isOpen),
+  // Fetch nurse data if in edit mode
+  const { data: nurse, isLoading } = useGetNurseById(nurseId, {
+    enabled: mode === "edit" && Boolean(nurseId) && (mode === "edit" ? open : isOpen),
   });
-  console.log("doc", doctor);
+  console.log("nurse", nurse);
 
   // Initialize a ref to keep track of form data across steps
   const formDataRef = React.useRef({});
@@ -75,12 +81,12 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
     },
   });
 
-  const mutationAdd = useAddDoctor();
-  const mutationUpdate = useUpdateDoctor();
+  const mutationAdd = useAddNurse();
+  const mutationUpdate = useUpdateNurse();
 
   const handleReset = () => {
     mode === "edit"
-      ? form.reset(doctor)
+      ? form.reset(nurse)
       : form.reset({
           workingHours: {
             Monday: { enabled: false },
@@ -106,34 +112,34 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
       const formData = form.getValues();
 
       // Choose operation based on mode
-      if (mode === "edit" && doctorId) {
-        // Update existing doctor
+      if (mode === "edit" && nurseId) {
+        // Update existing nurse
         mutationUpdate.mutate(
-          { id: doctorId, data: formData },
+          { id: nurseId, data: formData },
           {
             onSuccess: data => {
-              console.log("Doctor updated successfully:", data);
+              console.log("Nurse updated successfully:", data);
               handleReset();
               stepper.reset();
               formDataRef.current = {};
-              toast.success("Doctor updated successfully!");
+              toast.success("Nurse updated successfully!");
               onOpenChange(false);
             },
             onError: error => {
               console.error(error);
-              toast.error("Failed to update doctor. Please try again.");
+              toast.error("Failed to update nurse. Please try again.");
             },
           },
         );
       } else {
-        // Add new doctor
+        // Add new nurse
         mutationAdd.mutate(formData, {
           onSuccess: data => {
-            console.log("Doctor added successfully:", data);
+            console.log("Nurse added successfully:", data);
             handleReset();
             stepper.reset();
             formDataRef.current = {}; // Reset the formDataRef when stepper is reset
-            toast.success("Doctor added successfully!");
+            toast.success("Nurse added successfully!");
             setIsOpen(false);
           },
           onError: error => {
@@ -141,7 +147,7 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
             toast.error(
               error?.response?.data?.error?.message ??
                 error?.response?.data?.error ??
-                "Failed to add doctor. Please try again.",
+                "Failed to add nurse. Please try again.",
             );
           },
         });
@@ -163,11 +169,11 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
 
   // Fill the form with data when editing
   useEffect(() => {
-    if (mode === "edit" && doctor && !isLoading) {
-      form.reset(doctor);
+    if (mode === "edit" && nurse && !isLoading) {
+      form.reset(nurse);
       stepper.reset();
     }
-  }, [doctor, isLoading, form, mode, open]);
+  }, [nurse, isLoading, form, mode, open]);
 
   const handleDemo = () => {
     // Helper function to generate time in correct format within the valid range (8 AM - 7 PM)
@@ -233,18 +239,18 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
     const formValues = {
       workingHours,
       type: Math.random() > 0.5 ? "Full time" : "Part time",
-      name: `Dr. ${["Smith", "Jones", "Taylor", "Brown", "Williams"][Math.floor(Math.random() * 5)]}`,
+      name: `${["Smith", "Jones", "Taylor", "Brown", "Williams"][Math.floor(Math.random() * 5)]}`,
       specialty: [
-        "Ophthalmologist",
-        "Optometrist",
-        "Retina Specialist",
-        "Cornea Specialist",
-        "Glaucoma Specialist",
-        "Pediatric Ophthalmologist",
-        "Neuro-Ophthalmologist",
-        "Oculoplastic Surgeon",
-        "Ocular Oncologist",
-        "Contact Lens Specialist",
+        "Ophthalmic Nurse",
+        "Ophthalmic Surgical Nurse",
+        "Ophthalmic Nurse Practitioner",
+        "Retina Nurse",
+        "Glaucoma Nurse",
+        "Pediatric Ophthalmic Nurse",
+        "Cornea & External Disease Nurse",
+        "Oculoplastic Nurse",
+        "Ophthalmic Oncology Nurse",
+        "Low Vision Rehabilitation Nurse",
       ][Math.floor(Math.random() * 10)],
       phone: `0${Math.floor(Math.random() * 10e8)}`,
       email: `test${Math.floor(Math.random() * 10000)}@example.com`,
@@ -276,13 +282,13 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
           (mode === "add" && (
             <Button variant="primary">
               <PlusIcon />
-              Add Doctor
+              Add Nurse
             </Button>
           ))}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{mode === "edit" ? "Edit doctor" : "Add new doctor"}</DialogTitle>
+          <DialogTitle>{mode === "edit" ? "Edit nurse" : "Add new nurse"}</DialogTitle>
         </DialogHeader>
 
         {isLoading && mode === "edit" ? (
@@ -358,7 +364,7 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
               <div className="space-y-4">
                 {stepper.switch({
                   staffInfo: () => <StaffInfoComponent />,
-                  contactInfo: () => <ContactInfoComponent />,
+                  contactInfo: () => <ContactInfoComponent mode={mode} />,
                   workingHours: () => <WorkingHoursComponent />,
                   daysOff: () => <DaysOffComponent />,
                 })}
@@ -392,8 +398,23 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
                       </Button>
                     )}
 
-                    <Button type="submit" variant={stepper.isLast ? "primary" : "default"}>
-                      {stepper.isLast ? (mode === "edit" ? "Update Doctor" : "Add Doctor") : "Next"}
+                    <Button
+                      type="submit"
+                      variant={stepper.isLast ? "primary" : "default"}
+                      disabled={mutationAdd.isPending || mutationUpdate.isPending}
+                      className="min-w-[120px]"
+                    >
+                      {mutationAdd.isPending || mutationUpdate.isPending ? (
+                        <Loader2 className="animate-spin size-8" />
+                      ) : stepper.isLast ? (
+                        mode === "edit" ? (
+                          "Update Nurse"
+                        ) : (
+                          "Add Nurse"
+                        )
+                      ) : (
+                        "Next"
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -406,4 +427,4 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
   );
 }
 
-export default DoctorForm;
+export default NurseForm;

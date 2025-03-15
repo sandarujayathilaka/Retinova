@@ -32,12 +32,15 @@ import {
 
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useDeleteDoctor, useGetDoctors } from "@/services/doctor.service";
+import { useDeleteAdmin, useGetAdmins } from "@/services/admin.service";
 import toast from "react-hot-toast";
 import { FaUserDoctor } from "react-icons/fa6";
 import DoctorForm from "./DoctorForm";
+import ViewDoctor from "./ViewDoctor";
+import { format } from "date-fns";
+import AdminForm from "./AdminForm";
 
-const List = () => {
+const AdminList = () => {
   const columns = [
     {
       id: "select",
@@ -67,15 +70,12 @@ const List = () => {
       cell: ({ row }) => (
         <div className="flex gap-2 items-center">
           <Avatar className="size-8">
-            <AvatarImage src={row.original.image.Location} alt="@shadcn" />
+            <AvatarImage src={row.original.image?.Location} alt="@shadcn" />
             <AvatarFallback className="bg-gray-300">
               {row.original.name?.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-col">
-            <div className="capitalize font-semibold text-black/80">{row.getValue("name")}</div>
-            <div className="text-sm text-muted-foreground">{row.original.specialty}</div>
-          </div>
+          <div className="capitalize font-semibold text-black/80">{row.getValue("name")}</div>
         </div>
       ),
     },
@@ -84,51 +84,20 @@ const List = () => {
       header: ({ column }) => <SortableHeader column={column} title="Email" />,
 
       cell: ({ row }) => (
-        <div className="flex flex-col">
-          <div className="font-medium text-black/70">{row.original.phone}</div>
-          <div className="lowercase text-sm text-blue-700">{row.getValue("email")}</div>
-        </div>
+        <div className="lowercase text-sm text-blue-700">{row.getValue("email")}</div>
       ),
     },
     {
-      accessorKey: "workingHours",
-      header: ({ column }) => {
-        return <Button variant="ghost">Working Days</Button>;
-      },
-
+      accessorKey: "createdAt",
+      header: ({ column }) => <SortableHeader column={column} title="Date Added" />,
       cell: ({ row }) => {
-        const workingDays = row.original.workingHours;
-
+        const date = row.getValue("createdAt");
         return (
-          <div className="flex gap-1">
-            {Object.keys(workingDays).map((day, index) => {
-              const { enabled } = workingDays[day];
-
-              return (
-                <div
-                  key={index}
-                  className={`rounded-full text-xs leading-3 select-none size-6 flex items-center justify-center ${
-                    enabled ? "bg-blue-400 text-white" : "bg-slate-300"
-                  }`}
-                >
-                  <span>{day?.charAt(0)?.toUpperCase()}</span>
-                </div>
-              );
-            })}
+          <div className="uppercase text-xs font-semibold text-gray-600">
+            {date ? format(new Date(date), "MMM d, yyyy hh:mm a") : "N/A"}
           </div>
         );
       },
-    },
-    {
-      accessorKey: "type",
-      header: ({ column }) => <SortableHeader column={column} title="Type" />,
-      cell: ({ row }) => (
-        <div
-          className={`uppercase inline-block px-2 py-1 rounded-lg text-xs font-semibold ${row.getValue("type").toLowerCase() === "full time" ? "bg-green-200 text-green-700" : "bg-yellow-200 text-yellow-700"}`}
-        >
-          {row.getValue("type")}
-        </div>
-      ),
     },
     {
       id: "actions",
@@ -137,7 +106,7 @@ const List = () => {
         const payment = row.original;
 
         return (
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
                 <span className="sr-only">Open menu</span>
@@ -148,7 +117,15 @@ const List = () => {
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => {
-                  setDoctorIdToEdit(row.original._id);
+                  setAdminIdToView(row.original.id);
+                  setIsViewDialogOpen(true);
+                }}
+              >
+                View
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setAdminIdToEdit(row.original.id);
                   setIsEditDialogOpen(true);
                 }}
               >
@@ -156,7 +133,7 @@ const List = () => {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
-                  setDoctorIdToDelete(row.original._id);
+                  setAdminIdToDelete(row.original.id);
                   setIsDeleteDialogOpen(true);
                 }}
               >
@@ -175,17 +152,19 @@ const List = () => {
   const [rowSelection, setRowSelection] = useState({});
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [doctorIdToDelete, setDoctorIdToDelete] = useState(null);
+  const [adminIdToDelete, setAdminIdToDelete] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [doctorIdToEdit, setDoctorIdToEdit] = useState(null);
+  const [adminIdToEdit, setAdminIdToEdit] = useState(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [adminIdToView, setAdminIdToView] = useState(null);
 
-  const { data: doctors, isLoading } = useGetDoctors();
-  const { mutate: deleteDoctorMutation } = useDeleteDoctor();
+  const { data: admins, isLoading } = useGetAdmins();
+  const { mutate: deleteAdminMutation } = useDeleteAdmin();
 
-  console.log(doctors);
+  console.log(admins);
 
   const table = useReactTable({
-    data: doctors,
+    data: admins,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -209,16 +188,16 @@ const List = () => {
     },
   });
 
-  const handleDelete = doctorId => {
-    deleteDoctorMutation(doctorId, {
+  const handleDelete = adminId => {
+    deleteAdminMutation(adminId, {
       onSuccess: () => {
         setIsDeleteDialogOpen(false);
-        setDoctorIdToDelete(null);
-        toast.success("Doctor deleted successfully.");
+        setAdminIdToDelete(null);
+        toast.success("Admin deleted successfully.");
       },
       onError: error => {
         console.error(error);
-        toast.error("An error occurred while deleting the doctor.");
+        toast.error("An error occurred while deleting the admin.");
       },
     });
   };
@@ -233,9 +212,9 @@ const List = () => {
         <div className="flex items-center justify-between py-4">
           <div className="text-2xl font-medium text-black/70">
             <FaUserDoctor className="inline-block size-10 mr-2 text-blue-500" />
-            {doctors?.length} Doctors
+            {admins?.length} Admins
           </div>
-          <DoctorForm mode="add" />
+          <AdminForm mode="add" />
         </div>
         <div className="flex items-center py-4">
           <Input
@@ -332,20 +311,26 @@ const List = () => {
           </div>
         </div>
       </div>
-      <DoctorForm
+      <AdminForm
         mode="edit"
-        doctorId={doctorIdToEdit}
+        adminId={adminIdToEdit}
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
       />
       <ConfirmDialog
-        onSuccess={() => handleDelete(doctorIdToDelete)}
-        title="doctor"
+        onSuccess={() => handleDelete(adminIdToDelete)}
+        title="admin"
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
+      />
+      <ViewDoctor
+        adminId={adminIdToView}
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}
+        trigger={"View"}
       />
     </>
   );
 };
 
-export default List;
+export default AdminList;

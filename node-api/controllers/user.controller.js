@@ -7,6 +7,7 @@ const {
 const jwt = require("jsonwebtoken");
 const { sendEmail } = require("../utils/send-email");
 const { generateResetLink } = require("../utils/generate-link");
+const crypto = require("crypto");
 
 const signUp = async (req, res) => {
   const { name, username, email, password, role } = req.body;
@@ -106,7 +107,7 @@ const resetPassword = async (req, res) => {
   res.json({ message: "Password reset successful" });
 };
 
-const resendResetLink = async (req, res) => {
+const requestPasswordResetLink = async (req, res) => {
   const { email } = req.body;
 
   const user = await User.findOne({ email });
@@ -120,7 +121,7 @@ const resendResetLink = async (req, res) => {
   const resetLink = generateResetLink(resetToken);
 
   // Send email with the new reset link
-  await sendEmail(email, "Password Reset Request", "password-reset", {
+  await sendEmail(email, "Password Reset Request", "password-reset-regular", {
     name: user.name || "User",
     resetLink,
   });
@@ -138,11 +139,103 @@ const getUser = async (req, res) => {
   res.json(user);
 };
 
+const addAdmin = async (req, res) => {
+  const { name, email, password, image } = req.body;
+
+  const existingUser = await User.findOne({ email });
+
+  if (existingUser) {
+    return res
+      .status(400)
+      .json({ error: "User with this email already exists" });
+  }
+
+  // Generate a secure random password
+  const generatedPassword = crypto.randomBytes(6).toString("hex");
+
+  const admin = new User({
+    name,
+    email,
+    password: password ?? generatedPassword,
+    role: "admin",
+    image,
+  });
+
+  await admin.save();
+
+  // Generate password reset token (valid for 24h)
+  const resetToken = generateResetToken(email);
+  const resetLink = generateResetLink(resetToken);
+
+  // Send email invite
+  await sendEmail(
+    email,
+    "Reset Your Password",
+    "password-reset-new", // MJML template name
+    {
+      name: name ?? "User",
+      resetLink,
+    }
+  );
+
+  res.status(201).json({ message: "Admin added successfully", admin });
+};
+
+const getAdmins = async (req, res) => {
+  const admins = await User.find({ role: "admin" });
+
+  res.send(admins);
+};
+
+const getAdminById = async (req, res) => {
+  const admin = await User.findById(req.params.id);
+
+  if (!admin) {
+    return res.status(404).json({ error: "Admin not found" });
+  }
+
+  res.send(admin);
+};
+
+const updateAdmin = async (req, res) => {
+  const admin = await User.findById(req.params.id);
+
+  if (!admin) {
+    return res.status(404).json({ error: "Admin not found" });
+  }
+
+  const { name, image } = req.body;
+
+  admin.name = name;
+  admin.image = image;
+
+  await admin.save();
+
+  res.send(admin);
+};
+
+const deleteAdmin = async (req, res) => {
+  const admin = await User.findById(req.params.id);
+
+  if (!admin) {
+    return res.status(404).json({ error: "Admin not found" });
+  }
+
+  await User.findByIdAndDelete(req.params.id);
+
+  res.status(204).send(admin);
+};
+
 module.exports = {
   signUp,
   signIn,
   refreshToken,
   resetPassword,
-  resendResetLink,
+  requestPasswordResetLink,
   getUser,
+  addAdmin,
+  getAdmins,
+  getAdminById,
+  updateAdmin,
+  deleteAdmin,
 };
