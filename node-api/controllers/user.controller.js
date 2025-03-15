@@ -7,6 +7,7 @@ const {
 const jwt = require("jsonwebtoken");
 const { sendEmail } = require("../utils/send-email");
 const { generateResetLink } = require("../utils/generate-link");
+const crypto = require("crypto");
 
 const signUp = async (req, res) => {
   const { name, username, email, password, role } = req.body;
@@ -149,10 +150,13 @@ const addAdmin = async (req, res) => {
       .json({ error: "User with this email already exists" });
   }
 
+  // Generate a secure random password
+  const generatedPassword = crypto.randomBytes(6).toString("hex");
+
   const admin = new User({
     name,
     email,
-    password,
+    password: password ?? generatedPassword,
     role: "admin",
     image,
   });

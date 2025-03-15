@@ -31,6 +31,7 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 // import PatientProfile from "./pages/testrecord/PatientProfile";
 import TestRecords from "./pages/testrecord/TestRecords";
 import NurseList from "@/pages/admin/NurseList";
+import AdminList from "./pages/admin/AdminList";
 // import AllPatientList from "./pages/testrecord/AllPatientList";
 
 const App = () => {
@@ -69,6 +70,7 @@ const App = () => {
 
           <Route path="/doctors" element={<DoctorsList />} />
           <Route path="/nurses" element={<NurseList />} />
+          <Route path="/admins" element={<AdminList />} />
         </Route>
 
         {/* <Route path="/allp" element={<AllPatientList />} /> */}
