@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import Diagnose from "./abc";
-import { api } from "@/services/api.service";
+import Diagnose from "./Diagnose";
 import toast from "react-hot-toast";
 import axios from "axios";
 
-const AMD = () => {
+const DR = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [prediction, setPrediction] = useState({
     disease: null,
     type: null,
@@ -13,26 +13,27 @@ const AMD = () => {
   });
   const [patientData, setPatientData] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
 
+  // Handle initial image submission for prediction
   const handleSubmission = async image => {
     setIsSubmitting(true);
     setErrorMessage(null);
-    setPrediction({ disease: null, type: null, confidence: null }); // Reset prediction
-    setPatientData(null); // Reset patient data
+    setPrediction({ disease: null, type: null, confidence: null });
+    setPatientData(null);
+    setImageFile(image);
 
     try {
-      console.log("Uploading image:", image.name);
+      console.log("Uploading image for prediction:", image.name);
 
       const formData = new FormData();
       formData.append("file", image); // Matches backend's expected field
       formData.append("diseaseType", "amd");
       const response = await axios.post("http://localhost:4000/api/patients/predict", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      console.log("Response data:", response.data);
+      console.log("Prediction response:", response.data);
 
       const { diagnosis, confidenceScores, patientData } = response.data;
 
@@ -41,18 +42,16 @@ const AMD = () => {
       }
 
       setPatientData(patientData);
-      // setPrediction({
-      //   disease: "Age Related Macular Degeneration",
-      //   type: diagnosis,
-      //   confidence: confidenceScores,
-      // });
 
-      // const highestConfidence = confidenceScores;
-      setPrediction({
-        disease: "Age Related Macular Degeneration",
-        type: diagnosis,
-        confidence: confidenceScores,
-      });
+      if (confidenceScores) {
+        setPrediction({
+          disease: "Age Related Macular Degeneration",
+          type: diagnosis,
+          confidence: confidenceScores,
+        });
+      } else {
+        toast.error("No confidence scores returned");
+      }
     } catch (error) {
       console.error("Error uploading image:", error);
       const errorMsg = error.response?.data?.error || "Error uploading image. Please try again.";
@@ -63,19 +62,73 @@ const AMD = () => {
     }
   };
 
+  // Handle saving prescription with image and form data
+  const handleSavePrescription = async formValues => {
+    if (!imageFile || !prediction.type || !patientData?.patientId) {
+      toast.error("Missing required data to save prescription.");
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", imageFile);
+      formData.append("diagnosis", prediction.type);
+      formData.append("confidenceScores", JSON.stringify([prediction.confidence]));
+      formData.append("category", JSON.stringify(["AMD"]));
+
+      // Format recommend according to the backend schema
+      const recommend = {
+        medicine: formValues.medicine || "",
+        tests: formValues.tests.map(test => ({
+          testName: test.testName,
+          status: "Pending",
+          attachmentURL: "",
+        })),
+        note: formValues.note || "",
+      };
+      formData.append("recommend", JSON.stringify(recommend));
+
+      const response = await axios.post(
+        "http://localhost:4000/api/patients/onedatasave",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
+
+      console.log("Save response:", response.data);
+      toast.success("Prescription saved successfully!");
+      resetState();
+    } catch (error) {
+      console.error("Error saving prescription:", error);
+      const errorMsg = error.response?.data?.error || "Failed to save prescription.";
+      setErrorMessage(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Reset all states
   const resetState = () => {
     setPrediction({ disease: null, type: null, confidence: null });
     setPatientData(null);
     setErrorMessage(null);
     setIsSubmitting(false);
+    setIsSaving(false);
+    setImageFile(null);
   };
-
+  console.log(patientData);
   return (
     <div>
       <Diagnose
         disease="Age Related Macular Degeneration"
         handleSubmission={handleSubmission}
+        handleSavePrescription={handleSavePrescription}
         isSubmitting={isSubmitting}
+        isSaving={isSaving}
         prediction={prediction}
         patientData={patientData}
         errorMessage={errorMessage}
@@ -85,4 +138,4 @@ const AMD = () => {
   );
 };
 
-export default AMD;
+export default DR;

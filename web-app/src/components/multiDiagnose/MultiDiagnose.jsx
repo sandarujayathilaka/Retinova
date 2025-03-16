@@ -8,6 +8,7 @@ import ImageModal from "../diagnose/ImageModal";
 import { PushSpinner } from "react-spinners-kit";
 import { Button } from "antd";
 import { FaSave } from "react-icons/fa";
+import Title from "antd/es/typography/Title";
 
 const { TabPane } = Tabs;
 
@@ -48,13 +49,18 @@ const MultiDiagnose = ({
 
   return (
     <div className="p-6">
-      <div className="font-kanit text-4xl font-semibold text-gray-800 mb-6">
-        Multi Diagnose{" "}
-        {disease && (
-          <span className="font-medium text-3xl text-gray-600">
-            {">"} {disease}
-          </span>
-        )}
+      <div className="flex items-center mb-8 bg-gradient-to-r from-blue-50 to-white p-4 rounded-xl shadow-sm border border-indigo-100">
+        <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md mr-4">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
+            <path d="M2 3h20M16 3v18H8V3M12 7v2M12 14v2"/>
+          </svg>
+        </div>
+        <div>
+          <Title level={2} className="text-gray-900 mb-0 font-semibold text-xl md:text-2xl">
+            Diagnose <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-600 font-medium">{disease}</span>
+          </Title>
+          <p className="text-gray-600 text-sm mt-1">Upload a retinal scan to analyze and diagnose potential conditions</p>
+        </div>
       </div>
 
       <Tabs activeKey={activeTab} onChange={setActiveTab} tabPosition="top" animated>
