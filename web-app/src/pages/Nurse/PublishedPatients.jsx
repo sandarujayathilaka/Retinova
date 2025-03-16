@@ -82,7 +82,7 @@ const PublishedPatients = () => {
         ];
 
         if (doctorIds.length > 0) {
-          const doctorResponse = await api.post("/v2/doctors/bulk", { doctorIds });
+          const doctorResponse = await api.post("/doctors/bulk", { doctorIds });
           console.log("Doctor API Response:", doctorResponse.data);
           setDoctors(doctorResponse.data.doctors || []);
         } else {

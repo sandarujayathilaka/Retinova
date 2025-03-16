@@ -21,14 +21,18 @@ import PublishedPatients from "./pages/Nurse/PublishedPatients";
 import AddPatient from "./pages/Nurse/AddPatient";
 import View from "./pages/Nurse/View";
 import RVO from "./pages/diseases/RVO";
-import DoctorsList from "./pages/doctors/List";
-import Add from "./pages/doctors/New";
+import DoctorsList from "@/pages/admin/DoctorList.jsx";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/auth/ResetPassword";
 import { Roles } from "./constants/roles";
 import ProtectedRoute from "./middleware/ProtectedRoute";
+import Login from "./pages/auth/Login";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 // import PatientProfile from "./pages/testrecord/PatientProfile";
 import TestRecords from "./pages/testrecord/TestRecords";
+import NurseList from "@/pages/admin/NurseList";
+import AdminList from "./pages/admin/AdminList";
+import TestList from "./pages/admin/TestList";
 // import AllPatientList from "./pages/testrecord/AllPatientList";
 
 const App = () => {
@@ -36,7 +40,9 @@ const App = () => {
     <BrowserRouter>
       <Toaster position="top-right" />
       <Routes>
-        <Route path="/" element={<Diagnose />} />
+        <Route path="/" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* common routes - for all roles */}
         <Route
@@ -44,7 +50,7 @@ const App = () => {
             <ProtectedRoute roles={[Roles.ADMIN, Roles.DOCTOR, Roles.NURSE]} redirectPath="/404" />
           }
         >
-          <Route path="/" element={<Diagnose />} />
+          <Route path="/" element={<Dashboard />} />
           <Route path="/monitoringPatients" element={<MonitoringPatients />} />
           <Route path="/publishedPatients" element={<PublishedPatients />} />
           <Route path="/addPatient" element={<AddPatient />} />
@@ -64,23 +70,19 @@ const App = () => {
           <Route path="/review-patients" element={<ReviewPatientsPage />} />
 
           <Route path="/doctors" element={<DoctorsList />} />
-          <Route path="/add" element={<Add />} />
+          <Route path="/nurses" element={<NurseList />} />
+          <Route path="/admins" element={<AdminList />} />
+          <Route path="/tests" element={<TestList />} />
         </Route>
 
-        <Route path="/reset-password" element={<ResetPassword />} />
+        {/* <Route path="/allp" element={<AllPatientList />} /> */}
+        <Route path="/patients/:patientId" element={<PatientProfile />} />
+        <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
 
-       
-
-
-
-          {/* <Route path="/allp" element={<AllPatientList />} /> */}
-          <Route path="/patients/:patientId" element={<PatientProfile />} />
-          <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
-
-          {/* 404 Not Found Page */}
-          <Route path="*" element={<NotFound />} />
-          <Route path="/404" element={<NotFound />} />
-        </Routes>
+        {/* 404 Not Found Page */}
+        <Route path="*" element={<NotFound />} />
+        <Route path="/404" element={<NotFound />} />
+      </Routes>
     </BrowserRouter>
   );
 };

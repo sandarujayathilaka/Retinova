@@ -25,6 +25,7 @@ export default {
       },
       colors: {
         main: "#3b82f6",
+        success: "#10b981",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
@@ -89,4 +90,3 @@ export default {
   },
   plugins: [require("tailwindcss-animate")],
 };
-

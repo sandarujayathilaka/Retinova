@@ -61,6 +61,12 @@ const data = {
       isExpandable: false,
     },
     {
+      title: "Nurses",
+      url: "/nurses",
+      icon: doctors,
+      isExpandable: false,
+    },
+    {
       title: "Patients",
       icon: doctors,
       isExpandable: true,
