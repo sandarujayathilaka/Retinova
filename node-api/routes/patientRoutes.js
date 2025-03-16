@@ -12,6 +12,8 @@ const {
   getPatientsWithUncheckedDiagnoses,
   getPatientsByOneStatus,
   updateDiagnosisRecommendations,
+  updateDiagnosisReviewRecommendations,
+  updateTestStatus,
 } = require("../controllers/patientController");
 const upload = require("../middleware/upload");
 
@@ -28,8 +30,8 @@ router.get("/status",getPatientsByOneStatus);
 router.get("/:patientId", getPatientById);
 router.get("/unchecked", getPatientsWithUncheckedDiagnoses);
 router.put("/:patientId/diagnoses/:diagnosisId/recommendations", updateDiagnosisRecommendations);
-
-
+router.put("/:patientId/diagnoses/:diagnosisId/review", updateDiagnosisReviewRecommendations);
+router.put("/:patientId/diagnoses/:diagnosisId/tests/:testId/status", updateTestStatus);
 
 // **Get Patient Diagnosis History**
 router.get("/:patientId/history", getPatientHistory);

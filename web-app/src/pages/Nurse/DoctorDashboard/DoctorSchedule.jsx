@@ -323,7 +323,7 @@ const DoctorSchedule = ({ doctor, selectedDate, setSelectedDate, reviewPatientCo
   };
 
   return (
-    <Card className={`shadow-lg rounded-xl overflow-hidden bg-white transition-all duration-300 hover:shadow-xl border-none ${className}`}>
+    <Card className={`rounded-xl overflow-hidden bg-white transition-all duration-300 border-none ${className}`}>
       <CardHeader className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white p-4">
         <div className="text-lg font-semibold flex items-center gap-2">
           <CalendarClock className="h-5 w-5" /> My Schedule
@@ -355,7 +355,7 @@ const DoctorSchedule = ({ doctor, selectedDate, setSelectedDate, reviewPatientCo
               </div>
             </div>
             
-            <div className="mt-2 p-3 bg-gray-50 rounded-lg shadow-sm w-full border border-gray-100">
+            <div className="mt-2 p-3 bg-gray-50 rounded-lg w-full border border-gray-100">
               <h3 className="font-semibold text-indigo-900 mb-2 flex items-center gap-1">
                 <Clock className="w-4 h-4" /> {selectedDate.toLocaleDateString("en-US", { month: 'long', day: 'numeric', year: 'numeric' })}
               </h3>

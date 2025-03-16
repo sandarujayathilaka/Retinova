@@ -34,11 +34,11 @@ class UserService {
     const resetToken = generateResetToken(email);
     const resetLink = generateResetLink(resetToken);
 
-    // Send email invite with AWS SES
+    // Send email invite
     await sendEmail(
       email,
       "Reset Your Password",
-      "password-reset", // MJML template name
+      "password-reset-new", // MJML template name
       {
         name: name ?? "User",
         resetLink,

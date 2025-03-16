@@ -1,9 +1,10 @@
 const Patient = require("../models/patient");
+const Doctor = require("../models/doctor.model");
 const { s3 } = require("../config/aws");
 require("dotenv").config();
 const mongoose = require("mongoose");
 const validator = require("validator");
-const logger = require("../utils/logger"); // Hypothetical logger (e.g., Winston)
+const logger = require("../config/logger"); // Hypothetical logger (e.g., Winston)
 const { isValidDate, getStartEndOfDay, getStartEndOfMonth } = require("../utils/dateUtils"); // Hypothetical date utilities
 
 // Utility function to upload files to S3
@@ -31,34 +32,92 @@ const deleteFileFromS3 = async (filePath) => {
 };
 
 // Get patient count for a specific day
+// const getPatientCount = async (req, res) => {
+//   console.log(req.query)
+//   try {
+//     console.log("ree")
+//     const { patientStatus, nextVisit, doctorId } = req.query;
+//     console.log(patientStatus, nextVisit, doctorId)
+//     if (!patientStatus || !nextVisit || !doctorId) {
+//       return res.status(400).json({
+//         errorCode: "MISSING_QUERY_PARAMS",
+//         message: "Missing required query parameters",
+//       });
+//     }
+//     if (!isValidDate(nextVisit)) {
+//       return res.status(400).json({
+//         errorCode: "INVALID_DATE",
+//         message: "Invalid nextVisit date",
+//       });
+//     }
+//     console.log(patientStatus, nextVisit, doctorId)
+//     const { start, end } = getStartEndOfDay(nextVisit);
+//     console.log(start, end )
+//     const count = await Patient.countDocuments({
+//       patientStatus,
+//       nextVisit: { $gte: start, $lte: end },
+//       doctorId,
+//     });
+//     console.log(count )
+//     res.status(200).json({ message: "Patient count retrieved", data: { count } });
+//   } catch (error) {
+//     logger.error("Error in getPatientCount:", error);
+//     res.status(500).json({
+//       errorCode: "SERVER_ERROR",
+//       message: "Error fetching patient count",
+//       error: error.message,
+//     });
+//   }
+// };
+
 const getPatientCount = async (req, res) => {
-  console.log(req.query)
   try {
-    console.log("ree")
-    const { patientStatus, nextVisit, doctorId } = req.query;
-    console.log(patientStatus, nextVisit, doctorId)
+    const { patientStatus, nextVisit, doctorId, patientId } = req.query;
+
+    // Validate required parameters
     if (!patientStatus || !nextVisit || !doctorId) {
       return res.status(400).json({
         errorCode: "MISSING_QUERY_PARAMS",
-        message: "Missing required query parameters",
+        message: "Missing required query parameters: patientStatus, nextVisit, doctorId",
       });
     }
+
     if (!isValidDate(nextVisit)) {
       return res.status(400).json({
         errorCode: "INVALID_DATE",
         message: "Invalid nextVisit date",
       });
     }
-    console.log(patientStatus, nextVisit, doctorId)
+
+    // Normalize the date to the start and end of the day
     const { start, end } = getStartEndOfDay(nextVisit);
-    console.log(start, end )
-    const count = await Patient.countDocuments({
+
+    // Build the base query
+    const query = {
       patientStatus,
       nextVisit: { $gte: start, $lte: end },
       doctorId,
+    };
+
+    // Get total count of patients matching the criteria
+    const totalCount = await Patient.countDocuments(query);
+
+    // If patientId is provided, check if this specific patient is in the count
+    let isPatientIncluded = false;
+    if (patientId) {
+      const patientQuery = { ...query, patientId };
+      const patientExists = await Patient.countDocuments(patientQuery);
+      isPatientIncluded = patientExists > 0;
+    }
+
+    // Return response with total count and whether the patient is included
+    res.status(200).json({
+      message: "Patient count retrieved",
+      data: {
+        totalCount,
+        isPatientIncluded: patientId ? isPatientIncluded : undefined, // Only include if patientId was provided
+      },
     });
-    console.log(count )
-    res.status(200).json({ message: "Patient count retrieved", data: { count } });
   } catch (error) {
     logger.error("Error in getPatientCount:", error);
     res.status(500).json({
@@ -69,56 +128,12 @@ const getPatientCount = async (req, res) => {
   }
 };
 
-
-// const getPatientCount = async (req, res) => {
-//     try {
-//       console.log("getPatientCount")
-//       console.log(req.params)
-//       const { patientStatus, nextVisit, doctorId } = req.query;
-//   console.log(patientStatus, nextVisit, doctorId)
-//       // Validate required parameters
-//       if (!patientStatus || !nextVisit || !doctorId) {
-//         return res.status(400).json({
-//           success: false,
-//           message: "Missing required query parameters: patientStatus, nextVisit, doctorId",
-//         });
-//       }
-  
-//       // Convert nextVisit to start and end of day for accurate matching
-//       const startOfDay = new Date(nextVisit);
-//       startOfDay.setUTCHours(0, 0, 0, 0);
-//       const endOfDay = new Date(nextVisit);
-//       endOfDay.setUTCHours(23, 59, 59, 999);
-  
-//       // Query the database for patients with matching status, nextVisit, and doctorId in diagnoseHistory
-//       const count = await Patient.countDocuments({
-//         patientStatus,
-//         nextVisit: {
-//           $gte: startOfDay,
-//           $lte: endOfDay,
-//         },
-//         "diagnoseHistory.doctorId": doctorId, // Match doctorId in diagnoseHistory array
-//       });
-  
-//       res.status(200).json({
-//         success: true,
-//         count,
-//       });
-//     } catch (error) {
-//       console.error("Error fetching patient count:", error);
-//       res.status(500).json({
-//         success: false,
-//         message: "Server error while fetching patient count",
-//         error: error.message,
-//       });
-//     }
-//   };
-
 // Update patient revisit details
 const updatePatientRevisit = async (req, res) => {
   try {
     const { patientId } = req.params;
     const { doctorId, revisitDate, patientStatus = "Review" } = req.body;
+
     if (!doctorId || !revisitDate) {
       return res.status(400).json({
         errorCode: "MISSING_FIELDS",
@@ -137,6 +152,7 @@ const updatePatientRevisit = async (req, res) => {
         message: "Invalid revisit date",
       });
     }
+
     const patient = await Patient.findOne({ patientId });
     if (!patient) {
       return res.status(404).json({
@@ -144,10 +160,17 @@ const updatePatientRevisit = async (req, res) => {
         message: `Patient with ID ${patientId} not found`,
       });
     }
+
+    // Normalize the revisitDate to the start of the day
+    const normalizedRevisitDate = new Date(revisitDate);
+    normalizedRevisitDate.setUTCHours(0, 0, 0, 0);
+
     patient.doctorId = doctorId;
-    patient.nextVisit = new Date(revisitDate);
+    patient.nextVisit = normalizedRevisitDate; // Save normalized date
     patient.patientStatus = patientStatus;
+
     const updatedPatient = await patient.save();
+
     res.status(200).json({
       message: "Revisit updated successfully",
       data: {
@@ -256,11 +279,25 @@ const getPatientsByStatus = async (req, res) => {
     }
     if (gender) query.gender = gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
     const skip = (page - 1) * limit;
+    // const patients = await Patient.find(query)
+    //   .sort({ createdAt: -1 })
+    //   .skip(skip)
+    //   .limit(Number(limit))
+    //   .select("patientId fullName nic gender contactNumber email address diagnoseHistory birthDate age")
+    //   .lean();
+    let selectFields = "patientId fullName nic gender contactNumber email address diagnoseHistory birthDate age";
+
+    // Add doctorId and nextVisit if status is "Review"
+    if (status.toLowerCase() === "review") {
+      selectFields += " doctorId nextVisit";
+    }
+
+    // Fetch patients
     const patients = await Patient.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit))
-      .select("patientId fullName nic gender contactNumber email address diagnoseHistory birthDate age")
+      .select(selectFields)
       .lean();
     const total = await Patient.countDocuments(query);
     res.status(200).json({
@@ -286,6 +323,95 @@ const getPatientsByStatus = async (req, res) => {
 };
 
 // Add a new patient
+// const addPatient = async (req, res) => {
+//   try {
+//     const {
+//       fullName,
+//       birthDate,
+//       gender,
+//       nic,
+//       contactNumber,
+//       email,
+//       address,
+//       bloodType,
+//       height,
+//       weight,
+//       allergies,
+//       primaryPhysician,
+//       emergencyContact,
+//     } = req.body;
+//     if (!fullName || !birthDate || !gender || !nic || !contactNumber || !email || !address) {
+//       return res.status(400).json({
+//         errorCode: "MISSING_FIELDS",
+//         message: "Required fields are missing",
+//       });
+//     }
+//     if (!validator.isEmail(email)) {
+//       return res.status(400).json({
+//         errorCode: "INVALID_EMAIL",
+//         message: "Invalid email",
+//       });
+//     }
+//     if (!isValidDate(birthDate)) {
+//       return res.status(400).json({
+//         errorCode: "INVALID_DATE",
+//         message: "Invalid birth date",
+//       });
+//     }
+//     const sanitizedNic = validator.escape(nic);
+//     if (await Patient.findOne({ nic: sanitizedNic })) {
+//       return res.status(400).json({
+//         errorCode: "DUPLICATE_NIC",
+//         message: "Patient with this NIC already exists",
+//       });
+//     }
+//     if (await Patient.findOne({ email })) {
+//       return res.status(400).json({
+//         errorCode: "DUPLICATE_EMAIL",
+//         message: "Patient with this email already exists",
+//       });
+//     }
+//     let physicianId;
+//     if (primaryPhysician) {
+//       if (!mongoose.Types.ObjectId.isValid(primaryPhysician)) {
+//         return res.status(400).json({
+//           errorCode: "INVALID_PHYSICIAN_ID",
+//           message: "Invalid primaryPhysician ID format",
+//         });
+//       }
+//       physicianId = new mongoose.Types.ObjectId(primaryPhysician);
+//     }
+//     const patientId = await mongoose.connection.transaction(async (session) => {
+//       const lastPatient = await Patient.findOne().sort({ createdAt: -1 }).session(session).select("patientId");
+//       return lastPatient ? `P${parseInt(lastPatient.patientId.replace(/\D/g, "")) + 1}` : "P1";
+//     });
+//     const newPatient = new Patient({
+//       patientId,
+//       fullName: validator.escape(fullName),
+//       birthDate: new Date(birthDate),
+//       gender,
+//       nic: sanitizedNic,
+//       contactNumber,
+//       email,
+//       address,
+//       bloodType,
+//       height: height ? Number(height) : undefined,
+//       weight: weight ? Number(weight) : undefined,
+//       allergies,
+//       primaryPhysician: physicianId,
+//       emergencyContact,
+//     });
+//     await newPatient.save();
+//     res.status(201).json({ message: "Patient added successfully", data: newPatient });
+//   } catch (error) {
+//     logger.error("Error in addPatient:", error);
+//     res.status(500).json({
+//       errorCode: "SERVER_ERROR",
+//       message: "Error adding patient",
+//       error: error.message,
+//     });
+//   }
+// };
 const addPatient = async (req, res) => {
   try {
     const {
@@ -303,24 +429,35 @@ const addPatient = async (req, res) => {
       primaryPhysician,
       emergencyContact,
     } = req.body;
-    if (!fullName || !birthDate || !gender || !nic || !contactNumber || !email || !address) {
+
+    // Required field validation
+    const requiredFields = { fullName, birthDate, gender, nic, contactNumber, email };
+    const missingFields = Object.keys(requiredFields).filter((key) => !requiredFields[key]);
+    if (missingFields.length > 0) {
       return res.status(400).json({
         errorCode: "MISSING_FIELDS",
-        message: "Required fields are missing",
+        message: `Required fields are missing: ${missingFields.join(", ")}`,
       });
     }
+
+    // Email validation
     if (!validator.isEmail(email)) {
       return res.status(400).json({
         errorCode: "INVALID_EMAIL",
         message: "Invalid email",
       });
     }
-    if (!isValidDate(birthDate)) {
+
+    // Birth date validation
+    const parsedBirthDate = new Date(birthDate);
+    if (isNaN(parsedBirthDate.getTime())) {
       return res.status(400).json({
         errorCode: "INVALID_DATE",
         message: "Invalid birth date",
       });
     }
+
+    // Sanitize and check for duplicates
     const sanitizedNic = validator.escape(nic);
     if (await Patient.findOne({ nic: sanitizedNic })) {
       return res.status(400).json({
@@ -328,12 +465,15 @@ const addPatient = async (req, res) => {
         message: "Patient with this NIC already exists",
       });
     }
+
     if (await Patient.findOne({ email })) {
       return res.status(400).json({
         errorCode: "DUPLICATE_EMAIL",
         message: "Patient with this email already exists",
       });
     }
+
+    // Validate primary physician ID if provided
     let physicianId;
     if (primaryPhysician) {
       if (!mongoose.Types.ObjectId.isValid(primaryPhysician)) {
@@ -342,16 +482,25 @@ const addPatient = async (req, res) => {
           message: "Invalid primaryPhysician ID format",
         });
       }
+      const doctorExists = await Doctor.findById(primaryPhysician);
+      if (!doctorExists) {
+        return res.status(400).json({
+          errorCode: "PHYSICIAN_NOT_FOUND",
+          message: "Primary physician not found",
+        });
+      }
       physicianId = new mongoose.Types.ObjectId(primaryPhysician);
     }
-    const patientId = await mongoose.connection.transaction(async (session) => {
-      const lastPatient = await Patient.findOne().sort({ createdAt: -1 }).session(session).select("patientId");
-      return lastPatient ? `P${parseInt(lastPatient.patientId.replace(/\D/g, "")) + 1}` : "P1";
-    });
+
+    // Generate patient ID
+    const lastPatient = await Patient.findOne().sort({ createdAt: -1 }).select("patientId");
+    const patientId = lastPatient ? `P${parseInt(lastPatient.patientId.replace(/\D/g, "")) + 1}` : "P1";
+
+    // Create new patient
     const newPatient = new Patient({
       patientId,
       fullName: validator.escape(fullName),
-      birthDate: new Date(birthDate),
+      birthDate: parsedBirthDate,
       gender,
       nic: sanitizedNic,
       contactNumber,
@@ -364,9 +513,21 @@ const addPatient = async (req, res) => {
       primaryPhysician: physicianId,
       emergencyContact,
     });
+
     await newPatient.save();
     res.status(201).json({ message: "Patient added successfully", data: newPatient });
   } catch (error) {
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map((err) => ({
+        path: err.path,
+        message: err.message,
+      }));
+      return res.status(400).json({
+        errorCode: "VALIDATION_ERROR",
+        message: "Validation failed",
+        errors,
+      });
+    }
     logger.error("Error in addPatient:", error);
     res.status(500).json({
       errorCode: "SERVER_ERROR",
@@ -375,7 +536,6 @@ const addPatient = async (req, res) => {
     });
   }
 };
-
 // Get a single patient by ID
 const getPatient = async (req, res) => {
   try {
@@ -400,6 +560,91 @@ const getPatient = async (req, res) => {
 };
 
 // Edit a patient's details
+// const editPatient = async (req, res) => {
+//   try {
+//     const { patientId } = req.params;
+//     const {
+//       nic,
+//       email,
+//       birthDate,
+//       fullName,
+//       gender,
+//       contactNumber,
+//       address,
+//       bloodType,
+//       height,
+//       weight,
+//       allergies,
+//       primaryPhysician,
+//       emergencyContact,
+//     } = req.body;
+
+//     if (!fullName || !birthDate || !gender || !nic || !contactNumber || !email || !address) {
+//       return res.status(400).json({
+//         errorCode: "MISSING_FIELDS",
+//         message: "Required fields are missing",
+//       });
+//     }
+  
+//     const patient = await Patient.findOne({ patientId });
+//     if (!patient) {
+//       return res.status(404).json({
+//         errorCode: "PATIENT_NOT_FOUND",
+//         message: "Patient not found",
+//       });
+//     }
+//     if (nic && nic !== patient.nic && (await Patient.findOne({ nic, _id: { $ne: patient._id } }))) {
+//       return res.status(400).json({
+//         errorCode: "DUPLICATE_NIC",
+//         message: "Patient with this NIC already exists",
+//       });
+//     }
+//     if (email && email !== patient.email && (await Patient.findOne({ email, _id: { $ne: patient._id } }))) {
+//       return res.status(400).json({
+//         errorCode: "DUPLICATE_EMAIL",
+//         message: "Patient with this email already exists",
+//       });
+//     }
+//     if (birthDate && !isValidDate(birthDate)) {
+//       return res.status(400).json({
+//         errorCode: "INVALID_DATE",
+//         message: "Invalid birth date",
+//       });
+//     }
+//     if (email && !validator.isEmail(email)) {
+//       return res.status(400).json({
+//         errorCode: "INVALID_EMAIL",
+//         message: "Invalid email",
+//       });
+//     }
+//     patient.fullName = fullName ? validator.escape(fullName) : patient.fullName;
+//     patient.nic = nic ? validator.escape(nic) : patient.nic;
+//     patient.birthDate = birthDate ? new Date(birthDate) : patient.birthDate;
+//     patient.gender = gender || patient.gender;
+//     patient.contactNumber = contactNumber || patient.contactNumber;
+//     patient.email = email !== undefined ? email : patient.email;
+//     patient.address = address !== undefined ? address : patient.address;
+//     patient.bloodType = bloodType !== undefined ? bloodType : patient.bloodType;
+//     patient.height = height !== undefined ? Number(height) : patient.height;
+//     patient.weight = weight !== undefined ? Number(weight) : patient.weight;
+//     patient.allergies = allergies !== undefined ? allergies : patient.allergies;
+//     patient.primaryPhysician =
+//       primaryPhysician !== undefined && mongoose.Types.ObjectId.isValid(primaryPhysician)
+//         ? new mongoose.Types.ObjectId(primaryPhysician)
+//         : patient.primaryPhysician;
+//     patient.emergencyContact = emergencyContact !== undefined ? emergencyContact : patient.emergencyContact;
+//     const updatedPatient = await patient.save();
+//     res.status(200).json({ message: "Patient updated successfully", data: updatedPatient });
+//   } catch (error) {
+//     logger.error("Error in editPatient:", error);
+//     res.status(500).json({
+//       errorCode: "SERVER_ERROR",
+//       message: "Error updating patient",
+//       error: error.message,
+//     });
+//   }
+// };
+
 const editPatient = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -418,14 +663,17 @@ const editPatient = async (req, res) => {
       primaryPhysician,
       emergencyContact,
     } = req.body;
-    
-    if (!fullName || !birthDate || !gender || !nic || !contactNumber || !email || !address) {
+
+    // Required field validation
+    const requiredFields = { fullName, birthDate, gender, nic, contactNumber, email, address };
+    const missingFields = Object.keys(requiredFields).filter((key) => !requiredFields[key]);
+    if (missingFields.length > 0) {
       return res.status(400).json({
         errorCode: "MISSING_FIELDS",
-        message: "Required fields are missing",
+        message: `Required fields are missing: ${missingFields.join(", ")}`,
       });
     }
-  
+
     const patient = await Patient.findOne({ patientId });
     if (!patient) {
       return res.status(404).json({
@@ -433,6 +681,8 @@ const editPatient = async (req, res) => {
         message: "Patient not found",
       });
     }
+
+    // Check for duplicates excluding current patient
     if (nic && nic !== patient.nic && (await Patient.findOne({ nic, _id: { $ne: patient._id } }))) {
       return res.status(400).json({
         errorCode: "DUPLICATE_NIC",
@@ -445,37 +695,106 @@ const editPatient = async (req, res) => {
         message: "Patient with this email already exists",
       });
     }
-    if (birthDate && !isValidDate(birthDate)) {
-      return res.status(400).json({
-        errorCode: "INVALID_DATE",
-        message: "Invalid birth date",
-      });
-    }
-    if (email && !validator.isEmail(email)) {
+
+    // Validation: Email
+    if (!validator.isEmail(email)) {
       return res.status(400).json({
         errorCode: "INVALID_EMAIL",
         message: "Invalid email",
       });
     }
-    patient.fullName = fullName ? validator.escape(fullName) : patient.fullName;
-    patient.nic = nic ? validator.escape(nic) : patient.nic;
-    patient.birthDate = birthDate ? new Date(birthDate) : patient.birthDate;
-    patient.gender = gender || patient.gender;
-    patient.contactNumber = contactNumber || patient.contactNumber;
-    patient.email = email !== undefined ? email : patient.email;
-    patient.address = address !== undefined ? address : patient.address;
-    patient.bloodType = bloodType !== undefined ? bloodType : patient.bloodType;
-    patient.height = height !== undefined ? Number(height) : patient.height;
-    patient.weight = weight !== undefined ? Number(weight) : patient.weight;
-    patient.allergies = allergies !== undefined ? allergies : patient.allergies;
-    patient.primaryPhysician =
-      primaryPhysician !== undefined && mongoose.Types.ObjectId.isValid(primaryPhysician)
-        ? new mongoose.Types.ObjectId(primaryPhysician)
-        : patient.primaryPhysician;
-    patient.emergencyContact = emergencyContact !== undefined ? emergencyContact : patient.emergencyContact;
+
+    // Validation: Birth date
+    const parsedBirthDate = new Date(birthDate);
+    if (isNaN(parsedBirthDate.getTime())) {
+      return res.status(400).json({
+        errorCode: "INVALID_DATE",
+        message: "Invalid birth date",
+      });
+    }
+
+    // Validation: Primary physician
+    let physicianId;
+    if (primaryPhysician !== undefined) {
+      if (!mongoose.Types.ObjectId.isValid(primaryPhysician)) {
+        return res.status(400).json({
+          errorCode: "INVALID_PHYSICIAN_ID",
+          message: "Invalid primary physician ID format",
+        });
+      }
+      const doctorExists = await Doctor.findById(primaryPhysician);
+      if (!doctorExists) {
+        return res.status(400).json({
+          errorCode: "PHYSICIAN_NOT_FOUND",
+          message: "Primary physician not found",
+        });
+      }
+      physicianId = new mongoose.Types.ObjectId(primaryPhysician);
+    }
+
+// Validation: Emergency contact
+if (emergencyContact !== undefined) {
+  const { name, relationship, phone } = emergencyContact || {};
+  const hasAnyField = name || relationship || phone;
+  if (hasAnyField && !(name && relationship && phone)) {
+    return res.status(400).json({
+      errorCode: "INVALID_EMERGENCY_CONTACT",
+      message: "All emergency contact fields (name, relationship, phone) are required if any are provided.",
+    });
+  }
+  if (hasAnyField && (!validator.isMobilePhone(phone, "any", { strictMode: true }) || !/^\d{10}$/.test(phone))) {
+    return res.status(400).json({
+      errorCode: "INVALID_EMERGENCY_PHONE",
+      message: "Emergency contact phone must be a valid 10-digit number.",
+    });
+  }
+}
+
+    // Prepare updated data
+    const updatedData = {
+      fullName: validator.escape(fullName),
+      nic: validator.escape(nic),
+      birthDate: parsedBirthDate,
+      gender,
+      contactNumber,
+      email,
+      address,
+      bloodType: bloodType !== undefined ? bloodType : patient.bloodType,
+      height: height !== undefined ? Number(height) : patient.height,
+      weight: weight !== undefined ? Number(weight) : patient.weight,
+      allergies: allergies !== undefined ? allergies : patient.allergies,
+      primaryPhysician: physicianId !== undefined ? physicianId : patient.primaryPhysician,
+      emergencyContact: emergencyContact !== undefined ? emergencyContact : patient.emergencyContact,
+    };
+
+    // Check if there are any changes
+    const hasChanges = Object.keys(updatedData).some(
+      (key) => JSON.stringify(updatedData[key]) !== JSON.stringify(patient[key])
+    );
+    if (!hasChanges) {
+      return res.status(200).json({
+        message: "No changes have been made",
+        data: patient,
+      });
+    }
+
+    // Update patient
+    Object.assign(patient, updatedData);
     const updatedPatient = await patient.save();
     res.status(200).json({ message: "Patient updated successfully", data: updatedPatient });
   } catch (error) {
+    console.log(error)
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map((err) => ({
+        path: err.path,
+        message: err.message,
+      }));
+      return res.status(400).json({
+        errorCode: "VALIDATION_ERROR",
+        message: "Validation failed",
+        errors,
+      });
+    }
     logger.error("Error in editPatient:", error);
     res.status(500).json({
       errorCode: "SERVER_ERROR",

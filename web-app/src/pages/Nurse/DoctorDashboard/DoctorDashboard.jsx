@@ -614,7 +614,7 @@ const DoctorDashboard = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
-        <div className="text-center p-8 bg-white rounded-xl shadow-lg">
+        <div className="text-center p-8 bg-white rounded-xl">
           <Loader2 className="h-12 w-12 text-indigo-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-700 font-medium">Loading doctor dashboard...</p>
         </div>
@@ -625,7 +625,7 @@ const DoctorDashboard = () => {
   if (error && !doctor) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
-        <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md">
+        <div className="text-center p-8 bg-white rounded-xl max-w-md">
           <div className="text-red-500 text-lg mb-4 font-medium">{error}</div>
           <Button 
             onClick={() => fetchData()}
@@ -711,7 +711,7 @@ const DoctorDashboard = () => {
           <Button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="bg-gradient-to-r from-blue-800 to-indigo-800 hover:from-blue-900 hover:to-indigo-900 rounded-lg px-6 py-2 text-white shadow-md flex items-center gap-2 transition-all duration-200"
+            className="bg-gradient-to-r from-blue-800 to-indigo-800 hover:from-blue-900 hover:to-indigo-900 rounded-lg px-6 py-2 text-white flex items-center gap-2 transition-all duration-200"
           >
             {isRefreshing ? (
               <>

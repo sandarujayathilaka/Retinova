@@ -15,12 +15,12 @@ const dashboardRoutes = require("./routes/dashboard.routes");
 const patientNurseRoutes = require("./routes/patient.routes");
 const utilRoutes = require("./routes/util.routes");
 const doctorRoutes = require("./routes/doctor.routes");
+const nurseRoutes = require("./routes/nurse.routes");
 const updatePatientAges = require("./config/cron.jobs");
 const treatmentRoutes = require("./routes/treatment.routes");
 // const patientRoutes = require("./routes/patient.routes.temp");
-const testsRoutes = require("./routes/test.records.routes");
-
-
+const testRecordssRoutes = require("./routes/test.records.routes");
+const testRoutes = require("./routes/test.routes");
 
 const app = express();
 
@@ -36,16 +36,20 @@ app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
-app.use("/api/patients", patientRoutes);
+// app.use("/api/patients", patientRoutes);
 
 app.use("/api/auth", userRoutes);
-app.use("/api/v2/patients", patientNurseRoutes);
+app.use("/api/patients", patientNurseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/util", utilRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/treatments", treatmentRoutes);
-app.use("/api/patients", patientRoutes);
-app.use("/api/patients", testsRoutes);
+// app.use("/api/patients", patientRoutes);
+// app.use("/api/patients", testRecordssRoutes);
+app.use("/api/nurses", nurseRoutes);
+app.use("/api/tests", testRoutes);
+
+// app.use("/api/patients", testsRoutes);
 
 
 app.use(errorHandler);
