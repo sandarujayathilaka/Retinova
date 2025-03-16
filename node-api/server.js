@@ -19,6 +19,7 @@ const updatePatientAges = require("./config/cron.jobs");
 const treatmentRoutes = require("./routes/treatment.routes");
 // const patientRoutes = require("./routes/patient.routes.temp");
 const testsRoutes = require("./routes/test.records.routes");
+const nurseRoutes = require("./routes/nurse.routes");
 
 
 
@@ -46,6 +47,8 @@ app.use("/api/doctors", doctorRoutes);
 app.use("/api/treatments", treatmentRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/patients", testsRoutes);
+app.use("/api/nurse", nurseRoutes);
+
 
 
 app.use(errorHandler);

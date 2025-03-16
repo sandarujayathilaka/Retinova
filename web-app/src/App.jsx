@@ -29,9 +29,12 @@ import { Roles } from "./constants/roles";
 import ProtectedRoute from "./middleware/ProtectedRoute";
 // import PatientProfile from "./pages/testrecord/PatientProfile";
 import TestRecords from "./pages/testrecord/TestRecords";
+import NurseProfile from "./pages/Nurse/NurseProfile";
+import NurseDashboard from "./pages/Nurse/NurseDashboard";
 // import AllPatientList from "./pages/testrecord/AllPatientList";
 
 const App = () => {
+  const SAMPLE_NURSE_ID = '67d1eec052a3868b43b617d3'; // Replace with a real ID
   return (
     <BrowserRouter>
       <Toaster position="top-right" />
@@ -65,6 +68,13 @@ const App = () => {
 
           <Route path="/doctors" element={<DoctorsList />} />
           <Route path="/add" element={<Add />} />
+
+          <Route path="/patients/:patientId" element={<PatientProfile />} />
+          <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
+
+          <Route path="/nursedashboard" element={<NurseDashboard />} />
+          <Route path="/profile" element={<NurseProfile nurseId={SAMPLE_NURSE_ID} />} />
+          {/* <Route path="/profile/:nurseId" element={<NurseProfileWrapper />} /> */}
         </Route>
 
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -74,8 +84,7 @@ const App = () => {
 
 
           {/* <Route path="/allp" element={<AllPatientList />} /> */}
-          <Route path="/patients/:patientId" element={<PatientProfile />} />
-          <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
+         
 
           {/* 404 Not Found Page */}
           <Route path="*" element={<NotFound />} />

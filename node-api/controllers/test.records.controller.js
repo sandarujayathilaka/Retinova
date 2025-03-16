@@ -9,26 +9,33 @@ const s3 = new AWS.S3({
   region: process.env.AWS_REGION,
 });
 
-// Get test records for a patient
+// Get test records for a patient (return all records with non-empty tests)
 const getTestRecords = asyncHandler(async (req, res) => {
-  const patient = await Patient.findOne({ patientId: req.params.patientId });
-  if (!patient) {
-    res.status(404);
-    throw new Error("Patient not found");
-  }
+  try {
+    const patient = await Patient.findOne({ patientId: req.params.patientId });
 
-  // const checkedRecords = patient.diagnoseHistory.filter((record) => record.status === "Checked");
-  // Get records with checked status and non-empty test arrays
-  const checkedRecords = patient.diagnoseHistory.filter(
-    (record) => 
-      record.status === "Checked" && 
-      record.recommend.tests && 
-      record.recommend.tests.length > 0
-  );
-  res.status(200).json({
-    success: true,
-    data: checkedRecords,
-  });
+    if (!patient) {
+      res.status(404);
+      throw new Error("Patient not found");
+    }
+
+    // Return all records with non-empty tests array, regardless of status
+    const allRecords = patient.diagnoseHistory.filter((record) => {
+      return (
+        record.recommend &&
+        Array.isArray(record.recommend.tests) &&
+        record.recommend.tests.length > 0
+      );
+    });
+
+    res.status(200).json({
+      success: true,
+      data: allRecords,
+    });
+  } catch (error) {
+    res.status(500);
+    throw new Error("Failed to fetch test records: " + error.message);
+  }
 });
 
 // Upload test attachment to S3
@@ -54,6 +61,7 @@ const uploadTestAttachment = asyncHandler(async (req, res) => {
 });
 
 // Update test status and attachment
+// backend controller - updateTestStatus
 const updateTestStatus = asyncHandler(async (req, res) => {
   const { patientId, diagnoseId, testIndex, status, attachmentURL } = req.body;
 
@@ -80,6 +88,15 @@ const updateTestStatus = asyncHandler(async (req, res) => {
     throw new Error("Test not found");
   }
 
+  // Prevent any status change if no attachment exists or is provided
+  if (test.status !== status) { // Check if status is actually changing
+    if (!test.attachmentURL && !attachmentURL) {
+      res.status(400);
+      throw new Error("An attachment is required to change the test status");
+    }
+  }
+
+  // Update status and attachment if provided
   test.status = status;
   if (attachmentURL) test.attachmentURL = attachmentURL;
 
@@ -92,6 +109,7 @@ const updateTestStatus = asyncHandler(async (req, res) => {
   });
 });
 
+// Complete diagnosis and update patient status
 // Complete diagnosis and update patient status
 const completeDiagnosis = asyncHandler(async (req, res) => {
   const { patientId } = req.params;
@@ -114,32 +132,36 @@ const completeDiagnosis = asyncHandler(async (req, res) => {
     throw new Error("Diagnosis not found");
   }
 
-  // Check if all tests for this diagnosis are completed
-  const allTestsCompleted = diagnose.recommend.tests.every(
-    (test) => test.status === "Completed"
-  );
-  if (!allTestsCompleted) {
+  // Check if the specific diagnosis has "Checked" status
+  if (diagnose.status !== "Checked") {
     res.status(400);
-    throw new Error("Not all tests are completed");
+    throw new Error(`Diagnosis status is ${diagnose.status}, expected 'Checked' to complete`);
   }
 
-  // Count diagnoses with "Checked" status
-  const checkedDiagnosesCount = patient.diagnoseHistory.filter(
-    (d) => d.status === "Checked"
+  // Check if all tests for this diagnosis are completed or reviewed
+  const incompleteTests = diagnose.recommend.tests.filter(
+    (test) => test.status !== "Completed" && test.status !== "Reviewed"
+  );
+  if (incompleteTests.length > 0) {
+    res.status(400);
+    throw new Error(
+      `Not all tests are completed or reviewed. Incomplete tests: ${incompleteTests
+        .map((test) => `${test.testName} (${test.status})`)
+        .join(", ")}`
+    );
+  }
+
+  // Update the diagnosis status to "Test Completed"
+  diagnose.status = "Test Completed";
+
+  // Check if this was the last "Checked" diagnosis, and update patient status if needed
+  const remainingCheckedDiagnoses = patient.diagnoseHistory.filter(
+    (d) => d.status === "Checked" && d._id.toString() !== diagnoseId
   ).length;
 
-  // Logic based on the number of "Checked" diagnoses
-  if (checkedDiagnosesCount > 1) {
-    // If there are multiple "Checked" diagnoses, only update the specific diagnosis status
-    diagnose.status = "Test Completed";
-  } else if (checkedDiagnosesCount === 1) {
-    // If there is only one "Checked" diagnosis, update both diagnosis and patient status
-    diagnose.status = "Test Completed";
+  if (remainingCheckedDiagnoses === 0) {
+    // If no other diagnoses are "Checked", update patient status
     patient.patientStatus = "Published";
-  } else {
-    // If no diagnoses are "Checked," return an error or handle as needed
-    res.status(400);
-    throw new Error("No diagnoses with 'Checked' status found to complete");
   }
 
   // Save the changes
@@ -147,7 +169,7 @@ const completeDiagnosis = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    message: "Diagnosis and patient  updated",
+    message: "Diagnosis and patient updated",
     data: { diagnose, patientStatus: patient.patientStatus },
   });
 });
