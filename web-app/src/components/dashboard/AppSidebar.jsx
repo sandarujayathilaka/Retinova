@@ -89,6 +89,38 @@ const data = {
         { title: "RVO", url: "/diagnose/rvo" },
       ],
     },
+    {
+      title: "Nurse",
+      url: "#",
+      icon: doctors,
+      isExpandable: true,
+      items: [
+        {
+          title: "Admin Dashboard",
+          url: "/dashboard",
+        },
+        {
+          title: "Doctor Dashboard",
+          url: "/doctordashboard",
+        },
+        {
+          title: "Add Patient",
+          url: "/add-patient",
+        },
+        {
+          title: "Monitoring patients",
+          url: "/monitoring-patients",
+        },
+        {
+          title: "Published patients",
+          url: "/published-patients",
+        },
+        {
+          title: "Review patients",
+          url: "/review-patients",
+        },
+      ],
+    },
   ],
 };
 

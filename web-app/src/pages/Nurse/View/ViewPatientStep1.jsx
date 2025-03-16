@@ -1,83 +1,54 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import { IdCardIcon, CalendarIcon, User2, Smartphone, Mail, Home, Circle, Loader2 } from "lucide-react";
-import { step2Schema } from "../CommonFiles/patientSchemas"; // Import step2Schema for validation
-
-const step1Schema = z.object({
-  fullName: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  nic: z.string().min(10, { message: "NIC must be at least 10 characters." }),
-  birthDate: z.string().min(1, { message: "Date of birth is required." }),
-  gender: z.enum(["Male", "Female", "Other"], { message: "Gender is required." }),
-  contactNumber: z
-    .string()
-    .min(1, { message: "Phone number is required." })
-    .regex(/^\d{10}$/, { message: "Phone number must be 10 digits." }),
-  address: z.string().min(5, { message: "Address must be at least 5 characters." }),
-  email: z
-    .string()
-    .min(1, { message: "Email is required." })
-    .email({ message: "Invalid email address." }),
-});
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { IdCardIcon, CalendarIcon, User2, Smartphone, Mail, Home, Circle, Loader2, ChevronRight, Save, X } from "lucide-react";
+import { step1Schema,step2Schema } from "../CommonFiles/patientSchemas";
+import PropTypes from "prop-types";
 
 const ViewPatientStep1 = ({ initialData, step2Data, onNext, onSave, onCancel, isSubmitting }) => {
   const form = useForm({
     resolver: zodResolver(step1Schema),
-    defaultValues: {
-      fullName: initialData?.fullName || "",
-      nic: initialData?.nic || "",
-      birthDate: initialData?.birthDate || "",
-      gender: initialData?.gender || "",
-      contactNumber: initialData?.contactNumber || "",
-      email: initialData?.email || "",
-      address: initialData?.address || "",
+    defaultValues: initialData || {
+      fullName: "",
+      nic: "",
+      birthDate: "",
+      gender: "",
+      contactNumber: "",
+      email: "",
+      address: "",
     },
   });
 
-  // Check if Step 2 data is valid to enable the Save button
   const isStep2Valid = step2Data ? step2Schema.safeParse(step2Data).success : false;
   const isStep1Valid = form.formState.isValid;
 
-  const handleNext = (data) => {
-    onNext(data);
-  };
-
-  const handleSave = async (data) => {
-    await onSave(data);
-  };
+  const handleNext = (data) => onNext(data);
+  const handleSave = (data) => onSave(data);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleNext)} className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <FormField
             control={form.control}
             name="fullName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-700 flex items-center gap-2">
-                  <User2 className="h-5 w-5 text-teal-500" />
+                <FormLabel className="text-gray-700 font-semibold flex items-center gap-2">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <User2 className="h-4 w-4 text-blue-700" />
+                  </div>
                   Full Name<span className="text-red-500">*</span>
                 </FormLabel>
                 <FormControl>
-                  <Input {...field} className="rounded-lg border-gray-300 focus:ring-teal-400" />
+                  <Input
+                    {...field}
+                    className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    aria-label="Full Name"
+                  />
                 </FormControl>
                 <FormMessage className="text-red-500 font-medium" />
               </FormItem>
@@ -88,12 +59,18 @@ const ViewPatientStep1 = ({ initialData, step2Data, onNext, onSave, onCancel, is
             name="nic"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-700 flex items-center gap-2">
-                  <IdCardIcon className="h-5 w-5 text-teal-500" />
+                <FormLabel className="text-gray-700 font-semibold flex items-center gap-2">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <IdCardIcon className="h-4 w-4 text-blue-700" />
+                  </div>
                   NIC Number<span className="text-red-500">*</span>
                 </FormLabel>
                 <FormControl>
-                  <Input {...field} className="rounded-lg border-gray-300 focus:ring-teal-400" />
+                  <Input
+                    {...field}
+                    className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    aria-label="NIC Number"
+                  />
                 </FormControl>
                 <FormMessage className="text-red-500 font-medium" />
               </FormItem>
@@ -104,15 +81,18 @@ const ViewPatientStep1 = ({ initialData, step2Data, onNext, onSave, onCancel, is
             name="birthDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-700 flex items-center gap-2">
-                  <CalendarIcon className="h-5 w-5 text-teal-500" />
+                <FormLabel className="text-gray-700 font-semibold flex items-center gap-2">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <CalendarIcon className="h-4 w-4 text-blue-700" />
+                  </div>
                   Date of Birth<span className="text-red-500">*</span>
                 </FormLabel>
                 <FormControl>
                   <Input
                     type="date"
                     {...field}
-                    className="rounded-lg border-gray-300 focus:ring-teal-400"
+                    className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    aria-label="Date of Birth"
                   />
                 </FormControl>
                 <FormMessage className="text-red-500 font-medium" />
@@ -124,20 +104,34 @@ const ViewPatientStep1 = ({ initialData, step2Data, onNext, onSave, onCancel, is
             name="gender"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-700 flex items-center gap-2">
-                  <Circle className="h-5 w-5 text-teal-500" />
+                <FormLabel className="text-gray-700 font-semibold flex items-center gap-2">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <Circle className="h-4 w-4 text-blue-700" />
+                  </div>
                   Gender<span className="text-red-500">*</span>
                 </FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger className="rounded-lg border-gray-300 focus:ring-teal-400">
+                    <SelectTrigger className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent className="bg-white rounded-lg shadow-lg">
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                  <SelectContent className="bg-white rounded-xl border-gray-200">
+                    <SelectItem value="Male" className="py-3 hover:bg-blue-50 rounded-lg">
+                      <span className="flex items-center gap-2">
+                        <span className="text-blue-600">♂</span> Male
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="Female" className="py-3 hover:bg-blue-50 rounded-lg">
+                      <span className="flex items-center gap-2">
+                        <span className="text-pink-500">♀</span> Female
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="Other" className="py-3 hover:bg-blue-50 rounded-lg">
+                      <span className="flex items-center gap-2">
+                        <span className="text-purple-500">⚧</span> Other
+                      </span>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage className="text-red-500 font-medium" />
@@ -149,18 +143,21 @@ const ViewPatientStep1 = ({ initialData, step2Data, onNext, onSave, onCancel, is
             name="contactNumber"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-700 flex items-center gap-2">
-                  <Smartphone className="h-5 w-5 text-teal-500" />
+                <FormLabel className="text-gray-700 font-semibold flex items-center gap-2">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <Smartphone className="h-4 w-4 text-blue-700" />
+                  </div>
                   Phone Number<span className="text-red-500">*</span>
                 </FormLabel>
                 <FormControl>
                   <Input
                     {...field}
                     onChange={(e) => {
-                      const numericValue = e.target.value.replace(/\D/g, '');
+                      const numericValue = e.target.value.replace(/\D/g, "");
                       field.onChange(numericValue);
                     }}
-                    className="rounded-lg border-gray-300 focus:ring-teal-400"
+                    className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    aria-label="Phone Number"
                   />
                 </FormControl>
                 <FormMessage className="text-red-500 font-medium" />
@@ -172,12 +169,18 @@ const ViewPatientStep1 = ({ initialData, step2Data, onNext, onSave, onCancel, is
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-700 flex items-center gap-2">
-                  <Mail className="h-5 w-5 text-teal-500" />
+                <FormLabel className="text-gray-700 font-semibold flex items-center gap-2">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <Mail className="h-4 w-4 text-blue-700" />
+                  </div>
                   Email Address<span className="text-red-500">*</span>
                 </FormLabel>
                 <FormControl>
-                  <Input {...field} className="rounded-lg border-gray-300 focus:ring-teal-400" />
+                  <Input
+                    {...field}
+                    className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    aria-label="Email Address"
+                  />
                 </FormControl>
                 <FormMessage className="text-red-500 font-medium" />
               </FormItem>
@@ -188,48 +191,63 @@ const ViewPatientStep1 = ({ initialData, step2Data, onNext, onSave, onCancel, is
             name="address"
             render={({ field }) => (
               <FormItem className="md:col-span-2">
-                <FormLabel className="text-gray-700 flex items-center gap-2">
-                  <Home className="h-5 w-5 text-teal-500" />
+                <FormLabel className="text-gray-700 font-semibold flex items-center gap-2">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <Home className="h-4 w-4 text-blue-700" />
+                  </div>
                   Full Address<span className="text-red-500">*</span>
                 </FormLabel>
                 <FormControl>
-                  <Input {...field} className="rounded-lg border-gray-300 focus:ring-teal-400" />
+                  <Input
+                    {...field}
+                    className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    aria-label="Full Address"
+                  />
                 </FormControl>
                 <FormMessage className="text-red-500 font-medium" />
               </FormItem>
             )}
           />
         </div>
-        <div className="flex justify-center gap-4">
+        <div className="flex justify-center gap-6 pt-4">
           <Button
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="bg-gray-500 hover:bg-gray-600 rounded-full px-6 py-2 text-white shadow-md transition-all duration-200"
+            className="h-12 px-6 rounded-full bg-gray-600 hover:bg-gray-700 text-white font-semibold transition-all duration-300"
+            aria-label="Cancel editing"
           >
-            Cancel
+            <X className="h-4 w-4 mr-2" /> Cancel
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-teal-500 hover:bg-teal-600 rounded-full px-6 py-2 text-white shadow-md transition-all duration-200"
-          >Next Step
-           
+            className="h-12 px-6 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-all duration-300"
+            aria-label="Go to next step"
+          >
+            <span className="flex items-center">
+              Next Step
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </span>
           </Button>
           {isStep1Valid && isStep2Valid && (
             <Button
               type="button"
               onClick={form.handleSubmit(handleSave)}
               disabled={isSubmitting}
-              className="bg-teal-500 hover:bg-teal-600 rounded-full px-6 py-2 text-white shadow-md transition-all duration-200"
+              className="h-12 px-6 rounded-full bg-blue-900 hover:bg-blue-800 text-white font-semibold transition-all duration-300"
+              aria-label="Save changes"
             >
               {isSubmitting ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                <span className="flex items-center">
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Saving...
-                </>
+                </span>
               ) : (
-                "Save"
+                <span className="flex items-center">
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </span>
               )}
             </Button>
           )}
@@ -237,6 +255,15 @@ const ViewPatientStep1 = ({ initialData, step2Data, onNext, onSave, onCancel, is
       </form>
     </Form>
   );
+};
+
+ViewPatientStep1.propTypes = {
+  initialData: PropTypes.object,
+  step2Data: PropTypes.object,
+  onNext: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  isSubmitting: PropTypes.bool.isRequired,
 };
 
 export default ViewPatientStep1;

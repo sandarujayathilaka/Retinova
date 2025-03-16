@@ -10,9 +10,11 @@ const {
   getDoctorsByIds,
   getDoctorPatientsSummary,
   getDoctorNames,
+  getDoctorsForRevisit,
 } = require("../controllers/doctor.controller");
 
 router.get("/names", getDoctorNames);
+router.get("/for-revisit", getDoctorsForRevisit);
 router.post("/", addDoctor);
 router.get("/", getDoctors);
 router.get("/:id", getDoctorById);

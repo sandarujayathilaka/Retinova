@@ -13,8 +13,8 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../services/api.service";
 import { toast } from "react-hot-toast";
 // import "react-toastify/dist/ReactToastify.css";
-import { PieChartComponent } from "@/components/ui/pieChart";
-import { DiseaseStageChart, PatientCategoryChart, PatientsStatusBarChart, DoctorTypeAndSpecialtyBarChart, NurseTypeAndSpecialtyBarChart } from "@/components/ui/barChart";
+import { PieChartComponent } from "@/components/shared/pieChart";
+import { DiseaseStageChart, PatientCategoryChart, PatientsStatusBarChart, DoctorTypeAndSpecialtyBarChart, NurseTypeAndSpecialtyBarChart } from "@/components/shared/barChart";
 import { User2, Stethoscope, Activity } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DatePicker from "react-datepicker";
@@ -48,14 +48,14 @@ const Dashboard = () => {
       try {
         const [doctorsRes, nursesRes, patientsRes] = await Promise.all([
           api.get("/dashboard/doctors?type=summary"),
-          api.get("/dashboard/doctors?type=summary"), // Corrected to fetch nurses
+          api.get("/dashboard/nurses?type=summary"), // Corrected to fetch nurses
           api.get("/dashboard/patients?type=summary"),
         ]);
         setDoctors(doctorsRes.data.doctors);
-        setNurses(nursesRes.data.doctors);
+        setNurses(nursesRes.data.nurses);
         setPatients(patientsRes.data.patients);
         console.log("doc", doctorsRes.data.doctors);
-        console.log("nurse", nursesRes.data.doctors);
+        console.log("nurse", nursesRes.data.nurses);
         console.log("pat", patientsRes.data.patients);
       } catch (err) {
         toast.error("Error fetching data. Please try again.", {
@@ -67,8 +67,6 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-
-  
   // Doctors Status Pie Chart
   const onlineDoctors = doctors.filter((doc) => doc.status).length;
   const offlineDoctors = doctors.length - onlineDoctors;
@@ -161,11 +159,12 @@ const Dashboard = () => {
   const nursePieChartTitle = nurseChartView === "specialties" ? "Nurse Specialties" : "Nurse Types";
   const nursePieChartDescription = nurseChartView === "specialties" ? "Distribution of Expertise" : "Full-time vs Part-time";
 
-  // Patients Data (unchanged)
+  // Patients Data
   const patientsStatus = patients.reduce(
     (acc, p) => {
-      const diagnoseCount = p.diagnoseHistoryLength;
-      const isNew = diagnoseCount <= 1;
+      const diagnoseCount = p.diagnoseHistory ? p.diagnoseHistory.length : 0;
+      const hasNextVisit = p.nextVisit && !isNaN(new Date(p.nextVisit).getTime());
+      const isNew = (diagnoseCount <= 2) && !hasNextVisit;
       const key = isNew ? "New Patients" : "Existing Patients";
       const latestDate = diagnoseCount
         ? Math.max(...p.diagnoseHistory.map((d) => new Date(d.uploadedAt).getTime()))
@@ -237,8 +236,7 @@ const Dashboard = () => {
   const doctorSpecialtiess = [...new Set(doctors.map(doc => doc.specialty.toLowerCase()))];
   
   const getDoctorCount = () => {
-    const filter = doctorFilter.toLowerCase(); // Convert to lowercase for consistency
-  
+    const filter = doctorFilter.toLowerCase();
     if (filter === "total") return totalDoctors;
     if (doctorTypes.includes(filter)) {
       const count = doctors.filter(doc => doc.type.toLowerCase() === filter).length;
@@ -250,12 +248,9 @@ const Dashboard = () => {
       console.log(`Count for specialty '${filter}':`, count);
       return count;
     }
-  
     return totalDoctors;
   };
-  
 
-  
   // Nurses Calculations
   const totalNurses = nurses.length;
   const nurseTypess = [...new Set(nurses.map(nurse => nurse.type.toLowerCase()))];
@@ -277,7 +272,6 @@ const Dashboard = () => {
   const patientStatus = [...new Set(
     patients.map(p => p.patientStatus ? p.patientStatus.toLowerCase() : "Unknown")
   )];
-console.log("patientsStatusData",patientsStatusData)
 
   const getPatientCount = () => {
     if (patientFilter === "total") return totalPatients;
@@ -288,18 +282,14 @@ console.log("patientsStatusData",patientsStatusData)
     return totalPatients;
   };
 
-
   const isDateInRange = (date, startDate, endDate, repeatYearly) => {
     const checkDate = date.getTime();
     let start = new Date(startDate);
     let end = new Date(endDate);
 
     if (repeatYearly) {
-      // Adjust dates to current year
       start.setFullYear(date.getFullYear());
       end.setFullYear(date.getFullYear());
-      
-      // If end date is before start date after year adjustment, move end to next year
       if (end < start) {
         end.setFullYear(date.getFullYear() + 1);
       }
@@ -308,42 +298,25 @@ console.log("patientsStatusData",patientsStatusData)
     return checkDate >= start.getTime() && checkDate <= end.getTime();
   };
 
-  // Check if date is a working day
   const isWorkingDay = (date) => {
     const dayName = date.toLocaleString('en-US', { weekday: 'long' });
     const allStaff = [...doctors, ...nurses];
 
     return allStaff.some(staff => {
-      // Check working hours
       const daySchedule = staff.workingHours?.[dayName];
       const isEnabled = daySchedule?.enabled === true;
-      
-      // Check if it's not a day off
       const isDayOff = staff.daysOff?.some(dayOff => 
-        isDateInRange(
-          date,
-          dayOff.startDate,
-          dayOff.endDate,
-          dayOff.repeatYearly
-        )
+        isDateInRange(date, dayOff.startDate, dayOff.endDate, dayOff.repeatYearly)
       );
-
       return isEnabled && !isDayOff;
     });
   };
 
-  // Check if date is a day off
   const isDayOff = (date) => {
     const allStaff = [...doctors, ...nurses];
-    
     return allStaff.some(staff => 
       staff.daysOff?.some(dayOff => 
-        isDateInRange(
-          date,
-          dayOff.startDate,
-          dayOff.endDate,
-          dayOff.repeatYearly
-        )
+        isDateInRange(date, dayOff.startDate, dayOff.endDate, dayOff.repeatYearly)
       )
     );
   };
@@ -351,7 +324,6 @@ console.log("patientsStatusData",patientsStatusData)
   const renderDayContents = (day, date) => {
     const isWorking = isWorkingDay(date);
     const isOff = isDayOff(date);
-    
     return (
       <div 
         className={`relative flex items-center justify-center w-full h-full
@@ -361,318 +333,306 @@ console.log("patientsStatusData",patientsStatusData)
         <span>{day}</span>
         {(isWorking || isOff) && (
           <span className="absolute bottom-0 right-0 text-xs">
-            {isWorking && !isOff && ''}
-            {isOff && ''}
+            {isWorking && !isOff && '✓'}
+            {isOff && '✗'}
           </span>
         )}
       </div>
     );
   };
 
-return (
-  <div className="bg-gray-100">
-    <div className="mx-auto space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-extrabold text-teal-700 flex items-center gap-2">
-          <Activity className="h-8 w-8" /> Hospital Dashboard
-        </h1>
-        <Button
-          onClick={() => navigate("/dashboard")}
-          className="bg-teal-500 hover:bg-teal-600 rounded-full px-6 py-2 text-white shadow-md"
-        >
-          Refresh Data
-        </Button>
-      </div>
+  // Get staff schedules for the selected date
+  const getStaffSchedulesForDate = () => {
+    const dayName = selectedDate.toLocaleString('en-US', { weekday: 'long' });
+    const allStaff = [...doctors, ...nurses];
+    const workingStaff = allStaff.filter(staff => {
+      const daySchedule = staff.workingHours?.[dayName];
+      const isEnabled = daySchedule?.enabled === true;
+      const isDayOff = staff.daysOff?.some(dayOff =>
+        isDateInRange(selectedDate, dayOff.startDate, dayOff.endDate, dayOff.repeatYearly)
+      );
+      return isEnabled && !isDayOff;
+    }).map(staff => ({
+      id: staff.id,
+      name: staff.name,
+      role: doctors.includes(staff) ? 'Doctor' : 'Nurse',
+      status: 'Working',
+      time: `${daySchedule?.startTime} to ${daySchedule?.endTime}`,
+    }));
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-  {/* Doctors Card */}
-  <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl min-h-[300px]">
-    <CardHeader className="bg-teal-500 text-white py-4">
-      <CardTitle className="text-lg font-semibold flex items-center gap-2">
-        <Stethoscope className="h-5 w-5" /> Doctors 
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="p-6 flex flex-col justify-center items-center h-full">
-      <div className="flex flex-col items-center w-full h-full">
-        <Select value={doctorFilter} onValueChange={setDoctorFilter}>
-          <SelectTrigger className="w-[220px] bg-white text-teal-700 mt-2">
-            <SelectValue placeholder="Filter Doctors" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="total">Total Doctors</SelectItem>
-            <SelectItem value="type">By Type</SelectItem>
-            <SelectItem value="specialty">By Specialty</SelectItem>
-          </SelectContent>
-        </Select>
+    const staffOnLeave = allStaff.filter(staff =>
+      staff.daysOff?.some(dayOff =>
+        isDateInRange(selectedDate, dayOff.startDate, dayOff.endDate, dayOff.repeatYearly)
+      )
+    ).map(staff => {
+      const dayOffInfo = staff.daysOff.find(dayOff =>
+        isDateInRange(selectedDate, dayOff.startDate, dayOff.endDate, dayOff.repeatYearly)
+      );
+      return {
+        id: staff.id,
+        name: staff.name,
+        role: doctors.includes(staff) ? 'Doctor' : 'Nurse',
+        status: 'Day Off',
+        time: dayOffInfo?.dayOffName ? `(${dayOffInfo.dayOffName})` : '',
+      };
+    });
 
-        <div className="w-full text-teal-600 mt-4 flex flex-col justify-center items-center flex-grow">
-          {doctorFilter === "total" && (
-            <div className="flex justify-center items-center min-h-[100px]">
-              <p className="text-2xl font-bold text-teal-600">Total Doctors: {totalDoctors}</p>
-            </div>
-          )}
+    if (staffOnLeave.length === allStaff.length && staffOnLeave.length > 0) {
+      return [{ id: 'all', name: 'Hospital', role: '', status: 'Holiday', time: 'All staff on leave' }];
+    }
 
-          {doctorFilter === "type" && (
-            <div className="text-left w-full">
-              <p className="text-lg font-semibold mb-2">Doctor Types:</p>
-              <ul className="list-disc pl-5">
-                {doctorTypes.map((type) => {
-                  const count = doctors.filter(doc => doc.type.toLowerCase() === type).length;
-                  return <li key={type} className="text-lg">{type}: {count}</li>;
-                })}
-              </ul>
-            </div>
-          )}
+    return [...workingStaff, ...staffOnLeave];
+  };
 
-          {doctorFilter === "specialty" && (
-            <div className="text-left w-full">
-              <p className="text-lg font-semibold mb-2">Doctor Specialties:</p>
-              <ul className="list-disc pl-5">
-                {doctorSpecialtiess.map((specialty) => {
-                  const count = doctors.filter(doc => doc.specialty.toLowerCase() === specialty).length;
-                  return <li key={specialty} className="text-lg">{specialty}: {count}</li>;
-                })}
-              </ul>
-            </div>
-          )}
+  return (
+    <div className="bg-gray-100">
+      <div className="mx-auto space-y-8">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-extrabold text-teal-700 flex items-center gap-2">
+            <Activity className="h-8 w-8" /> Hospital Dashboard
+          </h1>
+          <Button
+            onClick={() => navigate("/dashboard")}
+            className="bg-teal-500 hover:bg-teal-600 rounded-full px-6 py-2 text-white shadow-md"
+          >
+            Refresh Data
+          </Button>
         </div>
-      </div>
-    </CardContent>
-  </Card>
 
-  {/* Nurses Card */}
-  <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl min-h-[300px]">
-    <CardHeader className="bg-teal-500 text-white py-4">
-      <CardTitle className="text-lg font-semibold flex items-center gap-2">
-        <Stethoscope className="h-5 w-5" /> Nurses 
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="p-6 flex flex-col justify-center items-center h-full">
-      <div className="flex flex-col items-center w-full h-full">
-        <Select value={nurseFilter} onValueChange={setNurseFilter}>
-          <SelectTrigger className="w-[220px] bg-white text-teal-700 mt-2">
-            <SelectValue placeholder="Filter Nurses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="total">Total Nurses</SelectItem>
-            <SelectItem value="type">By Type</SelectItem>
-            <SelectItem value="specialty">By Specialty</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div className="w-full text-teal-600 mt-4 flex flex-col justify-center items-center flex-grow">
-          {nurseFilter === "total" && (
-            <div className="flex justify-center items-center min-h-[100px]">
-              <p className="text-2xl font-bold text-teal-600">Total Nurses: {totalNurses}</p>
-            </div>
-          )}
-
-          {nurseFilter === "type" && (
-            <div className="text-left w-full">
-              <p className="text-lg font-semibold mb-2">Nurse Types:</p>
-              <ul className="list-disc pl-5">
-                {nurseTypess.map((type) => {
-                  const count = nurses.filter(nus => nus.type.toLowerCase() === type).length;
-                  return <li key={type} className="text-lg">{type}: {count}</li>;
-                })}
-              </ul>
-            </div>
-          )}
-
-          {nurseFilter === "specialty" && (
-            <div className="text-left w-full">
-              <p className="text-lg font-semibold mb-2">Nurse Specialties:</p>
-              <ul className="list-disc pl-5">
-                {nurseSpecialtiess.map((specialty) => {
-                  const count = nurses.filter(nus => nus.specialty.toLowerCase() === specialty).length;
-                  return <li key={specialty} className="text-lg">{specialty}: {count}</li>;
-                })}
-              </ul>
-            </div>
-          )}
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-
-  {/* Patients Card */}
-  <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl min-h-[300px]">
-    <CardHeader className="bg-teal-500 text-white py-4">
-      <CardTitle className="text-lg font-semibold flex items-center gap-2">
-        <User2 className="h-5 w-5" /> Patients
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="p-6 flex flex-col justify-center items-center h-full">
-      <div className="flex flex-col items-center w-full h-full">
-        <Select value={patientFilter} onValueChange={setPatientFilter}>
-          <SelectTrigger className="w-[220px] bg-white text-teal-700 mt-2">
-            <SelectValue placeholder="Filter Patients" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="total">Total Patients</SelectItem>
-            <SelectItem value="stage">By Stages</SelectItem>
-            <SelectItem value="category">By Categories</SelectItem>
-            <SelectItem value="status">By Status</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <div className="w-full text-teal-600 mt-4 flex flex-col justify-center items-center flex-grow">
-          {patientFilter === "total" && (
-            <div className="flex justify-center items-center min-h-[100px]">
-              <p className="text-2xl font-bold text-teal-600">Total Patients: {totalPatients}</p>
-            </div>
-          )}
-
-          {patientFilter === "stage" && (
-            <div className="text-left w-full">
-              <p className="text-lg font-semibold mb-2">Patient Stages:</p>
-              <ul className="list-disc pl-5">
-                {diseaseStages.map((stage) => {
-                  const count = patients.filter(p => 
-                    p.diagnoseHistory.some(d => d.diagnosis === stage)
-                  ).length;
-                  return <li key={stage} className="text-lg">{stage}: {count}</li>;
-                })}
-              </ul>
-            </div>
-          )}
-
-          {patientFilter === "category" && (
-            <div className="text-left w-full">
-              <p className="text-lg font-semibold mb-2">Disease Categories:</p>
-              <ul className="list-disc pl-5">
-                {diseaseCategories.map((category) => {
-                  const count = patients.filter(p => 
-                    p.category.includes(category)
-                  ).length;
-                  return <li key={category} className="text-lg">{category}: {count}</li>;
-                })}
-              </ul>
-            </div>
-          )}
-
-          {patientFilter === "status" && (
-            <div className="text-left w-full">
-              <p className="text-lg font-semibold mb-2">Patient Status:</p>
-              <ul className="list-disc pl-5">
-                {patientStatus.map((status) => {
-                  if (!status) return null;
-                  const count = patients.filter(p => p.patientStatus?.toLowerCase() === status).length;
-                  return <li key={status} className="text-lg">{status}: {count}</li>;
-                })}
-              </ul>
-            </div>
-          )}
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-
-  {/* Staff Schedule Card remains unchanged */}
-  <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl">
-    <CardHeader className="bg-teal-500 text-white py-4">
-      <CardTitle className="text-lg font-semibold flex items-center gap-2">
-        <Activity className="h-5 w-5" /> Staff Schedule
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="p-6">
-      <DatePicker
-        selected={selectedDate}
-        onChange={(date) => setSelectedDate(date)}
-        inline
-        renderDayContents={renderDayContents}
-        className="w-full"
-        calendarClassName="custom-datepicker"
-      />
-      <div className="mt-2 text-sm flex flex-row items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-green-100 inline-block"></span>
-          <span>Working Day</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 bg-red-100 inline-block"></span>
-          <span>Day Off</span>
-        </div>
-      </div>
-
-      <div className="mt-2 text-sm">
-        <h3 className="font-semibold text-teal-700">Staff Details for {selectedDate.toLocaleDateString()}</h3>
-        <div className="mt-2 max-h-20 overflow-y-auto overflow-x-auto space-y-2 custom-scrollbar">
-          {[...doctors, ...nurses]
-            .filter(staff => {
-              const dayName = selectedDate.toLocaleString('en-US', { weekday: 'long' });
-              const daySchedule = staff.workingHours?.[dayName];
-              const isEnabled = daySchedule?.enabled === true;
-              const isDayOff = staff.daysOff?.some(dayOff =>
-                isDateInRange(
-                  selectedDate,
-                  dayOff.startDate,
-                  dayOff.endDate,
-                  dayOff.repeatYearly
-                )
-              );
-              return isEnabled && !isDayOff;
-            })
-            .map(staff => (
-              <div key={staff.id} className="flex items-center gap-2 min-w-max">
-                <span className="text-green-600">✓</span>
-                <span className="truncate">
-                  {staff.name} ({doctors.includes(staff) ? 'Doctor' : 'Nurse'}) - Working: {staff.workingHours[selectedDate.toLocaleString('en-US', { weekday: 'long' })]?.startTime} to {staff.workingHours[selectedDate.toLocaleString('en-US', { weekday: 'long' })]?.endTime}
-                </span>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Doctors Card */}
+          <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl min-h-[300px]">
+            <CardHeader className="bg-teal-500 text-white py-4">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <Stethoscope className="h-5 w-5" /> Doctors 
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 flex flex-col justify-center items-center h-full">
+              <div className="flex flex-col items-center w-full h-full">
+                <Select value={doctorFilter} onValueChange={setDoctorFilter}>
+                  <SelectTrigger className="w-[220px] bg-white text-teal-700 mt-2">
+                    <SelectValue placeholder="Filter Doctors" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="total">Total Doctors</SelectItem>
+                    <SelectItem value="type">By Type</SelectItem>
+                    <SelectItem value="specialty">By Specialty</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="w-full text-teal-600 mt-4 flex flex-col justify-center items-center flex-grow">
+                  {doctorFilter === "total" && (
+                    <div className="flex justify-center items-center min-h-[100px]">
+                      <p className="text-2xl font-bold text-teal-600">Total Doctors: {totalDoctors}</p>
+                    </div>
+                  )}
+                  {doctorFilter === "type" && (
+                    <div className="text-left w-full">
+                      <p className="text-lg font-semibold mb-2">Doctor Types:</p>
+                      <ul className="list-disc pl-5">
+                        {doctorTypes.map((type) => {
+                          const count = doctors.filter(doc => doc.type.toLowerCase() === type).length;
+                          return <li key={type} className="text-lg">{type}: {count}</li>;
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                  {doctorFilter === "specialty" && (
+                    <div className="text-left w-full">
+                      <p className="text-lg font-semibold mb-2">Doctor Specialties:</p>
+                      <ul className="list-disc pl-5">
+                        {doctorSpecialtiess.map((specialty) => {
+                          const count = doctors.filter(doc => doc.specialty.toLowerCase() === specialty).length;
+                          return <li key={specialty} className="text-lg">{specialty}: {count}</li>;
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
+            </CardContent>
+          </Card>
 
-          {(() => {
-            const allStaff = [...doctors, ...nurses];
-            const staffOnLeave = allStaff.filter(staff =>
-              staff.daysOff?.some(dayOff =>
-                isDateInRange(
-                  selectedDate,
-                  dayOff.startDate,
-                  dayOff.endDate,
-                  dayOff.repeatYearly
-                )
-              )
-            );
-            if (staffOnLeave.length === allStaff.length && staffOnLeave.length > 0) {
-              return (
-                <div className="flex items-center gap-2 min-w-max">
-                  <span className="text-red-600">✗</span>
-                  <span className="truncate">
-                    Hospital Holiday - All staff on leave
-                  </span>
+          {/* Nurses Card */}
+          <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl min-h-[300px]">
+            <CardHeader className="bg-teal-500 text-white py-4">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <Stethoscope className="h-5 w-5" /> Nurses 
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 flex flex-col justify-center items-center h-full">
+              <div className="flex flex-col items-center w-full h-full">
+                <Select value={nurseFilter} onValueChange={setNurseFilter}>
+                  <SelectTrigger className="w-[220px] bg-white text-teal-700 mt-2">
+                    <SelectValue placeholder="Filter Nurses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="total">Total Nurses</SelectItem>
+                    <SelectItem value="type">By Type</SelectItem>
+                    <SelectItem value="specialty">By Specialty</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="w-full text-teal-600 mt-4 flex flex-col justify-center items-center flex-grow">
+                  {nurseFilter === "total" && (
+                    <div className="flex justify-center items-center min-h-[100px]">
+                      <p className="text-2xl font-bold text-teal-600">Total Nurses: {totalNurses}</p>
+                    </div>
+                  )}
+                  {nurseFilter === "type" && (
+                    <div className="text-left w-full">
+                      <p className="text-lg font-semibold mb-2">Nurse Types:</p>
+                      <ul className="list-disc pl-5">
+                        {nurseTypess.map((type) => {
+                          const count = nurses.filter(nus => nus.type.toLowerCase() === type).length;
+                          return <li key={type} className="text-lg">{type}: {count}</li>;
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                  {nurseFilter === "specialty" && (
+                    <div className="text-left w-full">
+                      <p className="text-lg font-semibold mb-2">Nurse Specialties:</p>
+                      <ul className="list-disc pl-5">
+                        {nurseSpecialtiess.map((specialty) => {
+                          const count = nurses.filter(nus => nus.specialty.toLowerCase() === specialty).length;
+                          return <li key={specialty} className="text-lg">{specialty}: {count}</li>;
+                        })}
+                      </ul>
+                    </div>
+                  )}
                 </div>
-              );
-            }
+              </div>
+            </CardContent>
+          </Card>
 
-            return staffOnLeave.map(staff => {
-              const dayOffInfo = staff.daysOff.find(dayOff =>
-                isDateInRange(
-                  selectedDate,
-                  dayOff.startDate,
-                  dayOff.endDate,
-                  dayOff.repeatYearly
-                )
-              );
-              return (
-                <div key={staff.id} className="flex items-center gap-2 min-w-max">
-                  <span className="text-red-600">✗</span>
-                  <span className="truncate">
-                    {staff.name} ({doctors.includes(staff) ? 'Doctor' : 'Nurse'}) - 
-                    Day Off {dayOffInfo?.dayOffName ? `(${dayOffInfo.dayOffName})` : ''}
-                  </span>
+          {/* Patients Card */}
+          <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl min-h-[300px]">
+            <CardHeader className="bg-teal-500 text-white py-4">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <User2 className="h-5 w-5" /> Patients
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 flex flex-col justify-center items-center h-full">
+              <div className="flex flex-col items-center w-full h-full">
+                <Select value={patientFilter} onValueChange={setPatientFilter}>
+                  <SelectTrigger className="w-[220px] bg-white text-teal-700 mt-2">
+                    <SelectValue placeholder="Filter Patients" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="total">Total Patients</SelectItem>
+                    <SelectItem value="stage">By Stages</SelectItem>
+                    <SelectItem value="category">By Categories</SelectItem>
+                    <SelectItem value="status">By Status</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="w-full text-teal-600 mt-4 flex flex-col justify-center items-center flex-grow">
+                  {patientFilter === "total" && (
+                    <div className="flex justify-center items-center min-h-[100px]">
+                      <p className="text-2xl font-bold text-teal-600">Total Patients: {totalPatients}</p>
+                    </div>
+                  )}
+                  {patientFilter === "stage" && (
+                    <div className="text-left w-full">
+                      <p className="text-lg font-semibold mb-2">Patient Stages:</p>
+                      <ul className="list-disc pl-5">
+                        {diseaseStages.map((stage) => {
+                          const count = patients.filter(p => 
+                            p.diagnoseHistory.some(d => d.diagnosis === stage)
+                          ).length;
+                          return <li key={stage} className="text-lg">{stage}: {count}</li>;
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                  {patientFilter === "category" && (
+                    <div className="text-left w-full">
+                      <p className="text-lg font-semibold mb-2">Disease Categories:</p>
+                      <ul className="list-disc pl-5">
+                        {diseaseCategories.map((category) => {
+                          const count = patients.filter(p => 
+                            p.category.includes(category)
+                          ).length;
+                          return <li key={category} className="text-lg">{category}: {count}</li>;
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                  {patientFilter === "status" && (
+                    <div className="text-left w-full">
+                      <p className="text-lg font-semibold mb-2">Patient Status:</p>
+                      <ul className="list-disc pl-5">
+                        {patientStatus.map((status) => {
+                          if (!status) return null;
+                          const count = patients.filter(p => p.patientStatus?.toLowerCase() === status).length;
+                          return <li key={status} className="text-lg">{status}: {count}</li>;
+                        })}
+                      </ul>
+                    </div>
+                  )}
                 </div>
-              );
-            });
-          })()}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Staff Schedule Card with Split View */}
+          <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl row-span-2">
+            <CardHeader className="bg-teal-500 text-white py-4">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <Activity className="h-5 w-5" /> Staff Schedule
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 flex flex-col md:flex-row gap-6 h-full">
+              {/* Left: Calendar */}
+              <div className="w-full md:w-1/2">
+                <DatePicker
+                  selected={selectedDate}
+                  onChange={(date) => setSelectedDate(date)}
+                  inline
+                  renderDayContents={renderDayContents}
+                  className="w-full"
+                  calendarClassName="custom-datepicker"
+                />
+                <div className="mt-2 text-sm flex flex-row items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-green-100 inline-block"></span>
+                    <span>Working Day</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-red-100 inline-block"></span>
+                    <span>Day Off</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Staff Schedules */}
+              <div className="w-full md:w-1/2">
+                <h3 className="font-semibold text-teal-700 mb-2">
+                  Staff Details for {selectedDate.toLocaleDateString()}
+                </h3>
+                <div className="space-y-2">
+                  {getStaffSchedulesForDate().map((schedule) => (
+                    <div
+                      key={schedule.id}
+                      className="flex items-center gap-2 min-w-max"
+                    >
+                      <span className={schedule.status === "Working" ? "text-green-600" : "text-red-600"}>
+                        {schedule.status === "Working" ? "✓" : "✗"}
+                      </span>
+                      <span className="truncate">
+                        {schedule.name} ({schedule.role}) - {schedule.status}:{" "}
+                        {schedule.time}
+                      </span>
+                    </div>
+                  ))}
+                  {getStaffSchedulesForDate().length === 0 && (
+                    <p className="text-gray-500">No staff scheduled for this date.</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
-    </CardContent>
-  </Card>
-</div>
 
-
-        {/* second Row: Status Pie Charts */}
+        {/* Second Row: Status Pie Charts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl">
             <CardHeader className="bg-teal-500 text-white py-4">

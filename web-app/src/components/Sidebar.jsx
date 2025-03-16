@@ -67,9 +67,12 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
       isExpandable: true,
       section: "nurse",
       subItems: [
-        { title: "Monitoring", url: "/monitoringPatients" },
-        { title: "Published", url: "/publishedPatients" },
-        { title: "Add Patient", url: "/addPatient" },
+        { title: "Admin Dashboard", url: "/dashboard" },
+        { title: "Add Patient", url: "/add-patient" },
+        { title: "Monitoring patients", url: "/monitoring-patients" },
+        { title: "Published patients", url: "/published-patients" },
+        { title: "Review patients", url: "/review-patients" },
+        { title: "Doctor Dashboard", url: "/doctordashboard" },
       ],
     },
     {

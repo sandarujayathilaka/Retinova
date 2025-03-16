@@ -1,7 +1,8 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { api } from "../../services/api.service";
+import { api } from "../../../services/api.service";
 import {
   Dialog,
   DialogContent,
@@ -20,13 +21,12 @@ import {
   ZoomOut,
   Upload,
 } from "lucide-react";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
 
 const MedicalHistory = ({ patientId }) => {
   const [records, setRecords] = useState([]);
   const [newRecords, setNewRecords] = useState([
-    { condition: "", diagnosedAt: "", medications: [], files: [] }, // Changed from [""]
+    { condition: "", diagnosedAt: "", medications: [], files: [], notes: "", isChronicCondition: false },
   ]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
@@ -44,13 +44,11 @@ const MedicalHistory = ({ patientId }) => {
   const fetchRecords = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/v2/patients/${patientId}/medical-records`);
-      console.log("API Response:", response.data);
+      const response = await api.get(`/patients/${patientId}/medical-records`);
       const medicalHistory = Array.isArray(response.data.medicalHistory)
         ? response.data.medicalHistory.filter((record) => record && typeof record === "object")
         : [];
       setRecords(medicalHistory);
-      console.log("Processed Records:", medicalHistory);
     } catch (error) {
       handleApiError(error, "Error fetching medical records");
     } finally {
@@ -63,14 +61,17 @@ const MedicalHistory = ({ patientId }) => {
   }, [patientId]);
 
   const handleAddMultipleRecords = async () => {
+    console.log("clicked");
     const invalidRecords = newRecords.filter((record) => !record.condition);
     if (invalidRecords.length > 0) {
       return toast.error("Condition is required for all records");
     }
 
+    console.log("clicked");
     try {
       const formData = new FormData();
       newRecords.forEach((record, index) => {
+        console.log(`Appending record[${index}]:`, record);
         formData.append(`records[${index}][condition]`, record.condition);
         if (record.diagnosedAt) formData.append(`records[${index}][diagnosedAt]`, record.diagnosedAt);
         record.medications.forEach((med, medIndex) => {
@@ -79,17 +80,29 @@ const MedicalHistory = ({ patientId }) => {
         record.files.forEach((file, fileIndex) => {
           formData.append(`records[${index}][files][${fileIndex}]`, file);
         });
+        formData.append(`records[${index}][notes]`, record.notes || "");
+        formData.append(
+          `records[${index}][isChronicCondition]`,
+          (record.isChronicCondition ?? false).toString()
+        );
       });
 
-      const response = await api.post(`/v2/patients/${patientId}/medical-records`, formData, {
+      for (let pair of formData.entries()) {
+        console.log(`${pair[0]}: ${pair[1]}`);
+      }
+
+      await api.post(`/patients/${patientId}/medical-records`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
       toast.success("Medical records added successfully");
       await fetchRecords();
-      setNewRecords([{ condition: "", diagnosedAt: "", medications: [], files: [] }]); // Changed from [""]
+      setNewRecords([
+        { condition: "", diagnosedAt: "", medications: [], files: [], notes: "", isChronicCondition: false },
+      ]);
       setShowAddForm(false);
     } catch (error) {
+      console.error("API Error:", error.response?.data || error.message);
       handleApiError(error, "Error adding medical records");
     }
   };
@@ -99,12 +112,16 @@ const MedicalHistory = ({ patientId }) => {
       toast.error("Cannot edit this record: Invalid data");
       return;
     }
+    // Close the add form if it's open
+    setShowAddForm(false);
     setEditingRecord({
       ...record,
       diagnosedAt: record.diagnosedAt ? record.diagnosedAt.split("T")[0] : "",
-      medications: record.medications?.length > 0 ? [...record.medications] : [], // Changed from [""]
+      medications: record.medications?.length > 0 ? [...record.medications] : [],
       files: [],
       filesToRemove: [],
+      notes: record.notes === "No additional notes" ? "" : record.notes || "",
+      isChronicCondition: record.isChronicCondition || false,
     });
   };
 
@@ -115,30 +132,23 @@ const MedicalHistory = ({ patientId }) => {
 
     const formData = new FormData();
     formData.append("condition", editingRecord.condition);
-    if (editingRecord.diagnosedAt) {
-      formData.append("diagnosedAt", editingRecord.diagnosedAt);
-    }
-
+    if (editingRecord.diagnosedAt) formData.append("diagnosedAt", editingRecord.diagnosedAt);
     if (editingRecord.medications && editingRecord.medications.length > 0) {
       formData.append("medications", JSON.stringify(editingRecord.medications));
     }
-
     if (editingRecord.files && editingRecord.files.length > 0) {
       editingRecord.files.forEach((file) => {
         if (file) formData.append("files", file);
       });
     }
-
     if (editingRecord.filesToRemove && editingRecord.filesToRemove.length > 0) {
       formData.append("filesToRemove", JSON.stringify(editingRecord.filesToRemove));
     }
+    formData.append("notes", editingRecord.notes || "");
+    formData.append("isChronicCondition", editingRecord.isChronicCondition.toString());
 
     try {
-      const response = await api.put(
-        `/patients/${patientId}/medical-records/${editingRecord._id}`,
-        formData
-      );
-
+      await api.put(`/patients/${patientId}/medical-records/${editingRecord._id}`, formData);
       toast.success("Record updated successfully");
       await fetchRecords();
       setEditingRecord(null);
@@ -148,7 +158,7 @@ const MedicalHistory = ({ patientId }) => {
   };
 
   const handleAddNewRecord = () => {
-    setNewRecords([...newRecords, { condition: "", diagnosedAt: "", medications: [], files: [] }]); // Changed from [""]
+    setNewRecords([...newRecords, { condition: "", diagnosedAt: "", medications: [], files: [], notes: "", isChronicCondition: false }]);
   };
 
   const handleRemoveRecord = (index) => {
@@ -340,8 +350,10 @@ const MedicalHistory = ({ patientId }) => {
         <Button
           onClick={() => {
             setShowAddForm(true);
-            setEditingRecord(null);
-            setNewRecords([{ condition: "", diagnosedAt: "", medications: [], files: [] }]); // Changed from [""]
+            setEditingRecord(null); // Close edit form if open
+            setNewRecords([
+              { condition: "", diagnosedAt: "", medications: [], files: [], notes: "", isChronicCondition: false },
+            ]);
           }}
           className="bg-teal-600 hover:bg-teal-700 rounded-full px-6 py-2 text-white font-medium shadow-md transition-all duration-200"
         >
@@ -360,7 +372,7 @@ const MedicalHistory = ({ patientId }) => {
               <h3 className="text-xl font-semibold text-teal-800">Add New Medical Record</h3>
               {newRecords.map((record, recordIndex) => (
                 <div key={recordIndex} className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-700">Condition <span className="text-red-500">*</span></label>
                       <Input
@@ -388,6 +400,21 @@ const MedicalHistory = ({ patientId }) => {
                         className="mt-1 border-teal-200 focus:ring-teal-500"
                       />
                     </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Condition Type</label>
+                      <select
+                        value={record.isChronicCondition ? "Chronic" : "Acute"}
+                        onChange={(e) => {
+                          const updatedRecords = [...newRecords];
+                          updatedRecords[recordIndex].isChronicCondition = e.target.value === "Chronic";
+                          setNewRecords(updatedRecords);
+                        }}
+                        className="mt-1 block w-full border border-teal-200 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm p-2"
+                      >
+                        <option value="Acute">Acute</option>
+                        <option value="Chronic">Chronic</option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -399,7 +426,7 @@ const MedicalHistory = ({ patientId }) => {
                             value={med}
                             onChange={(e) => handleMedicationChange(recordIndex, medIndex, e.target.value)}
                             placeholder={`Medication ${medIndex + 1}`}
-                            className="border-teal-200 focus:ring-teal-500"
+                            className="border-teal-200 focus:ring-teal-500 max-w-md"
                           />
                           <Button
                             onClick={() => handleRemoveMedication(recordIndex, medIndex)}
@@ -444,8 +471,8 @@ const MedicalHistory = ({ patientId }) => {
                     {record.files.length > 0 && (
                       <ul className="space-y-2 mt-2">
                         {record.files.map((file, fileIndex) => (
-                          <li key={fileIndex} className="flex items-center justify-between bg-gray-100 p-2 rounded-md">
-                            <span className="text-sm text-gray-700 truncate">{file.name}</span>
+                          <li key={fileIndex} className="flex items-center justify-between bg-gray-100 p-2 rounded-md max-w-md">
+                            <span className="text-sm text-gray-700 truncate max-w-xs">{file.name}</span>
                             <Button
                               variant="outline"
                               size="icon"
@@ -458,6 +485,20 @@ const MedicalHistory = ({ patientId }) => {
                         ))}
                       </ul>
                     )}
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Notes</label>
+                    <textarea
+                      placeholder="Additional notes"
+                      value={record.notes}
+                      onChange={(e) => {
+                        const updatedRecords = [...newRecords];
+                        updatedRecords[recordIndex].notes = e.target.value;
+                        setNewRecords(updatedRecords);
+                      }}
+                      className="mt-1 block w-full min-w-[300px] max-w-full border border-teal-200 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm p-2 resize-y min-h-[100px]"
+                    />
                   </div>
 
                   {newRecords.length > 1 && (
@@ -492,13 +533,16 @@ const MedicalHistory = ({ patientId }) => {
           )}
 
           <div className="space-y-4">
+         
             {records.length > 0 ? (
               records.map((record) =>
                 record && record._id ? (
                   <div key={record._id} className="bg-white p-6 rounded-lg shadow-md border border-teal-100 hover:shadow-lg transition-shadow duration-200">
+                     <h3 className="text-xl font-semibold text-teal-800 mb-4">Edit Medical Record</h3>
                     {editingRecord && editingRecord._id === record._id ? (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                   
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div>
                             <label className="text-sm font-medium text-gray-700">Condition <span className="text-red-500">*</span></label>
                             <Input
@@ -518,6 +562,19 @@ const MedicalHistory = ({ patientId }) => {
                               className="mt-1 border-teal-200 focus:ring-teal-500"
                             />
                           </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">Condition Type</label>
+                            <select
+                              value={editingRecord.isChronicCondition ? "Chronic" : "Acute"}
+                              onChange={(e) =>
+                                setEditingRecord({ ...editingRecord, isChronicCondition: e.target.value === "Chronic" })
+                              }
+                              className="mt-1 block w-full border border-teal-200 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm p-2"
+                            >
+                              <option value="Acute">Acute</option>
+                              <option value="Chronic">Chronic</option>
+                            </select>
+                          </div>
                         </div>
 
                         <div className="space-y-2">
@@ -529,7 +586,7 @@ const MedicalHistory = ({ patientId }) => {
                                   value={med}
                                   onChange={(e) => handleEditMedicationChange(medIndex, e.target.value)}
                                   placeholder={`Medication ${medIndex + 1}`}
-                                  className="border-teal-200 focus:ring-teal-500"
+                                  className="border-teal-200 focus:ring-teal-500 max-w-md"
                                 />
                                 <Button
                                   onClick={() => handleRemoveEditMedication(medIndex)}
@@ -557,7 +614,7 @@ const MedicalHistory = ({ patientId }) => {
                           {editingRecord.filePaths?.length > 0 && (
                             <ul className="space-y-2">
                               {editingRecord.filePaths.map((path, index) => (
-                                <li key={index} className="flex items-center justify-between bg-gray-100 p-2 rounded-md">
+                                <li key={index} className="flex items-center justify-between bg-gray-100 p-2 rounded-md max-w-md">
                                   {path.match(/\.(jpg|png|jpeg)$/i) ? (
                                     <div className="flex items-center gap-2">
                                       <div className="text-center">
@@ -567,7 +624,7 @@ const MedicalHistory = ({ patientId }) => {
                                           className="w-20 h-20 object-cover rounded-md"
                                           onError={() => console.log(`Failed to load image: ${path}`)}
                                         />
-                                        <span className="text-xs text-gray-600 block mt-1 truncate">{getCleanFileName(path)}</span>
+                                        <span className="text-xs text-gray-600 block mt-1 truncate max-w-xs">{getCleanFileName(path)}</span>
                                       </div>
                                       <Button
                                         variant="outline"
@@ -587,7 +644,7 @@ const MedicalHistory = ({ patientId }) => {
                                       href={path}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-teal-600 hover:underline text-sm truncate"
+                                      className="text-teal-600 hover:underline text-sm truncate max-w-xs"
                                     >
                                       {getCleanFileName(path)}
                                     </a>
@@ -624,8 +681,8 @@ const MedicalHistory = ({ patientId }) => {
                           {editingRecord.files.length > 0 && (
                             <ul className="space-y-2 mt-2">
                               {editingRecord.files.map((file, fileIndex) => (
-                                <li key={fileIndex} className="flex items-center justify-between bg-gray-100 p-2 rounded-md">
-                                  <span className="text-sm text-gray-700 truncate">{file.name}</span>
+                                <li key={fileIndex} className="flex items-center justify-between bg-gray-100 p-2 rounded-md max-w-md">
+                                  <span className="text-sm text-gray-700 truncate max-w-xs">{file.name}</span>
                                   <Button
                                     variant="outline"
                                     size="icon"
@@ -638,6 +695,16 @@ const MedicalHistory = ({ patientId }) => {
                               ))}
                             </ul>
                           )}
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium text-gray-700">Notes</label>
+                          <textarea
+                            value={editingRecord.notes}
+                            onChange={(e) => setEditingRecord({ ...editingRecord, notes: e.target.value })}
+                            placeholder="Additional notes"
+                            className="mt-1 block w-full min-w-[300px] max-w-full border border-teal-200 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500 sm:text-sm p-2 resize-y min-h-[100px]"
+                          />
                         </div>
 
                         <div className="flex justify-end gap-3">
@@ -656,13 +723,21 @@ const MedicalHistory = ({ patientId }) => {
                       <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                         <div className="space-y-3 flex-1">
                           <h3 className="text-xl font-semibold text-teal-700">{record.condition || "Unnamed Condition"}</h3>
-                          <p className="text-sm text-gray-600">
+                          <div className="text-sm text-gray-600">
                             {record.diagnosedAt && (
                               <span>
                                 Diagnosed: <span className="font-medium">{new Date(record.diagnosedAt).toLocaleDateString()}</span>
                               </span>
                             )}
-                          </p>
+                            {record.diagnosedAt && record.hasOwnProperty('isChronicCondition') && (
+                              <span className="ml-2">|</span>
+                            )}
+                            {record.hasOwnProperty('isChronicCondition') && (
+                              <span className="ml-2">
+                                Type: <span className="font-medium">{record.isChronicCondition ? "Chronic" : "Acute"}</span>
+                              </span>
+                            )}
+                          </div>
                           {record.medications?.length > 0 && (
                             <div className="space-y-1">
                               <p className="text-sm font-medium text-gray-700">Medications:</p>
@@ -687,7 +762,7 @@ const MedicalHistory = ({ patientId }) => {
                                           className="w-24 h-24 object-cover rounded-md border border-gray-200"
                                           onError={() => console.log(`Failed to load image: ${path}`)}
                                         />
-                                        <span className="text-xs text-gray-600 block mt-1 truncate">{getCleanFileName(path)}</span>
+                                        <span className="text-xs text-gray-600 block mt-1 truncate max-w-xs">{getCleanFileName(path)}</span>
                                         <Button
                                           variant="outline"
                                           size="sm"
@@ -706,7 +781,7 @@ const MedicalHistory = ({ patientId }) => {
                                         href={path}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-teal-600 hover:underline text-sm truncate block"
+                                        className="text-teal-600 hover:underline text-sm truncate max-w-xs"
                                       >
                                         {getCleanFileName(path)}
                                       </a>
@@ -716,20 +791,26 @@ const MedicalHistory = ({ patientId }) => {
                               </div>
                             </div>
                           )}
+                          {record.notes && record.notes !== "No additional notes" && (
+                            <div className="mt-3">
+                              <p className="text-sm font-medium text-gray-700">Notes:</p>
+                              <p className="text-sm text-gray-600 whitespace-pre-wrap">{record.notes}</p>
+                            </div>
+                          )}
                         </div>
                         <div className="flex flex-col items-end gap-2">
-                        <p className="text-xs text-gray-500">
-  {record.updatedAt && 
-    `Last Modified: ${new Date(record.updatedAt).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true
-    })}`}
-</p>
+                          <p className="text-xs text-gray-500">
+                            {record.updatedAt &&
+                              `Last Modified: ${new Date(record.updatedAt).toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: true,
+                              })}`}
+                          </p>
                           <div className="flex gap-2">
                             <Button
                               onClick={() => handleEditRecord(record)}
@@ -757,12 +838,6 @@ const MedicalHistory = ({ patientId }) => {
             ) : (
               <div className="text-center py-10 bg-white rounded-lg shadow-md border border-teal-100">
                 <p className="text-gray-600 text-lg">No medical records available yet.</p>
-                <Button
-                  onClick={() => setShowAddForm(true)}
-                  className="mt-4 bg-teal-600 hover:bg-teal-700 text-white"
-                >
-                  Add a Record
-                </Button>
               </div>
             )}
           </div>

@@ -4,9 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api.service";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { PatientsStatusBarChart, DiseaseStageChart, PatientCategoryChart } from "@/components/ui/barChart";
+import { toast } from "react-hot-toast";
+import { PatientsStatusBarChart, DiseaseStageChart, PatientCategoryChart } from "@/components/shared/barChart";
 import { Stethoscope, User2, Activity } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DatePicker from "react-datepicker";
@@ -41,6 +40,7 @@ const DoctorDashboard = () => {
   const [patients, setPatients] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [patientFilter, setPatientFilter] = useState("total");
+  const [reviewPatientCounts, setReviewPatientCounts] = useState({});
   const id = "67cc3fd45e6d4c9cd4a602d5";
 
   useEffect(() => {
@@ -51,9 +51,24 @@ const DoctorDashboard = () => {
           api.get(`/doctors/${id}/patients?type=summary`),
         ]);
         setDoctor(doctorRes.data);
-        setPatients(patientsRes.data.data.patients || []);
+        const patientData = patientsRes.data.data.patients || [];
+        setPatients(patientData);
         console.log("Doctor Data:", doctorRes.data);
         console.log("Patients Data:", patientsRes.data.data);
+
+        const reviewCounts = patientData.reduce((acc, patient) => {
+          if (patient.patientStatus?.toLowerCase() === "review" && patient.nextVisit) {
+            const visitDate = new Date(patient.nextVisit).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            });
+            acc[visitDate] = (acc[visitDate] || 0) + 1;
+          }
+          return acc;
+        }, {});
+        setReviewPatientCounts(reviewCounts);
+        console.log("Review Patient Counts:", reviewCounts);
       } catch (err) {
         console.error("Fetch error:", err);
         toast.error("Error fetching data. Please try again.", {
@@ -69,7 +84,6 @@ const DoctorDashboard = () => {
     return <div>Loading...</div>;
   }
 
-  // Patient Calculations
   const totalPatients = patients.length;
   const diseaseCategories = [...new Set(patients.flatMap((p) => p.category))];
   const diseaseStages = [...new Set(patients.flatMap((p) => p.diagnoseHistory.map((d) => d.diagnosis)))];
@@ -88,22 +102,29 @@ const DoctorDashboard = () => {
     return totalPatients;
   };
 
-  // Patient Type Bar Chart Data (New vs Existing) with Dates
+ 
   const patientsStatus = patients.reduce(
     (acc, p) => {
-      const diagnoseCount = p.diagnoseHistory.length;
-      const isNew = diagnoseCount <= 1;
+      // Get the length of diagnoseHistory
+      const diagnoseCount = p.diagnoseHistory ? p.diagnoseHistory.length : 0;
+     
+      const isNew = p.isNew;
       const key = isNew ? "New Patients" : "Existing Patients";
-      acc[key].count += 1;
+
+      // Get the latest date for the patient
       const latestDate = diagnoseCount
         ? Math.max(...p.diagnoseHistory.map((d) => new Date(d.uploadedAt).getTime()))
         : new Date(p.createdAt).getTime();
+  
+      // Update the accumulator
+      acc[key].count += 1;
       acc[key].dates.push(latestDate);
+  
       return acc;
     },
     {
-      "New Patients": { count: 0, fill: "#3B82F6", dates: [] },
-      "Existing Patients": { count: 0, fill: "#FBBF24", dates: [] },
+      "New Patients": { count: 0, dates: [], fill: "#3B82F6" },
+      "Existing Patients": { count: 0, dates: [], fill: "#FBBF24" },
     }
   );
   const patientsStatusData = Object.entries(patientsStatus).map(([name, { count, fill, dates }]) => ({
@@ -113,7 +134,6 @@ const DoctorDashboard = () => {
     dates,
   }));
 
-  // Disease Categories Bar Chart Data
   const conditionsByDate = patients.reduce((acc, p) => {
     p.diagnoseHistory.forEach((record) => {
       const date = new Date(record.uploadedAt).toLocaleDateString();
@@ -131,7 +151,6 @@ const DoctorDashboard = () => {
     }))
   );
 
-  // Disease Stages Bar Chart Data
   const diagnosesByDate = patients.reduce((acc, p) => {
     p.diagnoseHistory.forEach((diag) => {
       const date = new Date(diag.uploadedAt).toLocaleDateString();
@@ -149,7 +168,6 @@ const DoctorDashboard = () => {
     }))
   );
 
-  // Latest Patients
   const latestPatients = [...patients]
     .sort((a, b) => {
       const aLatest = a.diagnoseHistory.length
@@ -162,7 +180,6 @@ const DoctorDashboard = () => {
     })
     .slice(0, 5);
 
-  // Schedule Functions
   const isDateInRange = (date, startDate, endDate, repeatYearly) => {
     const checkDate = date.getTime();
     let start = new Date(startDate);
@@ -193,6 +210,13 @@ const DoctorDashboard = () => {
   const renderDayContents = (day, date) => {
     const isWorking = isWorkingDay(date);
     const isOff = isDayOff(date);
+    const dateKey = date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const reviewCount = reviewPatientCounts[dateKey] || 0;
+
     return (
       <div
         className={`relative flex items-center justify-center w-full h-full
@@ -200,12 +224,17 @@ const DoctorDashboard = () => {
           ${isOff ? "bg-red-100" : ""}`}
       >
         <span>{day}</span>
-        {(isWorking || isOff) && (
-          <span className="absolute bottom-0 right-0 text-xs">
-            {isWorking && !isOff && "✓"}
-            {isOff && "✗"}
-          </span>
-        )}
+        <div className="absolute bottom-0 right-0 text-xs flex flex-col items-end">
+          {(isWorking || isOff) && (
+            <span>
+              {isWorking && !isOff && ""}
+              {isOff && ""}
+            </span>
+          )}
+          {reviewCount > 0 && (
+            <span className="text-teal-600 font-semibold">{reviewCount}</span>
+          )}
+        </div>
       </div>
     );
   };
@@ -227,7 +256,6 @@ const DoctorDashboard = () => {
           </Button>
         </div>
 
-        {/* First Row: Patient Count and Schedule */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl min-h-[300px]">
             <CardHeader className="bg-teal-500 text-white py-4">
@@ -337,6 +365,10 @@ const DoctorDashboard = () => {
                   <span className="w-3 h-3 bg-red-100 inline-block"></span>
                   <span>Day Off</span>
                 </div>
+                {/* <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 bg-teal-100 inline-block"></span>
+                  <span>Review Patients</span>
+                </div> */}
               </div>
               <div className="mt-2 text-sm">
                 <h3 className="font-semibold text-teal-700">
@@ -358,12 +390,16 @@ const DoctorDashboard = () => {
                 ) : (
                   <p className="text-gray-600">No Schedule</p>
                 )}
+                {reviewPatientCounts[selectedDate.toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" })] > 0 && (
+                  <p className="text-teal-600">
+                    Review Patients: {reviewPatientCounts[selectedDate.toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" })]}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Second Row: Patient Type and Disease Categories */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl">
             <CardHeader className="bg-teal-500 text-white py-4">
@@ -394,7 +430,6 @@ const DoctorDashboard = () => {
           </Card>
         </div>
 
-        {/* Third Row: Disease Stages */}
         <div className="grid grid-cols-1 gap-6">
           <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl">
             <CardHeader className="bg-teal-500 text-white py-4">
@@ -411,7 +446,6 @@ const DoctorDashboard = () => {
           </Card>
         </div>
 
-        {/* Fourth Row: Latest Patients */}
         <div className="grid grid-cols-1 gap-6">
           <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl">
             <CardHeader className="bg-teal-500 text-white py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -430,6 +464,8 @@ const DoctorDashboard = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
+                    <TableHead>Eye</TableHead>
+                    <TableHead>Patient Status</TableHead>
                     <TableHead>Latest Diagnosis</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
@@ -444,6 +480,9 @@ const DoctorDashboard = () => {
                     return (
                       <TableRow key={index}>
                         <TableCell>{patient.fullName}</TableCell>
+                        <TableCell>{latestDiagnosis.eye}</TableCell>
+                        <TableCell>{patient.patientStatus}</TableCell>
+                        
                         <TableCell>{latestDiagnosis.diagnosis}</TableCell>
                         <TableCell>{latestDiagnosis.status}</TableCell>
                       </TableRow>

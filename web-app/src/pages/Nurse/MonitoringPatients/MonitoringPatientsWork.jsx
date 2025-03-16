@@ -21,8 +21,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
+// import "react-toastify/dist/ReactToastify.css";
 
 const MonitoringPatients = () => {
   const [patients, setPatients] = useState([]);
@@ -42,7 +42,7 @@ const MonitoringPatients = () => {
     const fetchMonitoringPatients = async (page = 1) => {
       setLoading(true);
       try {
-        const response = await api.get("/v2/patients", {
+        const response = await api.get("/patients", {
           params: {
             status: "Monitoring",
             page,

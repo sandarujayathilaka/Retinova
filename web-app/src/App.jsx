@@ -15,11 +15,11 @@ import MonitoringPatientsPage from "./pages/MonitoringPatientsPage";
 import PreMonitoringPatientsPage from "./pages/PreMonitoringPatientsPage";
 import CompletedPatientsPage from "./pages/CompletedPatientsPage";
 import ReviewPatientsPage from "./pages/ReviewPatientsPage";
-import Dashboard from "./pages/Dashboard";
-import MonitoringPatients from "./pages/Nurse/MonitoringPatients";
-import PublishedPatients from "./pages/Nurse/PublishedPatients";
-import AddPatient from "./pages/Nurse/AddPatient";
-import View from "./pages/Nurse/View";
+import Dashboard from "./pages/Nurse/AdminDashboard/Dashboard";
+import MonitoringPatients from "./pages/Nurse/MonitoringPatients/MonitoringPatients";
+import PublishedPatients from "./pages/Nurse/PublishedPatients/PublishedPatients";
+import AddPatient from "./pages/Nurse/AddPatient/AddPatient";
+import View from "./pages/Nurse/View/ViewPatient";
 import RVO from "./pages/diseases/RVO";
 import DoctorsList from "@/pages/admin/DoctorList.jsx";
 import NotFound from "./pages/NotFound";
@@ -34,6 +34,9 @@ import NurseList from "@/pages/admin/NurseList";
 import AdminList from "./pages/admin/AdminList";
 import TestList from "./pages/admin/TestList";
 // import AllPatientList from "./pages/testrecord/AllPatientList";
+import DoctorDashboard from "./pages/Nurse/DoctorDashboard/DoctorDashboard";
+import AddPatientWizard from "./pages/Nurse/AddPatient/AddPatientWizard";
+import ReviewPatients from "./pages/Nurse/ReviewPatients/ReviewPatients";
 
 const App = () => {
   return (
@@ -50,12 +53,15 @@ const App = () => {
             <ProtectedRoute roles={[Roles.ADMIN, Roles.DOCTOR, Roles.NURSE]} redirectPath="/404" />
           }
         >
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/monitoringPatients" element={<MonitoringPatients />} />
-          <Route path="/publishedPatients" element={<PublishedPatients />} />
-          <Route path="/addPatient" element={<AddPatient />} />
-          <Route path="/monitoringPatients/view/:id" element={<View />} />
+          <Route path="/" element={<Diagnose />} />
+          <Route path="/monitoring-patients" element={<MonitoringPatients />} />
+          <Route path="/published-patients" element={<PublishedPatients />} />
+          <Route path="/review-patients" element={<ReviewPatients />} />
+          <Route path="/addPatientt" element={<AddPatient />} />
+          <Route path="/add-patient" element={<AddPatientWizard />} />
+          <Route path="/monitoring-patients/view/:id" element={<View />} />
 
+          <Route path="/doctordashboard" element={<DoctorDashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/diagnose/dr" element={<DR />} />
           <Route path="/diagnose/amd" element={<AMD />} />

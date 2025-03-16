@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { UsersIcon, SearchIcon, Loader2 } from "lucide-react";
-import { api } from "../../services/api.service";
+import { api } from "../../../services/api.service";
 import { useNavigate } from "react-router-dom";
 import {
   Select,
@@ -21,8 +21,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
+// import "react-toastify/dist/ReactToastify.css";
 import {
   Dialog,
   DialogContent,
@@ -56,7 +56,7 @@ const PublishedPatients = () => {
     const fetchPublishedPatientsAndDoctors = async (page = 1) => {
       setLoading(true);
       try {
-        const patientResponse = await api.get("/v2/patients", {
+        const patientResponse = await api.get("/patients", {
           params: {
             status: "Published",
             page,
@@ -66,16 +66,16 @@ const PublishedPatients = () => {
           },
         });
         console.log("Patient API Response:", patientResponse.data);
-        if (!patientResponse.data || !Array.isArray(patientResponse.data.patients)) {
+        if (!patientResponse.data || !Array.isArray(patientResponse.data.data.patients)) {
           throw new Error("Invalid patient API response format");
         }
 
-        setPatients(patientResponse.data.patients);
-        setPagination(patientResponse.data.pagination);
+        setPatients(patientResponse.data.data.patients);
+        setPagination(patientResponse.data.data.pagination);
 
         const doctorIds = [
           ...new Set(
-            patientResponse.data.patients
+            patientResponse.data.data.patients
               .flatMap((p) => p.diagnoseHistory?.map((d) => d.doctorId) || [])
               .filter((id) => id)
           ),
@@ -109,7 +109,7 @@ const PublishedPatients = () => {
       const dateStr = utcDate.toISOString().split("T")[0];
       console.log("Fetching count for:", { patientStatus: "Review", nextVisit: dateStr, doctorId });
 
-      const response = await api.get("/v2/patients/count", {
+      const response = await api.get("/patients/count", {
         params: {
           patientStatus: "Review",
           nextVisit: dateStr,
@@ -117,8 +117,8 @@ const PublishedPatients = () => {
         },
         headers: { "Cache-Control": "no-cache" },
       });
-      console.log("Count Response:", response.data);
-      return response.data.count || 0;
+      console.log("Count Response:", response.data.data);
+      return response.data.data.count || 0;
     } catch (error) {
       console.error("Error fetching patient count:", error);
       return 0;
@@ -168,31 +168,24 @@ const PublishedPatients = () => {
 
     try {
       const utcRevisitDate = new Date(Date.UTC(revisitDate.getFullYear(), revisitDate.getMonth(), revisitDate.getDate()));
-    console.log("Updating revisit for:", selectedPatient.patientId, selectedDoctorId, utcRevisitDate.toISOString());
+      console.log("Updating revisit for:", selectedPatient.patientId, selectedDoctorId, utcRevisitDate.toISOString());
 
-    const response = await api.put(`/v2/patients/${selectedPatient.patientId}/revisit`, {
-      doctorId: selectedDoctorId,
-      revisitDate: utcRevisitDate.toISOString(), // Send UTC midnight
-    });
-      // const response = await api.put(`/v2/patients/${selectedPatient.patientId}/revisit`, {
-      //   doctorId: selectedDoctorId,
-      //   revisitDate: revisitDate.toISOString(),
-      // });
+      const response = await api.put(`/patients/${selectedPatient.patientId}/revisit`, {
+        doctorId: selectedDoctorId,
+        revisitDate: utcRevisitDate.toISOString(),
+      });
       toast.success("Revisit date assigned successfully!", { position: "top-right" });
 
-      // Update local patients state by removing the patient from the list
       setPatients((prevPatients) =>
         prevPatients.filter((patient) => patient.patientId !== selectedPatient.patientId)
       );
 
-      // Update pagination total if necessary
       setPagination((prev) => ({
         ...prev,
         totalPatients: prev.totalPatients - 1,
         totalPages: Math.ceil((prev.totalPatients - 1) / prev.limit),
       }));
 
-      // Close modal and reset state
       setSelectedPatient(null);
       setSelectedDoctorId("");
       setRevisitDate(null);
@@ -204,7 +197,7 @@ const PublishedPatients = () => {
 
   const isDateDisabled = (date) => {
     if (!selectedDoctorId) return false;
-    const doctor = doctors.find((d) => d._id.toString() === selectedDoctorId);
+    const doctor = doctors.find((d) => d._id?.toString() === selectedDoctorId);
     if (!doctor) return false;
 
     const day = date.toLocaleString("en-US", { weekday: "long" });
@@ -253,11 +246,12 @@ const PublishedPatients = () => {
   };
 
   const getDoctorLabel = (doctor) => {
-    const latestDiagnosis = selectedPatient?.diagnoseHistory
+    if (!doctor || !selectedPatient) return "Unknown Doctor";
+    const latestDiagnosis = selectedPatient.diagnoseHistory
       ?.slice()
       .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))[0];
-    const isLatest = latestDiagnosis?.doctorId === doctor._id.toString();
-    return `${doctor.name} (${doctor.specialty}${isLatest ? " - Latest" : ""})`;
+    const isLatest = latestDiagnosis?.doctorId === doctor._id?.toString();
+    return `${doctor.name || "N/A"} (${doctor.specialty || "N/A"}${isLatest ? " - Latest" : ""})`;
   };
 
   const renderDayContents = (day, date) => {
@@ -466,19 +460,25 @@ const PublishedPatients = () => {
                   </SelectTrigger>
                   <SelectContent className="bg-white rounded-lg shadow-lg border border-gray-200">
                     {selectedPatient && selectedPatient.diagnoseHistory?.length > 0 ? (
-                      doctors
-                        .filter((doctor) =>
-                          selectedPatient.diagnoseHistory.some((d) => d.doctorId === doctor._id.toString())
-                        )
-                        .map((doctor) => (
-                          <SelectItem
-                            key={doctor._id}
-                            value={doctor._id.toString()}
-                            className="hover:bg-teal-50 transition-all duration-150"
-                          >
-                            {getDoctorLabel(doctor)}
-                          </SelectItem>
-                        ))
+                      doctors.length > 0 ? (
+                        doctors
+                          .filter((doctor) =>
+                            selectedPatient.diagnoseHistory.some((d) => d.doctorId === doctor._id?.toString())
+                          )
+                          .map((doctor) => (
+                            <SelectItem
+                              key={doctor._id?.toString() || Math.random()} // Fallback key if _id is undefined
+                              value={doctor._id?.toString() || ""} // Fallback value
+                              className="hover:bg-teal-50 transition-all duration-150"
+                            >
+                              {getDoctorLabel(doctor)}
+                            </SelectItem>
+                          ))
+                      ) : (
+                        <SelectItem value="" disabled className="text-gray-500">
+                          Loading doctors...
+                        </SelectItem>
+                      )
                     ) : (
                       <SelectItem value="" disabled className="text-gray-500">
                         No doctors available for this patient
@@ -492,12 +492,12 @@ const PublishedPatients = () => {
                 <div className="bg-teal-50 p-4 rounded-lg shadow-sm">
                   <h3 className="text-lg font-semibold text-teal-700 mb-3">Doctor Information</h3>
                   {(() => {
-                    const doctor = doctors.find((d) => d._id.toString() === selectedDoctorId);
+                    const doctor = doctors.find((d) => d._id?.toString() === selectedDoctorId);
                     return doctor ? (
                       <div className="space-y-4 text-sm">
                         <p>
                           <span className="font-medium text-gray-700">Name:</span>{" "}
-                          <span className="text-gray-900">{doctor.name}</span>
+                          <span className="text-gray-900">{doctor.name || "N/A"}</span>
                         </p>
                         <p>
                           <span className="font-medium text-gray-700">Type:</span>{" "}
@@ -510,7 +510,7 @@ const PublishedPatients = () => {
                         <div>
                           <span className="font-medium text-gray-700">Working Days:</span>
                           <ul className="list-disc pl-5 text-gray-900">
-                            {Object.entries(doctor.workingHours)
+                            {Object.entries(doctor.workingHours || {})
                               .filter(([, hours]) => hours)
                               .map(([day, { startTime, endTime }]) => (
                                 <li key={day}>
