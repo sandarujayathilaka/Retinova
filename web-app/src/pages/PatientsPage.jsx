@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { Users, RefreshCw, AlertCircle } from "lucide-react";
 import Filters from "../components/PatientsPage/Filters";
 import PatientsTable from "../components/PatientsPage/PatientsTable";
 import Pagination from "../components/PatientsPage/Pagination";
@@ -25,11 +26,14 @@ const PatientsPage = () => {
     sortOrder: "desc",
   });
   const [loading, setLoading] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const fetchPatients = async () => {
+  // Fetch patients with current filters
+  const fetchPatients = useCallback(async () => {
     setLoading(true);
+    setError(null);
+    
     try {
       const response = await axios.get("http://localhost:4000/api/patients/getallpatients", {
         params: filters,
@@ -38,46 +42,114 @@ const PatientsPage = () => {
       setPagination(response.data.pagination);
     } catch (error) {
       console.error("Error fetching patients:", error);
-      alert("Failed to fetch patients");
+      setError("Failed to fetch patients. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }, [filters]);
 
+  // Initial load
   useEffect(() => {
-    if (isInitialLoad) {
-      fetchPatients();
-      setIsInitialLoad(false);
-    }
-  }, [isInitialLoad]);
+    fetchPatients();
+  }, [fetchPatients]);
 
-  const handleFilterChange = e => {
+  // Handle filter changes
+  const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value, page: 1 }));
+    
+    // Reset all filters if reset button is clicked
+    if (name === 'resetAll') {
+      setFilters({
+        page: 1,
+        limit: 10,
+        category: "",
+        gender: "",
+        ageMin: "",
+        ageMax: "",
+        search: "",
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      });
+      return;
+    }
+    
+    // Otherwise, update the specific filter
+    setFilters(prev => ({ 
+      ...prev, 
+      [name]: value,
+      // Reset to page 1 when filters change
+      ...(name !== 'page' && { page: 1 })
+    }));
   };
 
+  // Handle search button click
   const handleSearch = () => {
     fetchPatients();
   };
 
-  const handlePageChange = newPage => {
+  // Handle page change
+  const handlePageChange = (newPage) => {
     setFilters(prev => ({ ...prev, page: newPage }));
-    fetchPatients();
   };
 
-  const handleViewPatient = patientId => {
+  // Navigate to patient details
+  const handleViewPatient = (patientId) => {
     navigate(`/patients/${patientId}`);
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Patient Records</h1>
-      <Filters
-        filters={filters}
-        handleFilterChange={handleFilterChange}
-        handleSearch={handleSearch}
-      />
-      <PatientsTable patients={patients} loading={loading} handleViewPatient={handleViewPatient} />
-      <Pagination pagination={pagination} handlePageChange={handlePageChange} />
+    <div className="min-h-screen bg-gray-100 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <div className="flex items-center">
+            <div className="p-2 mr-3 bg-indigo-100 rounded-full shadow-sm">
+              <Users className="w-6 h-6 text-indigo-800" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Patient Records</h1>
+          </div>
+          
+          <button 
+            onClick={fetchPatients} 
+            className="flex items-center justify-center px-4 py-2 bg-white text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors duration-200 shadow-sm self-start sm:self-auto"
+          >
+            <RefreshCw size={16} className="mr-2" />
+            <span>Refresh</span>
+          </button>
+        </div>
+        
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
+            <AlertCircle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
+        
+        {/* Filters */}
+        <Filters 
+          filters={filters} 
+          handleFilterChange={handleFilterChange} 
+          handleSearch={handleSearch} 
+        />
+        
+        {/* Patients Table */}
+        <PatientsTable 
+          patients={patients} 
+          loading={loading} 
+          handleViewPatient={handleViewPatient} 
+        />
+        
+        {/* Pagination - only show if not loading and we have patients */}
+        {!loading && patients.length > 0 && (
+          <div className="mt-6">
+            <Pagination 
+              pagination={pagination} 
+              handlePageChange={handlePageChange} 
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,15 +1,15 @@
 import React from "react";
 
 const Footer = ({ patient }) => (
-  <div className="bg-white rounded-xl shadow-lg p-6 text-sm text-gray-600 transform transition-all hover:shadow-xl">
-    <p>
-      <span className="font-medium">Created At:</span>{" "}
+  <div className="pt-4 border-t border-indigo-100 text-sm text-gray-600 space-y-1">
+    <div>
+      <span className="font-medium text-gray-700">Created:</span>{" "}
       {new Date(patient.createdAt).toLocaleString()}
-    </p>
-    <p>
-      <span className="font-medium">Updated At:</span>{" "}
+    </div>
+    <div>
+      <span className="font-medium text-gray-700">Updated:</span>{" "}
       {new Date(patient.updatedAt).toLocaleString()}
-    </p>
+    </div>
   </div>
 );
 

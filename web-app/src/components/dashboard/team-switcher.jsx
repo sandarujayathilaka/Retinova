@@ -30,44 +30,46 @@ export function TeamSwitcher({ teams }) {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:bg-indigo-600 text-white rounded-xl shadow-md transition-all duration-300 hover:shadow-lg"
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <activeTeam.logo className="size-4" />
+              <div className="flex aspect-square size-10 items-center justify-center rounded-xl bg-white/20">
+                <activeTeam.logo className="size-5 text-white" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{activeTeam.name}</span>
-                <span className="truncate text-xs">{activeTeam.plan}</span>
+                <span className="truncate font-semibold text-white">{activeTeam.name}</span>
+                <span className="truncate text-xs text-gray-200">{activeTeam.plan}</span>
               </div>
-              <ChevronsUpDown className="ml-auto" />
+              <ChevronsUpDown className="ml-auto size-4 text-white" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-60 rounded-xl p-2 bg-white shadow-lg border border-gray-100"
             align="start"
             side={isMobile ? "bottom" : "right"}
             sideOffset={4}
           >
-            <DropdownMenuLabel className="text-xs text-muted-foreground">Teams</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-sm font-medium text-gray-800">
+              Teams
+            </DropdownMenuLabel>
             {teams.map((team, index) => (
               <DropdownMenuItem
                 key={team.name}
                 onClick={() => setActiveTeam(team)}
-                className="gap-2 p-2"
+                className="hover:bg-indigo-50 rounded-md p-2 transition-colors duration-200"
               >
-                <div className="flex size-6 items-center justify-center rounded-sm border">
-                  <team.logo className="size-4 shrink-0" />
+                <div className="flex size-6 items-center justify-center rounded-md bg-gray-100">
+                  <team.logo className="size-4 text-gray-600" />
                 </div>
-                {team.name}
-                <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                <span className="ml-2 text-gray-700">{team.name}</span>
+                <DropdownMenuShortcut className="text-gray-500">⌘{index + 1}</DropdownMenuShortcut>
               </DropdownMenuItem>
             ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2">
-              <div className="flex size-6 items-center justify-center rounded-md border bg-background">
-                <Plus className="size-4" />
+            <DropdownMenuSeparator className="bg-gray-200" />
+            <DropdownMenuItem className="hover:bg-indigo-50 rounded-md p-2 transition-colors duration-200">
+              <div className="flex size-6 items-center justify-center rounded-md bg-gray-100">
+                <Plus className="size-4 text-gray-600" />
               </div>
-              <div className="font-medium text-muted-foreground">Add team</div>
+              <span className="ml-2 font-medium text-gray-700">Add team</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
