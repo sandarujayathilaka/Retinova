@@ -80,7 +80,7 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
         { title: "Monitoring", url: "/monitorpatients" },
         { title: "Pre-Monitoring", url: "/pre-monitoring-patients" },
         { title: "Completed", url: "/completed-patients" },
-        { title: "Review", url: "/review-patients" },
+        { title: "Review", url: "/review-patients-profile" },
       ],
     },
     {
@@ -114,7 +114,7 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
   return (
     <div className="flex">
       <div
-        className={`fixed inset-y-0 left-0 z-50 bg-gradient-to-br from-blue-950 via-indigo-900 to-violet-900 text-white transition-all duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 bg-gradient-to-b from-indigo-950 via-blue-900 to-indigo-900 text-white transition-all duration-300 ease-in-out ${
           isOpen ? "w-72" : "w-20"
         } shadow-xl flex flex-col justify-between overflow-y-auto overflow-x-hidden`}
       >

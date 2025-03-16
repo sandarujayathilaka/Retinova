@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { ErrorAlert } from "@/components/error/ErrorAlert";
 
 const PatientsPage = () => {
   const [patients, setPatients] = useState([]);
@@ -23,6 +24,7 @@ const PatientsPage = () => {
   });
   const [loading, setLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const fetchPatients = async () => {
@@ -35,7 +37,7 @@ const PatientsPage = () => {
       setPagination(response.data.pagination);
     } catch (error) {
       console.error("Error fetching patients:", error);
-      alert("Failed to fetch patients");
+      setError("Failed to fetch patients");
     }
     setLoading(false);
   };
@@ -68,6 +70,8 @@ const PatientsPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Patient Records</h1>
+
+      {error && <ErrorAlert message={error} />}
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow-md mb-6">

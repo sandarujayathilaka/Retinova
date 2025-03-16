@@ -35,7 +35,10 @@ const ResultsSection = ({
 
   const getPredictionDetails = (type) => {
     switch (type) {
-      case "advanced":
+      case "advanced" :
+      case "PDR":
+      case "CRVO":
+      case "wet":
         return {
           color: "red",
           bgColor: "bg-red-50",
@@ -58,9 +61,12 @@ const ResultsSection = ({
             </svg>
           ),
           progressColor: "#ef4444",
-          message: "Advanced diabetic retinopathy detected. Immediate specialist consultation recommended.",
+          message: "Advanced signs detected. Immediate specialist consultation recommended.",
         };
       case "early":
+      case "dry":
+      case "NPDR":
+      case "BRVO":
         return {
           color: "orange",
           bgColor: "bg-amber-50",
@@ -83,9 +89,11 @@ const ResultsSection = ({
             </svg>
           ),
           progressColor: "#f59e0b",
-          message: "Early signs of diabetic retinopathy. Regular monitoring and lifestyle changes advised.",
+          message: "Early signs detected. Regular monitoring and lifestyle changes advised.",
         };
       case "normal":
+      case "No_DR":
+      case "Healthy":
         return {
           color: "green",
           bgColor: "bg-green-50",
@@ -107,7 +115,7 @@ const ResultsSection = ({
             </svg>
           ),
           progressColor: "#22c55e",
-          message: "No signs of diabetic retinopathy detected. Continue with regular check-ups.",
+          message: `No signs detected. Continue with regular check-ups.`,
         };
       default:
         return {
@@ -132,12 +140,14 @@ const ResultsSection = ({
             </svg>
           ),
           progressColor: "#6b7280",
-          message: "Assessment completed. Please consult with your healthcare provider for interpretation.",
+          message: "Assessment completed.",
         };
     }
   };
 
   const handleImageClick = (url) => setSelectedImage(url);
+
+  console.log(prediction.type)
 
   const predictionDetails = getPredictionDetails(prediction.type);
   const confidencePercent = Math.round(prediction.confidence * 100);

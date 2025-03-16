@@ -5,6 +5,7 @@ import { Users, RefreshCw, AlertCircle } from "lucide-react";
 import Filters from "../components/PatientsPage/Filters";
 import PatientsTable from "../components/PatientsPage/PatientsTable";
 import Pagination from "../components/PatientsPage/Pagination";
+import { ErrorAlert } from "@/components/error/ErrorAlert";
 
 const PatientsPage = () => {
   const [patients, setPatients] = useState([]);
@@ -120,10 +121,7 @@ const PatientsPage = () => {
         
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
-            <AlertCircle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-            <p className="text-red-700 text-sm">{error}</p>
-          </div>
+        <ErrorAlert message={error} />
         )}
         
         {/* Filters */}
