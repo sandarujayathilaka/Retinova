@@ -170,6 +170,7 @@ patientSchema.index({ category: 1, gender: 1 }); // For queries filtering by bot
 patientSchema.index({ createdAt: -1 }); // For sorting by age and creation date
 
 patientSchema.index({ patientId: 1 }, { unique: true });
-
+patientSchema.index({ nic: 1 }, { unique: true });
+patientSchema.index({ email: 1 }, { unique: true });
 const Patient = mongoose.model("Patient", patientSchema);
 module.exports = Patient;

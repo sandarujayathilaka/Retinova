@@ -19,6 +19,41 @@ export const step1Schema = z.object({
 });
 
 // Step 2 schema
+// export const step2Schema = z.object({
+//   bloodType: z.string().optional(),
+//   height: z.number().min(0, { message: "Height cannot be negative" }).optional().or(z.literal("")),
+//   weight: z.number().min(0, { message: "Weight cannot be negative" }).optional().or(z.literal("")),
+//   allergies: z.array(z.string()).optional(),
+//   primaryPhysician: z.string().optional(),
+//   emergencyContact: z
+//     .object({
+//       name: z.string().optional(),
+//       relationship: z.string().optional(),
+//       phone: z
+//         .string()
+//         .optional()
+//         .refine(
+//           (val) => !val || /^\d{10}$/.test(val),
+//           { message: "Phone number must be a valid 10-digit number if provided." }
+//         ),
+//     })
+//     .optional()
+//     .refine(
+//       (data) => {
+//         // If emergencyContact is not provided or no subfields are filled, validation passes
+//         if (!data || (!data.name && !data.relationship && !data.phone)) {
+//           return true;
+//         }
+//         // If any subfield is provided, all must be present
+//         return data.name && data.relationship && data.phone;
+//       },
+//       {
+//         message: "If any emergency contact detail is provided, all fields (name, relationship, phone) are required.",
+//         path: ["emergencyContact"],
+//       }
+//     ),
+// });
+
 export const step2Schema = z.object({
   bloodType: z.string().optional(),
   height: z.number().min(0, { message: "Height cannot be negative" }).optional().or(z.literal("")),
@@ -38,18 +73,54 @@ export const step2Schema = z.object({
         ),
     })
     .optional()
-    .refine(
-      (data) => {
-        // If emergencyContact is not provided or no subfields are filled, validation passes
-        if (!data || (!data.name && !data.relationship && !data.phone)) {
-          return true;
+    .superRefine((data, ctx) => {
+      const { name, relationship, phone } = data || {};
+      const hasAnyField = name || relationship || phone;
+      
+      if (hasAnyField && !(name && relationship && phone)) {
+        if (!name) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['name'],
+            message: "Name is required if any emergency contact field is provided.",
+          });
         }
-        // If any subfield is provided, all must be present
-        return data.name && data.relationship && data.phone;
-      },
-      {
-        message: "If any emergency contact detail is provided, all fields (name, relationship, phone) are required.",
-        path: ["emergencyContact"],
+        if (!relationship) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['relationship'],
+            message: "Relationship is required if any emergency contact field is provided.",
+          });
+        }
+        if (!phone) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['phone'],
+            message: "Phone is required if any emergency contact field is provided.",
+          });
+        }
       }
-    ),
+    }),
 });
+
+
+// utils/emergencyContactValidation.js or patientSchemas.js
+export const validateEmergencyContact = (emergencyContact) => {
+  if (!emergencyContact) return { valid: true, errors: {} }; // Return empty errors if no contact
+
+  const { name, relationship, phone } = emergencyContact;
+  const hasAnyField = name || relationship || phone;
+
+  if (!hasAnyField) return { valid: true, errors: {} }; // All empty is valid
+
+  const errors = {};
+  if (!name) errors.name = "Name is required";
+  if (!relationship) errors.relationship = "Relationship is required";
+  if (!phone) errors.phone = "Phone is required";
+  else if (!/^\d{10}$/.test(phone)) errors.phone = "Phone must be a valid 10-digit number";
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors, // Always return errors, even if empty
+  };
+};

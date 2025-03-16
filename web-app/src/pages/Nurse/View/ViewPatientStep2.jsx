@@ -10,10 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Droplet, Ruler, Scale, AlertTriangle, Stethoscope, Phone, User2, Loader2, Save, ChevronLeft, X, Plus } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { step2Schema } from "../CommonFiles/patientSchemas";
+import { step2Schema, validateEmergencyContact } from "../CommonFiles/patientSchemas";
 import PropTypes from "prop-types";
 
 const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitting }) => {
+  const [emergencyContactError, setEmergencyContactError] = useState(null);
   const form = useForm({
     resolver: zodResolver(step2Schema),
     defaultValues: initialData || {
@@ -43,7 +44,6 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
 
   const [filteredDoctors, setFilteredDoctors] = useState(doctors);
   const [searchTerm, setSearchTerm] = useState("");
-  const [emergencyContactError, setEmergencyContactError] = useState("");
 
   useEffect(() => {
     setFilteredDoctors(doctors);
@@ -68,53 +68,36 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
     onPrevious(currentData);
   };
 
- // Add this function to the top of handleSubmit in ViewPatientStep2.jsx
-const handleSubmit = async (data) => {
-  try {
-    // Clear any previous emergency contact errors
-    setEmergencyContactError("");
-    
-    // Specifically check emergency contact validation first
-    const { name, relationship, phone } = data.emergencyContact || {};
-    const hasName = name && name.trim() !== "";
-    const hasRelationship = relationship && relationship.trim() !== "";
-    const hasPhone = phone && phone.trim() !== "";
-    
-    // If any field is filled but not all fields are filled
-    if ((hasName || hasRelationship || hasPhone) && !(hasName && hasRelationship && hasPhone)) {
-      const errorMessage = "All emergency contact fields (name, relationship, phone) are required if any are provided.";
-      
-      // Set visual error state
-      setEmergencyContactError(errorMessage);
-      
-      // Show toast notification
-      toast.error(errorMessage);
-      
-      // Mark individual fields as errors
-      if (!hasName) form.setError("emergencyContact.name", { type: "manual", message: "Required" });
-      if (!hasRelationship) form.setError("emergencyContact.relationship", { type: "manual", message: "Required" });
-      if (!hasPhone) form.setError("emergencyContact.phone", { type: "manual", message: "Required" });
-      
-      // Stop form submission
-      return;
-    }
-    
-    // Phone validation if phone exists
-    if (hasPhone && !/^\d{10}$/.test(phone)) {
-      form.setError("emergencyContact.phone", { 
-        type: "manual", 
-        message: "Emergency contact phone must be a valid 10-digit number." 
-      });
-      toast.error("Emergency contact phone must be a valid 10-digit number.");
-      return;
-    }
+  const handleSubmit = async (data) => {
+    try {
+      setEmergencyContactError(null);
+      const result = validateEmergencyContact(data.emergencyContact);
 
-    // Continue with save if validation passes
-    await onSave(data);
-  } catch (error) {
-    // Rest of your error handling...
-  }
-};
+      if (!result.valid) {
+        if (result.errors && Object.keys(result.errors).length > 0) {
+          Object.entries(result.errors).forEach(([field, message]) => {
+            form.setError(`emergencyContact.${field}`, { type: "manual", message });
+          });
+          setEmergencyContactError("Please fill in all emergency contact fields or leave them all empty.");
+        }
+        return;
+      }
+
+      // Convert "none" to empty string before submission
+      if (data.emergencyContact.relationship === "none") {
+        data.emergencyContact.relationship = "";
+      }
+
+      await onSave(data);
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "An error occurred while saving.";
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
 
   const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
   const relationships = ["Father", "Mother", "Sister", "Brother", "Son", "Daughter", "Friend", "Relative", "Other"];
@@ -309,8 +292,6 @@ const handleSubmit = async (data) => {
               <Phone className="h-5 w-5 mr-2 text-indigo-600" />
               Emergency Contact
             </h3>
-            
-            {/* Show emergency contact group error if present */}
             {emergencyContactError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-500 font-medium text-sm flex items-center">
@@ -319,7 +300,6 @@ const handleSubmit = async (data) => {
                 </p>
               </div>
             )}
-            
             <FormField
               control={form.control}
               name="emergencyContact.name"
@@ -357,7 +337,7 @@ const handleSubmit = async (data) => {
                   </FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || ""}>
                     <FormControl>
-                      <SelectTrigger 
+                      <SelectTrigger
                         className={`h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white ${
                           emergencyContactError ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""
                         }`}
@@ -366,6 +346,9 @@ const handleSubmit = async (data) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="bg-white rounded-xl border-gray-200">
+                      <SelectItem value="none" className="py-3 hover:bg-blue-50 rounded-lg">
+                        None
+                      </SelectItem>
                       {relationships.map((relationship) => (
                         <SelectItem key={relationship} value={relationship} className="py-3 hover:bg-blue-50 rounded-lg">
                           {relationship}
@@ -396,8 +379,8 @@ const handleSubmit = async (data) => {
                         field.onChange(numericValue);
                       }}
                       className={`h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white ${
-                        emergencyContactError || form.formState.errors.emergencyContact?.phone 
-                          ? "border-red-300 focus:border-red-500 focus:ring-red-500" 
+                        emergencyContactError || form.formState.errors.emergencyContact?.phone
+                          ? "border-red-300 focus:border-red-500 focus:ring-red-500"
                           : ""
                       }`}
                       aria-label="Emergency Contact Phone Number"
@@ -407,13 +390,6 @@ const handleSubmit = async (data) => {
                 </FormItem>
               )}
             />
-            
-            {/* Already handled with the error banner at the top of the emergency contact section */}
-            {form.formState.errors.emergencyContact && !form.formState.errors.emergencyContact.name && 
-             !form.formState.errors.emergencyContact.relationship && !form.formState.errors.emergencyContact.phone && 
-             !emergencyContactError && (
-              <p className="text-red-500 font-medium">{form.formState.errors.emergencyContact.message}</p>
-            )}
           </div>
         </div>
         <div className="flex justify-center gap-6 pt-4">

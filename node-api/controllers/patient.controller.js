@@ -713,9 +713,9 @@ const editPatient = async (req, res) => {
       });
     }
 
-    // Validation: Primary physician
+    // Validation: Primary physician (optional field)
     let physicianId;
-    if (primaryPhysician !== undefined) {
+    if (primaryPhysician !== undefined && primaryPhysician !== "" && primaryPhysician !== null) {
       if (!mongoose.Types.ObjectId.isValid(primaryPhysician)) {
         return res.status(400).json({
           errorCode: "INVALID_PHYSICIAN_ID",
@@ -730,25 +730,32 @@ const editPatient = async (req, res) => {
         });
       }
       physicianId = new mongoose.Types.ObjectId(primaryPhysician);
+    } else {
+      physicianId = undefined; // Keep existing value or allow unset
     }
 
-// Validation: Emergency contact
-if (emergencyContact !== undefined) {
-  const { name, relationship, phone } = emergencyContact || {};
-  const hasAnyField = name || relationship || phone;
-  if (hasAnyField && !(name && relationship && phone)) {
-    return res.status(400).json({
-      errorCode: "INVALID_EMERGENCY_CONTACT",
-      message: "All emergency contact fields (name, relationship, phone) are required if any are provided.",
-    });
-  }
-  if (hasAnyField && (!validator.isMobilePhone(phone, "any", { strictMode: true }) || !/^\d{10}$/.test(phone))) {
-    return res.status(400).json({
-      errorCode: "INVALID_EMERGENCY_PHONE",
-      message: "Emergency contact phone must be a valid 10-digit number.",
-    });
-  }
-}
+    // Validation: Emergency contact
+    if (emergencyContact !== undefined) {
+      const { name, relationship, phone } = emergencyContact || {};
+      const hasAnyField = name || relationship || phone;
+
+      if (hasAnyField) {
+        if (!(name && relationship && phone)) {
+          return res.status(400).json({
+            errorCode: "INVALID_EMERGENCY_CONTACT",
+            message: "All emergency contact fields are required if any are provided.",
+          });
+        }
+        if (!validator.isMobilePhone(phone, "any") || !/^\d{10}$/.test(phone)) {
+          return res.status(400).json({
+            errorCode: "INVALID_EMERGENCY_PHONE",
+            message: "Emergency contact phone must be a valid 10-digit number.",
+          });
+        }
+      } else {
+        emergencyContact = undefined; // If no fields are provided, set to undefined
+      }
+    }
 
     // Prepare updated data
     const updatedData = {
@@ -783,7 +790,7 @@ if (emergencyContact !== undefined) {
     const updatedPatient = await patient.save();
     res.status(200).json({ message: "Patient updated successfully", data: updatedPatient });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     if (error.name === "ValidationError") {
       const errors = Object.values(error.errors).map((err) => ({
         path: err.path,
@@ -803,7 +810,6 @@ if (emergencyContact !== undefined) {
     });
   }
 };
-
 // Delete a patient by ID
 const deletePatient = async (req, res) => {
   try {

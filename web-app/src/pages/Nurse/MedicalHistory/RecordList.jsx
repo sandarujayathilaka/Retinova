@@ -1,3 +1,4 @@
+
 // import RecordItem from "./RecordItem";
 
 // const RecordList = ({
@@ -10,9 +11,10 @@
 //   setEnlargedImage,
 //   patientId,
 //   fetchRecords,
+//   saveLoading,
 // }) => {
 //   return (
-//     <div className="space-y-4">
+//     <div className="space-y-6">
 //       {records.length > 0 ? (
 //         records.map((record) =>
 //           record && record._id ? (
@@ -22,29 +24,30 @@
 //               editingRecord={editingRecord}
 //               setEditingRecord={setEditingRecord}
 //               onEdit={onEdit}
-//               onDelete={() => {
-//                 onDelete(record._id);
-//                 setShowDeleteModal(true);
-//               }}
+//               onDelete={onDelete}
+//               setShowDeleteModal={setShowDeleteModal}
 //               setEnlargedImage={setEnlargedImage}
 //               patientId={patientId}
 //               fetchRecords={fetchRecords}
+//               saveLoading={saveLoading}
 //             />
 //           ) : null
 //         )
-//       ) : (
-//         <div className="text-center py-10 bg-white rounded-lg shadow-md border border-teal-100">
-//           <p className="text-gray-600 text-lg">No medical records available yet.</p>
-//         </div>
-//       )}
+//       ) : null}
 //     </div>
 //   );
 // };
 
 // export default RecordList;
+
+import React, { memo } from "react";
 import RecordItem from "./RecordItem";
 
-const RecordList = ({
+/**
+ * Displays a list of medical records
+ * Memoized to prevent unnecessary re-renders
+ */
+const RecordList = memo(({
   records,
   editingRecord,
   setEditingRecord,
@@ -56,29 +59,35 @@ const RecordList = ({
   fetchRecords,
   saveLoading,
 }) => {
+  // Early return if no records
+  if (!records || records.length === 0) {
+    return null;
+  }
+
   return (
     <div className="space-y-6">
-      {records.length > 0 ? (
-        records.map((record) =>
-          record && record._id ? (
-            <RecordItem
-              key={record._id}
-              record={record}
-              editingRecord={editingRecord}
-              setEditingRecord={setEditingRecord}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              setShowDeleteModal={setShowDeleteModal}
-              setEnlargedImage={setEnlargedImage}
-              patientId={patientId}
-              fetchRecords={fetchRecords}
-              saveLoading={saveLoading}
-            />
-          ) : null
-        )
-      ) : null}
+      {records.map((record) => (
+        record && record._id ? (
+          <RecordItem
+            key={record._id}
+            record={record}
+            editingRecord={editingRecord}
+            setEditingRecord={setEditingRecord}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            setShowDeleteModal={setShowDeleteModal}
+            setEnlargedImage={setEnlargedImage}
+            patientId={patientId}
+            fetchRecords={fetchRecords}
+            saveLoading={saveLoading}
+          />
+        ) : null
+      ))}
     </div>
   );
-};
+});
+
+// Set displayName for debugging
+RecordList.displayName = "RecordList";
 
 export default RecordList;
