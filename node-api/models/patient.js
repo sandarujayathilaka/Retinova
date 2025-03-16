@@ -47,7 +47,7 @@ const diagnoseSchema = new mongoose.Schema({
         testName: String,
         status: {
           type: String,
-          enum: ["Pending", "In Progress", "Completed"],
+          enum: ["Pending", "In Progress", "Completed", "Reviewed"],
           default: "Pending",
         },
         attachmentURL: String,
