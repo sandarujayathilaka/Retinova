@@ -2,8 +2,11 @@ const User = require("../models/user.model");
 const {
   generateToken,
   generateRefreshToken,
+  generateResetToken,
 } = require("../utils/generate-token");
 const jwt = require("jsonwebtoken");
+const { sendEmail } = require("../utils/send-email");
+const { generateResetLink } = require("../utils/generate-link");
 
 const signUp = async (req, res) => {
   const { name, username, email, password, role } = req.body;
@@ -60,4 +63,86 @@ const refreshToken = async (req, res) => {
   });
 };
 
-module.exports = { signUp, signIn, refreshToken };
+const resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res
+      .status(400)
+      .json({ error: "Token and new password are required" });
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(400)
+        .json({ error: "Reset link has expired. Request a new one." });
+    }
+    return res.status(400).json({ error: "Invalid token" });
+  }
+
+  const user = await User.findOne({ email: decoded.email });
+  if (!user) {
+    return res.status(400).json({ error: "Invalid token" });
+  }
+
+  // Check if the token was issued before password reset
+  if (
+    user.passwordChangedAt &&
+    decoded.iat * 1000 < user.passwordChangedAt.getTime()
+  ) {
+    return res.status(400).json({
+      error: "Token is no longer valid. Please request a new reset link.",
+    });
+  }
+
+  user.password = newPassword;
+  user.passwordChangedAt = new Date(); // Update timestamp
+  await user.save();
+
+  res.json({ message: "Password reset successful" });
+};
+
+const resendResetLink = async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(400).json({ error: "Email not found" });
+  }
+
+  // Generate a new reset token (valid for 24h)
+  const resetToken = generateResetToken(email);
+  const resetLink = generateResetLink(resetToken);
+
+  // Send email with the new reset link
+  await sendEmail(email, "Password Reset Request", "password-reset", {
+    name: user.name || "User",
+    resetLink,
+  });
+
+  res.json({ message: "Reset link sent successfully" });
+};
+
+const getUser = async (req, res) => {
+  const user = await User.findById(req.params.id).populate("profile");
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  res.json(user);
+};
+
+module.exports = {
+  signUp,
+  signIn,
+  refreshToken,
+  resetPassword,
+  resendResetLink,
+  getUser,
+};

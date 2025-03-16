@@ -1,4 +1,5 @@
 const Doctor = require("../models/doctor.model");
+const UserService = require("../services/user.service");
 
 const mongoose = require("mongoose");
 
@@ -36,6 +37,8 @@ const addDoctor = async (req, res) => {
   });
 
   await doctor.save();
+
+  await UserService.createUser(email, "doctor", doctor._id, name);
 
   res.status(201).json({ message: "Doctor added successfully", doctor });
 };

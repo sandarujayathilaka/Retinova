@@ -92,6 +92,7 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
             Sunday: { enabled: false },
           },
           image: { Location: "" },
+          name: "",
         });
   };
 
@@ -137,7 +138,11 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
           },
           onError: error => {
             console.error(error);
-            toast.error("Failed to add doctor. Please try again.");
+            toast.error(
+              error?.response?.data?.error?.message ??
+                error?.response?.data?.error ??
+                "Failed to add doctor. Please try again.",
+            );
           },
         });
       }
@@ -160,6 +165,7 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
   useEffect(() => {
     if (mode === "edit" && doctor && !isLoading) {
       form.reset(doctor);
+      stepper.reset();
     }
   }, [doctor, isLoading, form, mode, open]);
 
@@ -240,7 +246,7 @@ function DoctorForm({ mode = "add", doctorId = null, trigger, open, onOpenChange
         "Ocular Oncologist",
         "Contact Lens Specialist",
       ][Math.floor(Math.random() * 10)],
-      phone: `0${Math.floor(Math.random() * 10e10)}`,
+      phone: `0${Math.floor(Math.random() * 10e8)}`,
       email: `test${Math.floor(Math.random() * 10000)}@example.com`,
       address: `123 ${["Main St", "Broadway", "Elm St", "High St", "Park Ave"][Math.floor(Math.random() * 5)]}`,
       image: { Location: "" },

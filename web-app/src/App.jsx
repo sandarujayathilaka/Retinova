@@ -24,17 +24,26 @@ import RVO from "./pages/diseases/RVO";
 import DoctorsList from "./pages/doctors/List";
 import Add from "./pages/doctors/New";
 import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/auth/ResetPassword";
+import { Roles } from "./constants/roles";
+import ProtectedRoute from "./middleware/ProtectedRoute";
+// import PatientProfile from "./pages/testrecord/PatientProfile";
+import TestRecords from "./pages/testrecord/TestRecords";
+// import AllPatientList from "./pages/testrecord/AllPatientList";
 
 const App = () => {
   return (
     <BrowserRouter>
-      {/* Toast notifications at the root level */}
       <Toaster position="top-right" />
-      <ToastContainer />
-
       <Routes>
-        {/* All routes under AdminLayout with Sidebar */}
-        <Route element={<AdminLayout />}>
+        <Route path="/" element={<Diagnose />} />
+
+        {/* common routes - for all roles */}
+        <Route
+          element={
+            <ProtectedRoute roles={[Roles.ADMIN, Roles.DOCTOR, Roles.NURSE]} redirectPath="/404" />
+          }
+        >
           <Route path="/" element={<Diagnose />} />
           <Route path="/monitoringPatients" element={<MonitoringPatients />} />
           <Route path="/publishedPatients" element={<PublishedPatients />} />
@@ -56,12 +65,22 @@ const App = () => {
 
           <Route path="/doctors" element={<DoctorsList />} />
           <Route path="/add" element={<Add />} />
+        </Route>
+
+        <Route path="/reset-password" element={<ResetPassword />} />
+
+       
+
+
+
+          {/* <Route path="/allp" element={<AllPatientList />} /> */}
+          <Route path="/patients/:patientId" element={<PatientProfile />} />
+          <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
 
           {/* 404 Not Found Page */}
           <Route path="*" element={<NotFound />} />
           <Route path="/404" element={<NotFound />} />
-        </Route>
-      </Routes>
+        </Routes>
     </BrowserRouter>
   );
 };

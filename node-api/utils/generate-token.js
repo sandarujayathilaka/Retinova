@@ -12,4 +12,10 @@ const generateRefreshToken = (id) => {
   });
 };
 
-module.exports = { generateToken, generateRefreshToken };
+const generateResetToken = (email) => {
+  return jwt.sign({ email }, process.env.JWT_SECRET, {
+    expiresIn: "24h",
+  });
+};
+
+module.exports = { generateToken, generateRefreshToken, generateResetToken };
