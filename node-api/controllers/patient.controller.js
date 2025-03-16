@@ -1,200 +1,253 @@
 const Patient = require("../models/patient");
-const fs = require("fs");
+const Doctor = require("../models/doctor.model");
 const { s3 } = require("../config/aws");
-// const axios = require("axios");
 require("dotenv").config();
-const path = require("path");
+const mongoose = require("mongoose");
+const validator = require("validator");
+const logger = require("../config/logger"); // Hypothetical logger (e.g., Winston)
+const { isValidDate, getStartEndOfDay, getStartEndOfMonth } = require("../utils/dateUtils"); // Hypothetical date utilities
 
-const getPatientCount = async (req, res) => {
-  try {
-    console.log("called");
-    console.log(req.query);
-    const { patientStatus, nextVisit, doctorId } = req.query;
-
-    if (!patientStatus || !nextVisit || !doctorId) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required query parameters",
-      });
-    }
-
-    const startOfDay = new Date(nextVisit);
-    startOfDay.setUTCHours(0, 0, 0, 0);
-    const endOfDay = new Date(nextVisit);
-    endOfDay.setUTCHours(23, 59, 59, 999);
-
-    const count = await Patient.countDocuments({
-      patientStatus,
-      nextVisit: { $gte: startOfDay, $lte: endOfDay },
-      doctorId, // Use top-level doctorId instead of diagnoseHistory
-    });
-    console.log(count);
-    res.status(200).json({ success: true, count });
-  } catch (error) {
-    console.error("Error fetching patient count:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message,
-    });
-  }
+// Utility function to upload files to S3
+const uploadFileToS3 = async (file, patientId) => {
+  const fileName = `${Date.now()}_${file.originalname}`;
+  const s3Key = `medical-records/${patientId}/${fileName}`;
+  const params = {
+    Bucket: process.env.S3_BUCKET_NAME,
+    Key: s3Key,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  };
+  const { Location } = await s3.upload(params).promise();
+  return Location;
 };
 
-const updatePatientRevisit = async (req, res) => {
-  try {
-    const { patientId } = req.params; // Get patientId from URL params
-    const { doctorId, revisitDate } = req.body; // Get doctorId and nextVisit from request body
-    console.log(patientId, doctorId, revisitDate);
-    // Validate required fields
-    if (!doctorId || !revisitDate) {
-      return res.status(400).json({
-        success: false,
-        message: "Doctor ID and next visit date are required",
-      });
-    }
-
-    // Validate patientId exists
-    const patient = await Patient.findOne({ patientId });
-    console.log(patient);
-    if (!patient) {
-      return res.status(404).json({
-        success: false,
-        message: `Patient with ID ${patientId} not found`,
-      });
-    }
-
-    // Update patient fields
-    patient.doctorId = doctorId;
-    patient.nextVisit = new Date(revisitDate); // Convert ISO string to Date object
-    patient.patientStatus = "Review"; // Optionally set status to "Review" since this is a revisit
-
-    // Save the updated patient
-    const updatedPatient = await patient.save();
-    console.log(updatedPatient);
-    // Return success response
-    res.status(200).json({
-      success: true,
-      message: "Revisit date assigned successfully",
-      data: {
-        patientId: updatedPatient.patientId,
-        doctorId: updatedPatient.doctorId,
-        nextVisit: updatedPatient.revisitDate,
-        patientStatus: updatedPatient.patientStatus,
-      },
-    });
-  } catch (error) {
-    console.error("Error updating patient revisit:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: error.message,
-    });
-  }
+// Utility function to delete files from S3
+const deleteFileFromS3 = async (filePath) => {
+  const s3Key = decodeURIComponent(filePath.split("/").slice(3).join("/"));
+  const params = {
+    Bucket: process.env.S3_BUCKET_NAME,
+    Key: s3Key,
+  };
+  await s3.deleteObject(params).promise();
 };
 
+// Get patient count for a specific day
 // const getPatientCount = async (req, res) => {
+//   console.log(req.query)
 //   try {
-//     console.log("getPatientCount")
-//     console.log(req.query)
+//     console.log("ree")
 //     const { patientStatus, nextVisit, doctorId } = req.query;
-// console.log(patientStatus, nextVisit, doctorId)
-//     // Validate required parameters
+//     console.log(patientStatus, nextVisit, doctorId)
 //     if (!patientStatus || !nextVisit || !doctorId) {
 //       return res.status(400).json({
-//         success: false,
-//         message: "Missing required query parameters: patientStatus, nextVisit, doctorId",
+//         errorCode: "MISSING_QUERY_PARAMS",
+//         message: "Missing required query parameters",
 //       });
 //     }
-
-//     // Convert nextVisit to start and end of day for accurate matching
-//     const startOfDay = new Date(nextVisit);
-//     startOfDay.setUTCHours(0, 0, 0, 0);
-//     const endOfDay = new Date(nextVisit);
-//     endOfDay.setUTCHours(23, 59, 59, 999);
-
-//     // Query the database for patients with matching status, nextVisit, and doctorId in diagnoseHistory
+//     if (!isValidDate(nextVisit)) {
+//       return res.status(400).json({
+//         errorCode: "INVALID_DATE",
+//         message: "Invalid nextVisit date",
+//       });
+//     }
+//     console.log(patientStatus, nextVisit, doctorId)
+//     const { start, end } = getStartEndOfDay(nextVisit);
+//     console.log(start, end )
 //     const count = await Patient.countDocuments({
 //       patientStatus,
-//       nextVisit: {
-//         $gte: startOfDay,
-//         $lte: endOfDay,
-//       },
-//       "diagnoseHistory.doctorId": doctorId, // Match doctorId in diagnoseHistory array
+//       nextVisit: { $gte: start, $lte: end },
+//       doctorId,
 //     });
-
-//     res.status(200).json({
-//       success: true,
-//       count,
-//     });
+//     console.log(count )
+//     res.status(200).json({ message: "Patient count retrieved", data: { count } });
 //   } catch (error) {
-//     console.error("Error fetching patient count:", error);
+//     logger.error("Error in getPatientCount:", error);
 //     res.status(500).json({
-//       success: false,
-//       message: "Server error while fetching patient count",
+//       errorCode: "SERVER_ERROR",
+//       message: "Error fetching patient count",
 //       error: error.message,
 //     });
 //   }
 // };
 
-// Optional: Get patient counts for an entire month (optimization)
-const getPatientCountsForMonth = async (req, res) => {
+const getPatientCount = async (req, res) => {
   try {
-    const { patientStatus, doctorId, month } = req.query;
+    const { patientStatus, nextVisit, doctorId, patientId } = req.query;
 
-    if (!patientStatus || !doctorId || !month) {
+    // Validate required parameters
+    if (!patientStatus || !nextVisit || !doctorId) {
       return res.status(400).json({
-        success: false,
-        message:
-          "Missing required query parameters: patientStatus, doctorId, month",
+        errorCode: "MISSING_QUERY_PARAMS",
+        message: "Missing required query parameters: patientStatus, nextVisit, doctorId",
       });
     }
 
-    // Parse month (e.g., "2025-03") to get start and end dates
-    const [year, monthNum] = month.split("-");
-    const startOfMonth = new Date(Date.UTC(year, monthNum - 1, 1));
-    const endOfMonth = new Date(Date.UTC(year, monthNum, 0, 23, 59, 59, 999));
+    if (!isValidDate(nextVisit)) {
+      return res.status(400).json({
+        errorCode: "INVALID_DATE",
+        message: "Invalid nextVisit date",
+      });
+    }
 
-    // Aggregate patient counts by day
-    const patients = await Patient.aggregate([
-      {
-        $match: {
-          patientStatus,
-          nextVisit: { $gte: startOfMonth, $lte: endOfMonth },
-          "diagnoseHistory.doctorId": doctorId,
-        },
-      },
-      {
-        $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$nextVisit" } },
-          count: { $sum: 1 },
-        },
-      },
-    ]);
+    // Normalize the date to the start and end of the day
+    const { start, end } = getStartEndOfDay(nextVisit);
 
-    // Format results as an object
-    const counts = {};
-    patients.forEach((p) => (counts[p._id] = p.count));
+    // Build the base query
+    const query = {
+      patientStatus,
+      nextVisit: { $gte: start, $lte: end },
+      doctorId,
+    };
 
+    // Get total count of patients matching the criteria
+    const totalCount = await Patient.countDocuments(query);
+
+    // If patientId is provided, check if this specific patient is in the count
+    let isPatientIncluded = false;
+    if (patientId) {
+      const patientQuery = { ...query, patientId };
+      const patientExists = await Patient.countDocuments(patientQuery);
+      isPatientIncluded = patientExists > 0;
+    }
+
+    // Return response with total count and whether the patient is included
     res.status(200).json({
-      success: true,
-      counts,
+      message: "Patient count retrieved",
+      data: {
+        totalCount,
+        isPatientIncluded: patientId ? isPatientIncluded : undefined, // Only include if patientId was provided
+      },
     });
   } catch (error) {
-    console.error("Error fetching patient counts for month:", error);
+    logger.error("Error in getPatientCount:", error);
     res.status(500).json({
-      success: false,
-      message: "Server error while fetching patient counts",
+      errorCode: "SERVER_ERROR",
+      message: "Error fetching patient count",
       error: error.message,
     });
   }
 };
-// Fetch all patients
+
+// Update patient revisit details
+const updatePatientRevisit = async (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const { doctorId, revisitDate, patientStatus = "Review" } = req.body;
+
+    if (!doctorId || !revisitDate) {
+      return res.status(400).json({
+        errorCode: "MISSING_FIELDS",
+        message: "Doctor ID and revisit date are required",
+      });
+    }
+    if (!mongoose.Types.ObjectId.isValid(doctorId)) {
+      return res.status(400).json({
+        errorCode: "INVALID_DOCTOR_ID",
+        message: "Invalid doctorId format",
+      });
+    }
+    if (!isValidDate(revisitDate)) {
+      return res.status(400).json({
+        errorCode: "INVALID_DATE",
+        message: "Invalid revisit date",
+      });
+    }
+
+    const patient = await Patient.findOne({ patientId });
+    if (!patient) {
+      return res.status(404).json({
+        errorCode: "PATIENT_NOT_FOUND",
+        message: `Patient with ID ${patientId} not found`,
+      });
+    }
+
+    // Normalize the revisitDate to the start of the day
+    const normalizedRevisitDate = new Date(revisitDate);
+    normalizedRevisitDate.setUTCHours(0, 0, 0, 0);
+
+    patient.doctorId = doctorId;
+    patient.nextVisit = normalizedRevisitDate; // Save normalized date
+    patient.patientStatus = patientStatus;
+
+    const updatedPatient = await patient.save();
+
+    res.status(200).json({
+      message: "Revisit updated successfully",
+      data: {
+        patientId: updatedPatient.patientId,
+        doctorId,
+        nextVisit: updatedPatient.nextVisit,
+        patientStatus,
+      },
+    });
+  } catch (error) {
+    logger.error("Error in updatePatientRevisit:", error);
+    res.status(500).json({
+      errorCode: "SERVER_ERROR",
+      message: "Error updating patient revisit",
+      error: error.message,
+    });
+  }
+};
+
+// Get patient counts for a month
+const getPatientCountsForMonth = async (req, res) => {
+  try {
+    const { patientStatus, doctorId, month } = req.query;
+    if (!patientStatus || !doctorId || !month) {
+      return res.status(400).json({
+        errorCode: "MISSING_QUERY_PARAMS",
+        message: "Missing required query parameters",
+      });
+    }
+    if (!/^\d{4}-\d{2}$/.test(month)) {
+      return res.status(400).json({
+        errorCode: "INVALID_MONTH_FORMAT",
+        message: "Invalid month format (use YYYY-MM)",
+      });
+    }
+    const { start, end } = getStartEndOfMonth(month);
+    const patients = await Patient.aggregate([
+      { $match: { patientStatus, nextVisit: { $gte: start, $lte: end }, doctorId } },
+      { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$nextVisit" } }, count: { $sum: 1 } } },
+    ]);
+    const counts = patients.reduce((acc, p) => ({ ...acc, [p._id]: p.count }), {});
+    res.status(200).json({ message: "Monthly patient counts retrieved", data: { counts } });
+  } catch (error) {
+    logger.error("Error in getPatientCountsForMonth:", error);
+    res.status(500).json({
+      errorCode: "SERVER_ERROR",
+      message: "Error fetching patient counts for month",
+      error: error.message,
+    });
+  }
+};
+
+// Fetch all patients with pagination
 const getAllPatients = async (req, res) => {
   try {
-    const patients = await Patient.find({});
-    res.status(200).json({ patients });
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+    const patients = await Patient.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean();
+    const total = await Patient.countDocuments();
+    res.status(200).json({
+      message: "Patients retrieved",
+      data: {
+        patients,
+        pagination: {
+          currentPage: Number(page),
+          totalPages: Math.ceil(total / limit),
+          totalPatients: total,
+          limit: Number(limit),
+        },
+      },
+    });
   } catch (error) {
-    console.error("Error fetching patients:", error);
+    logger.error("Error in getAllPatients:", error);
     res.status(500).json({
       errorCode: "SERVER_ERROR",
       message: "Error fetching patients",
@@ -203,120 +256,279 @@ const getAllPatients = async (req, res) => {
   }
 };
 
+// Fetch patients by status with filtering and pagination
+const sanitizeRegex = (input) => validator.escape(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const getPatientsByStatus = async (req, res) => {
   try {
     const { status, page = 1, limit = 10, search, gender } = req.query;
+    if (!status) {
+      return res.status(400).json({
+        errorCode: "MISSING_STATUS",
+        message: "Status is required",
+      });
+    }
     const query = { patientStatus: status };
-
     if (search) {
+      const safeSearch = sanitizeRegex(search);
       query.$or = [
-        { patientId: { $regex: search, $options: "i" } },
-        { fullName: { $regex: search, $options: "i" } },
-        { nic: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
+        { patientId: { $regex: safeSearch, $options: "i" } },
+        { fullName: { $regex: safeSearch, $options: "i" } },
+        { nic: { $regex: safeSearch, $options: "i" } },
+        { email: { $regex: safeSearch, $options: "i" } },
       ];
     }
-    if (gender) {
-      query.gender =
-        gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+    if (gender) query.gender = gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+    const skip = (page - 1) * limit;
+    // const patients = await Patient.find(query)
+    //   .sort({ createdAt: -1 })
+    //   .skip(skip)
+    //   .limit(Number(limit))
+    //   .select("patientId fullName nic gender contactNumber email address diagnoseHistory birthDate age")
+    //   .lean();
+    let selectFields = "patientId fullName nic gender contactNumber email address diagnoseHistory birthDate age";
+
+    // Add doctorId and nextVisit if status is "Review"
+    if (status.toLowerCase() === "review") {
+      selectFields += " doctorId nextVisit";
     }
 
-    const skip = (page - 1) * limit;
+    // Fetch patients
     const patients = await Patient.find(query)
-      .lean()
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit))
-      .select(
-        "patientId fullName nic age gender contactNumber email address diagnoseHistory"
-      );
-
+      .select(selectFields)
+      .lean();
     const total = await Patient.countDocuments(query);
-
     res.status(200).json({
-      patients,
-      pagination: {
-        currentPage: Number(page),
-        totalPages: Math.ceil(total / limit),
-        totalPatients: total,
-        limit: Number(limit),
+      message: "Patients retrieved",
+      data: {
+        patients,
+        pagination: {
+          currentPage: Number(page),
+          totalPages: Math.ceil(total / limit),
+          totalPatients: total,
+          limit: Number(limit),
+        },
       },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    logger.error("Error in getPatientsByStatus:", error);
+    res.status(500).json({
+      errorCode: "SERVER_ERROR",
+      message: "Error fetching patients by status",
+      error: error.message,
+    });
   }
 };
+
 // Add a new patient
+// const addPatient = async (req, res) => {
+//   try {
+//     const {
+//       fullName,
+//       birthDate,
+//       gender,
+//       nic,
+//       contactNumber,
+//       email,
+//       address,
+//       bloodType,
+//       height,
+//       weight,
+//       allergies,
+//       primaryPhysician,
+//       emergencyContact,
+//     } = req.body;
+//     if (!fullName || !birthDate || !gender || !nic || !contactNumber || !email || !address) {
+//       return res.status(400).json({
+//         errorCode: "MISSING_FIELDS",
+//         message: "Required fields are missing",
+//       });
+//     }
+//     if (!validator.isEmail(email)) {
+//       return res.status(400).json({
+//         errorCode: "INVALID_EMAIL",
+//         message: "Invalid email",
+//       });
+//     }
+//     if (!isValidDate(birthDate)) {
+//       return res.status(400).json({
+//         errorCode: "INVALID_DATE",
+//         message: "Invalid birth date",
+//       });
+//     }
+//     const sanitizedNic = validator.escape(nic);
+//     if (await Patient.findOne({ nic: sanitizedNic })) {
+//       return res.status(400).json({
+//         errorCode: "DUPLICATE_NIC",
+//         message: "Patient with this NIC already exists",
+//       });
+//     }
+//     if (await Patient.findOne({ email })) {
+//       return res.status(400).json({
+//         errorCode: "DUPLICATE_EMAIL",
+//         message: "Patient with this email already exists",
+//       });
+//     }
+//     let physicianId;
+//     if (primaryPhysician) {
+//       if (!mongoose.Types.ObjectId.isValid(primaryPhysician)) {
+//         return res.status(400).json({
+//           errorCode: "INVALID_PHYSICIAN_ID",
+//           message: "Invalid primaryPhysician ID format",
+//         });
+//       }
+//       physicianId = new mongoose.Types.ObjectId(primaryPhysician);
+//     }
+//     const patientId = await mongoose.connection.transaction(async (session) => {
+//       const lastPatient = await Patient.findOne().sort({ createdAt: -1 }).session(session).select("patientId");
+//       return lastPatient ? `P${parseInt(lastPatient.patientId.replace(/\D/g, "")) + 1}` : "P1";
+//     });
+//     const newPatient = new Patient({
+//       patientId,
+//       fullName: validator.escape(fullName),
+//       birthDate: new Date(birthDate),
+//       gender,
+//       nic: sanitizedNic,
+//       contactNumber,
+//       email,
+//       address,
+//       bloodType,
+//       height: height ? Number(height) : undefined,
+//       weight: weight ? Number(weight) : undefined,
+//       allergies,
+//       primaryPhysician: physicianId,
+//       emergencyContact,
+//     });
+//     await newPatient.save();
+//     res.status(201).json({ message: "Patient added successfully", data: newPatient });
+//   } catch (error) {
+//     logger.error("Error in addPatient:", error);
+//     res.status(500).json({
+//       errorCode: "SERVER_ERROR",
+//       message: "Error adding patient",
+//       error: error.message,
+//     });
+//   }
+// };
 const addPatient = async (req, res) => {
   try {
-    const { fullName, birthDate, gender, nic, contactNumber, email, address } =
-      req.body;
+    const {
+      fullName,
+      birthDate,
+      gender,
+      nic,
+      contactNumber,
+      email,
+      address,
+      bloodType,
+      height,
+      weight,
+      allergies,
+      primaryPhysician,
+      emergencyContact,
+    } = req.body;
 
-    if (
-      !fullName ||
-      !birthDate ||
-      !gender ||
-      !nic ||
-      !contactNumber ||
-      !email ||
-      !address
-    ) {
+    // Required field validation
+    const requiredFields = { fullName, birthDate, gender, nic, contactNumber, email };
+    const missingFields = Object.keys(requiredFields).filter((key) => !requiredFields[key]);
+    if (missingFields.length > 0) {
       return res.status(400).json({
         errorCode: "MISSING_FIELDS",
-        message: "All fields are required",
+        message: `Required fields are missing: ${missingFields.join(", ")}`,
       });
     }
 
-    const existingPatient = await Patient.findOne({ nic });
-    if (existingPatient) {
+    // Email validation
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({
+        errorCode: "INVALID_EMAIL",
+        message: "Invalid email",
+      });
+    }
+
+    // Birth date validation
+    const parsedBirthDate = new Date(birthDate);
+    if (isNaN(parsedBirthDate.getTime())) {
+      return res.status(400).json({
+        errorCode: "INVALID_DATE",
+        message: "Invalid birth date",
+      });
+    }
+
+    // Sanitize and check for duplicates
+    const sanitizedNic = validator.escape(nic);
+    if (await Patient.findOne({ nic: sanitizedNic })) {
       return res.status(400).json({
         errorCode: "DUPLICATE_NIC",
         message: "Patient with this NIC already exists",
       });
     }
-    const existingPatientEmail = await Patient.findOne({ email });
-    if (existingPatientEmail) {
+
+    if (await Patient.findOne({ email })) {
       return res.status(400).json({
         errorCode: "DUPLICATE_EMAIL",
         message: "Patient with this email already exists",
       });
     }
 
-    // Get last patient and generate new patientId manually
-    const lastPatient = await Patient.findOne(
-      {},
-      {},
-      { sort: { patientId: -1 } }
-    );
-    console.log(lastPatient);
-    // Extract number correctly
-    let newPatientId;
-    if (lastPatient && lastPatient.patientId) {
-      const lastNumber =
-        parseInt(lastPatient.patientId.replace(/\D/g, ""), 10) || 0;
-      newPatientId = `P${lastNumber + 1}`;
-    } else {
-      newPatientId = "P1"; // If no patient exists, start with P1
+    // Validate primary physician ID if provided
+    let physicianId;
+    if (primaryPhysician) {
+      if (!mongoose.Types.ObjectId.isValid(primaryPhysician)) {
+        return res.status(400).json({
+          errorCode: "INVALID_PHYSICIAN_ID",
+          message: "Invalid primaryPhysician ID format",
+        });
+      }
+      const doctorExists = await Doctor.findById(primaryPhysician);
+      if (!doctorExists) {
+        return res.status(400).json({
+          errorCode: "PHYSICIAN_NOT_FOUND",
+          message: "Primary physician not found",
+        });
+      }
+      physicianId = new mongoose.Types.ObjectId(primaryPhysician);
     }
 
-    console.log(newPatientId);
+    // Generate patient ID
+    const lastPatient = await Patient.findOne().sort({ createdAt: -1 }).select("patientId");
+    const patientId = lastPatient ? `P${parseInt(lastPatient.patientId.replace(/\D/g, "")) + 1}` : "P1";
+
+    // Create new patient
     const newPatient = new Patient({
-      patientId: newPatientId, // ✅ Manually set patientId
-      fullName,
-      birthDate: new Date(birthDate), // Ensure it's a Date object
+      patientId,
+      fullName: validator.escape(fullName),
+      birthDate: parsedBirthDate,
       gender,
-      nic,
+      nic: sanitizedNic,
       contactNumber,
       email,
       address,
+      bloodType,
+      height: height ? Number(height) : undefined,
+      weight: weight ? Number(weight) : undefined,
+      allergies,
+      primaryPhysician: physicianId,
+      emergencyContact,
     });
 
     await newPatient.save();
-    res
-      .status(201)
-      .json({ message: "Patient added successfully", patient: newPatient });
+    res.status(201).json({ message: "Patient added successfully", data: newPatient });
   } catch (error) {
-    console.error("Error adding patient:", error);
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map((err) => ({
+        path: err.path,
+        message: err.message,
+      }));
+      return res.status(400).json({
+        errorCode: "VALIDATION_ERROR",
+        message: "Validation failed",
+        errors,
+      });
+    }
+    logger.error("Error in addPatient:", error);
     res.status(500).json({
       errorCode: "SERVER_ERROR",
       message: "Error adding patient",
@@ -324,18 +536,21 @@ const addPatient = async (req, res) => {
     });
   }
 };
-
 // Get a single patient by ID
 const getPatient = async (req, res) => {
   try {
-    const patient = await Patient.findOne({ patientId: req.params.patientId });
+    console.log(req)
+    const { patientId } = req.params;
+    const patient = await Patient.findOne({ patientId }).lean();
     if (!patient) {
-      return res
-        .status(404)
-        .json({ errorCode: "PATIENT_NOT_FOUND", message: "Patient not found" });
+      return res.status(404).json({
+        errorCode: "PATIENT_NOT_FOUND",
+        message: "Patient not found",
+      });
     }
-    res.status(200).json({ patient });
+    res.status(200).json({ message: "Patient retrieved", data: patient });
   } catch (error) {
+    logger.error("Error in getPatient:", error);
     res.status(500).json({
       errorCode: "SERVER_ERROR",
       message: "Error fetching patient",
@@ -344,68 +559,243 @@ const getPatient = async (req, res) => {
   }
 };
 
-// Edit a patient's details (without age)
+// Edit a patient's details
+// const editPatient = async (req, res) => {
+//   try {
+//     const { patientId } = req.params;
+//     const {
+//       nic,
+//       email,
+//       birthDate,
+//       fullName,
+//       gender,
+//       contactNumber,
+//       address,
+//       bloodType,
+//       height,
+//       weight,
+//       allergies,
+//       primaryPhysician,
+//       emergencyContact,
+//     } = req.body;
+
+//     if (!fullName || !birthDate || !gender || !nic || !contactNumber || !email || !address) {
+//       return res.status(400).json({
+//         errorCode: "MISSING_FIELDS",
+//         message: "Required fields are missing",
+//       });
+//     }
+  
+//     const patient = await Patient.findOne({ patientId });
+//     if (!patient) {
+//       return res.status(404).json({
+//         errorCode: "PATIENT_NOT_FOUND",
+//         message: "Patient not found",
+//       });
+//     }
+//     if (nic && nic !== patient.nic && (await Patient.findOne({ nic, _id: { $ne: patient._id } }))) {
+//       return res.status(400).json({
+//         errorCode: "DUPLICATE_NIC",
+//         message: "Patient with this NIC already exists",
+//       });
+//     }
+//     if (email && email !== patient.email && (await Patient.findOne({ email, _id: { $ne: patient._id } }))) {
+//       return res.status(400).json({
+//         errorCode: "DUPLICATE_EMAIL",
+//         message: "Patient with this email already exists",
+//       });
+//     }
+//     if (birthDate && !isValidDate(birthDate)) {
+//       return res.status(400).json({
+//         errorCode: "INVALID_DATE",
+//         message: "Invalid birth date",
+//       });
+//     }
+//     if (email && !validator.isEmail(email)) {
+//       return res.status(400).json({
+//         errorCode: "INVALID_EMAIL",
+//         message: "Invalid email",
+//       });
+//     }
+//     patient.fullName = fullName ? validator.escape(fullName) : patient.fullName;
+//     patient.nic = nic ? validator.escape(nic) : patient.nic;
+//     patient.birthDate = birthDate ? new Date(birthDate) : patient.birthDate;
+//     patient.gender = gender || patient.gender;
+//     patient.contactNumber = contactNumber || patient.contactNumber;
+//     patient.email = email !== undefined ? email : patient.email;
+//     patient.address = address !== undefined ? address : patient.address;
+//     patient.bloodType = bloodType !== undefined ? bloodType : patient.bloodType;
+//     patient.height = height !== undefined ? Number(height) : patient.height;
+//     patient.weight = weight !== undefined ? Number(weight) : patient.weight;
+//     patient.allergies = allergies !== undefined ? allergies : patient.allergies;
+//     patient.primaryPhysician =
+//       primaryPhysician !== undefined && mongoose.Types.ObjectId.isValid(primaryPhysician)
+//         ? new mongoose.Types.ObjectId(primaryPhysician)
+//         : patient.primaryPhysician;
+//     patient.emergencyContact = emergencyContact !== undefined ? emergencyContact : patient.emergencyContact;
+//     const updatedPatient = await patient.save();
+//     res.status(200).json({ message: "Patient updated successfully", data: updatedPatient });
+//   } catch (error) {
+//     logger.error("Error in editPatient:", error);
+//     res.status(500).json({
+//       errorCode: "SERVER_ERROR",
+//       message: "Error updating patient",
+//       error: error.message,
+//     });
+//   }
+// };
+
 const editPatient = async (req, res) => {
   try {
     const { patientId } = req.params;
-    const { nic, email, birthDate, fullName, gender, contactNumber, address } =
-      req.body;
+    const {
+      nic,
+      email,
+      birthDate,
+      fullName,
+      gender,
+      contactNumber,
+      address,
+      bloodType,
+      height,
+      weight,
+      allergies,
+      primaryPhysician,
+      emergencyContact,
+    } = req.body;
 
-    console.log("Request Params:", req.params);
-    console.log("Request Body:", req.body);
-
-    // Find the patient by patientId first
-    const existingPatient = await Patient.findOne({ patientId });
-    if (!existingPatient) {
-      return res
-        .status(404)
-        .json({ errorCode: "PATIENT_NOT_FOUND", message: "Patient not found" });
+    // Required field validation
+    const requiredFields = { fullName, birthDate, gender, nic, contactNumber, email, address };
+    const missingFields = Object.keys(requiredFields).filter((key) => !requiredFields[key]);
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        errorCode: "MISSING_FIELDS",
+        message: `Required fields are missing: ${missingFields.join(", ")}`,
+      });
     }
 
-    // Ensure NIC is unique except for the current patient
-    const duplicateNIC = await Patient.findOne({
-      nic,
-      _id: { $ne: existingPatient._id },
-    });
-    if (duplicateNIC) {
+    const patient = await Patient.findOne({ patientId });
+    if (!patient) {
+      return res.status(404).json({
+        errorCode: "PATIENT_NOT_FOUND",
+        message: "Patient not found",
+      });
+    }
+
+    // Check for duplicates excluding current patient
+    if (nic && nic !== patient.nic && (await Patient.findOne({ nic, _id: { $ne: patient._id } }))) {
       return res.status(400).json({
         errorCode: "DUPLICATE_NIC",
         message: "Patient with this NIC already exists",
       });
     }
-
-    // Ensure email is unique except for the current patient
-    const duplicateEmail = await Patient.findOne({
-      email,
-      _id: { $ne: existingPatient._id },
-    });
-    if (duplicateEmail) {
+    if (email && email !== patient.email && (await Patient.findOne({ email, _id: { $ne: patient._id } }))) {
       return res.status(400).json({
         errorCode: "DUPLICATE_EMAIL",
         message: "Patient with this email already exists",
       });
     }
 
-    // Update patient fields manually
-    existingPatient.fullName = fullName || existingPatient.fullName;
-    existingPatient.nic = nic || existingPatient.nic;
-    existingPatient.birthDate = birthDate || existingPatient.birthDate;
-    existingPatient.gender = gender || existingPatient.gender;
-    existingPatient.contactNumber =
-      contactNumber || existingPatient.contactNumber;
-    existingPatient.email = email || existingPatient.email;
-    existingPatient.address = address || existingPatient.address;
+    // Validation: Email
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({
+        errorCode: "INVALID_EMAIL",
+        message: "Invalid email",
+      });
+    }
 
-    // Save the patient to trigger the pre-save hook
-    const updatedPatient = await existingPatient.save();
+    // Validation: Birth date
+    const parsedBirthDate = new Date(birthDate);
+    if (isNaN(parsedBirthDate.getTime())) {
+      return res.status(400).json({
+        errorCode: "INVALID_DATE",
+        message: "Invalid birth date",
+      });
+    }
 
-    console.log("Updated Patient:", updatedPatient);
-    res.status(200).json({
-      message: "Patient updated successfully",
-      patient: updatedPatient,
+    // Validation: Primary physician
+    let physicianId;
+    if (primaryPhysician !== undefined) {
+      if (!mongoose.Types.ObjectId.isValid(primaryPhysician)) {
+        return res.status(400).json({
+          errorCode: "INVALID_PHYSICIAN_ID",
+          message: "Invalid primary physician ID format",
+        });
+      }
+      const doctorExists = await Doctor.findById(primaryPhysician);
+      if (!doctorExists) {
+        return res.status(400).json({
+          errorCode: "PHYSICIAN_NOT_FOUND",
+          message: "Primary physician not found",
+        });
+      }
+      physicianId = new mongoose.Types.ObjectId(primaryPhysician);
+    }
+
+// Validation: Emergency contact
+if (emergencyContact !== undefined) {
+  const { name, relationship, phone } = emergencyContact || {};
+  const hasAnyField = name || relationship || phone;
+  if (hasAnyField && !(name && relationship && phone)) {
+    return res.status(400).json({
+      errorCode: "INVALID_EMERGENCY_CONTACT",
+      message: "All emergency contact fields (name, relationship, phone) are required if any are provided.",
     });
+  }
+  if (hasAnyField && (!validator.isMobilePhone(phone, "any", { strictMode: true }) || !/^\d{10}$/.test(phone))) {
+    return res.status(400).json({
+      errorCode: "INVALID_EMERGENCY_PHONE",
+      message: "Emergency contact phone must be a valid 10-digit number.",
+    });
+  }
+}
+
+    // Prepare updated data
+    const updatedData = {
+      fullName: validator.escape(fullName),
+      nic: validator.escape(nic),
+      birthDate: parsedBirthDate,
+      gender,
+      contactNumber,
+      email,
+      address,
+      bloodType: bloodType !== undefined ? bloodType : patient.bloodType,
+      height: height !== undefined ? Number(height) : patient.height,
+      weight: weight !== undefined ? Number(weight) : patient.weight,
+      allergies: allergies !== undefined ? allergies : patient.allergies,
+      primaryPhysician: physicianId !== undefined ? physicianId : patient.primaryPhysician,
+      emergencyContact: emergencyContact !== undefined ? emergencyContact : patient.emergencyContact,
+    };
+
+    // Check if there are any changes
+    const hasChanges = Object.keys(updatedData).some(
+      (key) => JSON.stringify(updatedData[key]) !== JSON.stringify(patient[key])
+    );
+    if (!hasChanges) {
+      return res.status(200).json({
+        message: "No changes have been made",
+        data: patient,
+      });
+    }
+
+    // Update patient
+    Object.assign(patient, updatedData);
+    const updatedPatient = await patient.save();
+    res.status(200).json({ message: "Patient updated successfully", data: updatedPatient });
   } catch (error) {
-    console.error("Update Error:", error);
+    console.log(error)
+    if (error.name === "ValidationError") {
+      const errors = Object.values(error.errors).map((err) => ({
+        path: err.path,
+        message: err.message,
+      }));
+      return res.status(400).json({
+        errorCode: "VALIDATION_ERROR",
+        message: "Validation failed",
+        errors,
+      });
+    }
+    logger.error("Error in editPatient:", error);
     res.status(500).json({
       errorCode: "SERVER_ERROR",
       message: "Error updating patient",
@@ -417,16 +807,17 @@ const editPatient = async (req, res) => {
 // Delete a patient by ID
 const deletePatient = async (req, res) => {
   try {
-    const deletedPatient = await Patient.findOneAndDelete({
-      patientId: req.params.patientId,
-    });
+    const { patientId } = req.params;
+    const deletedPatient = await Patient.findOneAndDelete({ patientId });
     if (!deletedPatient) {
-      return res
-        .status(404)
-        .json({ errorCode: "PATIENT_NOT_FOUND", message: "Patient not found" });
+      return res.status(404).json({
+        errorCode: "PATIENT_NOT_FOUND",
+        message: "Patient not found",
+      });
     }
     res.status(200).json({ message: "Patient deleted successfully" });
   } catch (error) {
+    logger.error("Error in deletePatient:", error);
     res.status(500).json({
       errorCode: "SERVER_ERROR",
       message: "Error deleting patient",
@@ -435,19 +826,16 @@ const deletePatient = async (req, res) => {
   }
 };
 
-// Get all medical records for a patient
-// controllers/medicalHistory.controller.js
+// Upload medical history image
 const uploadMedicalHistoryImage = async (req, res) => {
   try {
     const { patientId } = req.params;
-
     if (!req.file) {
       return res.status(400).json({
         errorCode: "NO_FILE_UPLOADED",
         message: "No file provided",
       });
     }
-
     const patient = await Patient.findOne({ patientId });
     if (!patient) {
       return res.status(404).json({
@@ -455,43 +843,22 @@ const uploadMedicalHistoryImage = async (req, res) => {
         message: "Patient not found",
       });
     }
-
-    if (!Array.isArray(patient.medicalHistory)) {
-      patient.medicalHistory = [];
-    }
-
-    const file = req.file;
-    const fileName = `${Date.now()}_${file.originalname}`;
-    const s3Key = `medical-records/${patientId}/${fileName}`;
-
-    const params = {
-      Bucket: process.env.AWS_S3_BUCKET_NAME,
-      Key: s3Key,
-      Body: file.buffer,
-      ContentType: file.mimetype,
-      ACL: "public-read",
-    };
-
-    const s3Response = await s3.upload(params).promise();
-    const fileUrl = s3Response.Location;
-
+    if (!Array.isArray(patient.medicalHistory)) patient.medicalHistory = [];
+    const fileUrl = await uploadFileToS3(req.file, patientId);
     const newRecord = {
-      condition: req.body.condition || "Uploaded File",
-      diagnosedAt: req.body.diagnosedAt ? new Date(req.body.diagnosedAt) : null,
+      condition: validator.escape(req.body.condition || "Uploaded File"),
+      diagnosedAt: req.body.diagnosedAt && isValidDate(req.body.diagnosedAt) ? new Date(req.body.diagnosedAt) : null,
       medications: req.body.medications ? JSON.parse(req.body.medications) : [],
-      filePaths: [fileUrl], // Use array instead of filePath
+      filePaths: [fileUrl],
     };
-
     patient.medicalHistory.push(newRecord);
     await patient.save();
-
     res.status(201).json({
       message: "Medical record file uploaded successfully",
-      medicalHistory: newRecord,
-      fileUrl,
+      data: { medicalHistory: newRecord, fileUrl },
     });
   } catch (error) {
-    console.error("Error uploading medical history file:", error);
+    logger.error("Error in uploadMedicalHistoryImage:", error);
     res.status(500).json({
       errorCode: "SERVER_ERROR",
       message: "Error uploading medical history file",
@@ -500,38 +867,52 @@ const uploadMedicalHistoryImage = async (req, res) => {
   }
 };
 
+// Get medical history files
 const getmedicalHistoryFiles = async (req, res) => {
   try {
     const { recordId } = req.params;
     const patient = await Patient.findOne({ "medicalHistory._id": recordId });
     if (!patient) {
-      return res.status(404).json({ message: "Record not found" });
+      return res.status(404).json({
+        errorCode: "RECORD_NOT_FOUND",
+        message: "Record not found",
+      });
     }
     const record = patient.medicalHistory.id(recordId);
     if (!record.filePaths || record.filePaths.length === 0) {
-      return res.status(404).json({ message: "Files not found" });
+      return res.status(404).json({
+        errorCode: "FILES_NOT_FOUND",
+        message: "Files not found",
+      });
     }
-    // Redirect to the first file URL (or handle multiple files differently)
-    res.redirect(record.filePaths[0]);
+    res.redirect(record.filePaths[0]); // Redirect to first file
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error retrieving file", error: error.message });
+    logger.error("Error in getmedicalHistoryFiles:", error);
+    res.status(500).json({
+      errorCode: "SERVER_ERROR",
+      message: "Error retrieving medical history files",
+      error: error.message,
+    });
   }
 };
 
+// Get all medical history for a patient
 const getmedicalHistory = async (req, res) => {
   try {
     const { patientId } = req.params;
-    const patient = await Patient.findOne({ patientId });
+    const patient = await Patient.findOne({ patientId }).lean();
     if (!patient) {
       return res.status(404).json({
         errorCode: "PATIENT_NOT_FOUND",
         message: "Patient not found",
       });
     }
-    res.status(200).json({ medicalHistory: patient.medicalHistory });
+    res.status(200).json({
+      message: "Medical history retrieved",
+      data: { medicalHistory: patient.medicalHistory || [] },
+    });
   } catch (error) {
+    logger.error("Error in getmedicalHistory:", error);
     res.status(500).json({
       errorCode: "SERVER_ERROR",
       message: "Error fetching medical history",
@@ -539,34 +920,29 @@ const getmedicalHistory = async (req, res) => {
     });
   }
 };
+
+// Add medical history records
 const addmedicalHistory = async (req, res) => {
   try {
     const { patientId } = req.params;
     let records = req.body.records;
     const files = req.files || [];
-
-    console.log("Patient ID:", patientId);
-    console.log("Records Received:", records);
-    console.log("Files Received:", files);
-
     if (typeof records === "string") {
       try {
         records = JSON.parse(records);
-      } catch (error) {
+      } catch {
         return res.status(400).json({
-          errorCode: "INVALID_DATA",
+          errorCode: "INVALID_JSON",
           message: "Invalid JSON format in records",
         });
       }
     }
-
     if (!Array.isArray(records) || records.length === 0) {
       return res.status(400).json({
         errorCode: "INVALID_DATA",
         message: "Invalid records data",
       });
     }
-
     const patient = await Patient.findOne({ patientId });
     if (!patient) {
       return res.status(404).json({
@@ -574,81 +950,36 @@ const addmedicalHistory = async (req, res) => {
         message: "Patient not found",
       });
     }
-
-    if (!Array.isArray(patient.medicalHistory)) {
-      patient.medicalHistory = [];
-    }
-
-    const newRecords = [];
-
-    for (const [index, record] of records.entries()) {
-      const { condition, diagnosedAt, medications = [] } = record;
-
-      if (!condition) {
-        return res.status(400).json({
-          errorCode: "MISSING_FIELDS",
-          message: "Condition is required",
-        });
-      }
-
-      const filePaths = [];
-      const fileKeys = files
-        .filter((f) => f.fieldname.startsWith(`records[${index}][files]`))
-        .map((f) => f);
-
-      console.log(`Files for record ${index}:`, fileKeys); // Debug: Check filtered files
-
-      for (const file of fileKeys) {
-        const fileName = `${Date.now()}_${file.originalname}`;
-        const s3Key = `medical-records/${patientId}/${fileName}`;
-
-        const params = {
-          Bucket: process.env.AWS_S3_BUCKET_NAME,
-          Key: s3Key,
-          Body: file.buffer,
-          ContentType: file.mimetype,
-          ACL: "public-read",
-        };
-
-        const s3Response = await s3.upload(params).promise();
-        console.log(`S3 Response for file ${file.originalname}:`, s3Response); // Debug: Check S3 upload
-        filePaths.push(s3Response.Location);
-      }
-
-      console.log(`filePaths for record ${index}:`, filePaths); // Debug: Check filePaths before saving
-
-      let diagnosedAtDate = null;
-      if (diagnosedAt) {
-        diagnosedAtDate = new Date(diagnosedAt);
-        if (isNaN(diagnosedAtDate)) {
-          diagnosedAtDate = null;
+    if (!Array.isArray(patient.medicalHistory)) patient.medicalHistory = [];
+    const newRecords = await Promise.all(
+      records.map(async (record, index) => {
+        if (!record.condition) {
+          return res.status(400).json({
+            errorCode: "MISSING_CONDITION",
+            message: "Condition is required",
+          });
         }
-      }
-
-      const processedMedications = Array.isArray(medications)
-        ? medications.map((m) => m.trim()).filter((m) => m !== "")
-        : [];
-
-      newRecords.push({
-        condition,
-        diagnosedAt: diagnosedAtDate,
-        medications: processedMedications,
-        filePaths,
-      });
-    }
-
-    console.log("newRecords to save:", newRecords); // Debug: Final records before saving
+        const filePaths = await Promise.all(
+          files.filter((f) => f.fieldname.startsWith(`records[${index}][files]`)).map((f) => uploadFileToS3(f, patientId))
+        );
+        return {
+          condition: validator.escape(record.condition),
+          diagnosedAt: record.diagnosedAt && isValidDate(record.diagnosedAt) ? new Date(record.diagnosedAt) : null,
+          medications: Array.isArray(record.medications) ? record.medications : [],
+          filePaths,
+          notes: validator.escape(record.notes || "No additional notes"),
+          isChronicCondition: record.isChronicCondition === "true",
+        };
+      })
+    );
     patient.medicalHistory.push(...newRecords);
     await patient.save();
-
-    console.log("Patient after save:", patient); // Debug: Verify database update
-
     res.status(201).json({
       message: "Medical records added successfully",
-      medicalHistory: newRecords,
+      data: { medicalHistory: newRecords },
     });
   } catch (error) {
-    console.error("Error adding medical records:", error);
+    logger.error("Error in addmedicalHistory:", error);
     res.status(500).json({
       errorCode: "SERVER_ERROR",
       message: "Error adding medical records",
@@ -656,199 +987,103 @@ const addmedicalHistory = async (req, res) => {
     });
   }
 };
+
+// Update medical history record
 const updateMedicalHistory = async (req, res) => {
   try {
     const { patientId, recordId } = req.params;
     const files = req.files || [];
-
     const patient = await Patient.findOne({ patientId });
     if (!patient) {
-      return res
-        .status(404)
-        .json({ errorCode: "PATIENT_NOT_FOUND", message: "Patient not found" });
+      return res.status(404).json({
+        errorCode: "PATIENT_NOT_FOUND",
+        message: "Patient not found",
+      });
     }
-
     const record = patient.medicalHistory.id(recordId);
     if (!record) {
-      return res
-        .status(404)
-        .json({ errorCode: "RECORD_NOT_FOUND", message: "Record not found" });
+      return res.status(404).json({
+        errorCode: "RECORD_NOT_FOUND",
+        message: "Record not found",
+      });
     }
-
-    // Update fields from FormData
-    record.condition = req.body.condition || record.condition;
-    record.diagnosedAt = req.body.diagnosedAt
-      ? new Date(req.body.diagnosedAt)
-      : record.diagnosedAt;
-
-    // Safely parse medications
+    record.condition = req.body.condition ? validator.escape(req.body.condition) : record.condition;
+    record.diagnosedAt = req.body.diagnosedAt && isValidDate(req.body.diagnosedAt) ? new Date(req.body.diagnosedAt) : record.diagnosedAt;
+    record.notes = req.body.notes ? validator.escape(req.body.notes) : record.notes;
+    record.isChronicCondition = req.body.isChronicCondition === "true" ? true : record.isChronicCondition;
     if (req.body.medications) {
       try {
         record.medications = JSON.parse(req.body.medications);
-      } catch (parseError) {
+      } catch {
         return res.status(400).json({
           errorCode: "INVALID_JSON",
           message: "Invalid JSON format for medications",
-          details: parseError.message,
         });
       }
     }
-
-    // Handle files to remove
     if (req.body.filesToRemove) {
+      let filesToRemove;
       try {
-        const filesToRemove = JSON.parse(req.body.filesToRemove);
-        if (Array.isArray(filesToRemove) && filesToRemove.length > 0) {
-          console.log("Files to remove (original):", filesToRemove);
-          console.log("Current filePaths before filtering:", record.filePaths);
-
-          // Filter using the original (encoded) filesToRemove to match record.filePaths
-          const originalFilePaths = [...record.filePaths];
-          record.filePaths = record.filePaths.filter(
-            (path) => !filesToRemove.includes(path)
-          );
-          console.log("Filtered filePaths:", record.filePaths);
-
-          // Track successfully deleted files
-          const successfullyDeleted = [];
-
-          // Delete files from S3
-          for (const fileUrl of filesToRemove) {
-            const decodedUrl = decodeURIComponent(fileUrl); // Decode for S3 key
-            const s3Key = decodedUrl.split("/").slice(3).join("/");
-            console.log(`Attempting to delete S3 key: ${s3Key}`);
-
-            const deleteParams = {
-              Bucket: process.env.AWS_S3_BUCKET_NAME,
-              Key: s3Key,
-            };
-
-            try {
-              const deleteResponse = await s3
-                .deleteObject(deleteParams)
-                .promise();
-              console.log(
-                `Successfully deleted ${s3Key} from S3:`,
-                deleteResponse
-              );
-              successfullyDeleted.push(fileUrl); // Track using original URL
-            } catch (s3Error) {
-              console.error(`Failed to delete ${s3Key} from S3:`, s3Error);
-              if (successfullyDeleted.length === 0) {
-                record.filePaths = [...originalFilePaths];
-              } else {
-                record.filePaths = originalFilePaths.filter(
-                  (path) => !successfullyDeleted.includes(path)
-                );
-              }
-              throw s3Error; // Stop execution and report error
-            }
-          }
-        }
-      } catch (parseError) {
+        filesToRemove = JSON.parse(req.body.filesToRemove);
+        if (!Array.isArray(filesToRemove)) throw new Error("Invalid filesToRemove format");
+      } catch {
         return res.status(400).json({
           errorCode: "INVALID_JSON",
           message: "Invalid JSON format for filesToRemove",
-          details: parseError.message,
         });
       }
+      const originalFilePaths = [...record.filePaths];
+      record.filePaths = record.filePaths.filter((path) => !filesToRemove.includes(path));
+      try {
+        await Promise.all(filesToRemove.map(deleteFileFromS3));
+      } catch (s3Error) {
+        record.filePaths = originalFilePaths; // Rollback on failure
+        throw s3Error;
+      }
     }
-
-    // Upload new files to S3 and append to filePaths
-    for (const file of files) {
-      const fileName = `${Date.now()}_${file.originalname}`;
-      const s3Key = `medical-records/${patientId}/${fileName}`;
-      const params = {
-        Bucket: process.env.AWS_S3_BUCKET_NAME,
-        Key: s3Key,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-        ACL: "public-read",
-      };
-      const s3Response = await s3.upload(params).promise();
-      record.filePaths.push(s3Response.Location);
-      console.log(`Uploaded new file: ${s3Response.Location}`);
-    }
-
+    const newFilePaths = await Promise.all(files.map((f) => uploadFileToS3(f, patientId)));
+    record.filePaths.push(...newFilePaths);
     await patient.save();
-    res.json({
+    res.status(200).json({
       message: "Record updated successfully",
-      medicalHistory: record,
+      data: { medicalHistory: record },
     });
   } catch (error) {
-    console.error("Error updating medical record:", error);
-    res.status(500).json({ errorCode: "SERVER_ERROR", message: error.message });
+    logger.error("Error in updateMedicalHistory:", error);
+    res.status(500).json({
+      errorCode: "SERVER_ERROR",
+      message: "Error updating medical record",
+      error: error.message,
+    });
   }
 };
+
+// Delete medical history record
 const deletemedicalHistory = async (req, res) => {
   try {
     const { patientId, recordId } = req.params;
-
-    // Find the patient
     const patient = await Patient.findOne({ patientId });
     if (!patient) {
-      return res
-        .status(404)
-        .json({ errorCode: "PATIENT_NOT_FOUND", message: "Patient not found" });
+      return res.status(404).json({
+        errorCode: "PATIENT_NOT_FOUND",
+        message: "Patient not found",
+      });
     }
-
-    // Find the record to delete
     const record = patient.medicalHistory.id(recordId);
     if (!record) {
-      return res
-        .status(404)
-        .json({ errorCode: "RECORD_NOT_FOUND", message: "Record not found" });
-    }
-
-    // Delete associated files from S3
-    if (record.filePaths && record.filePaths.length > 0) {
-      console.log("filePaths to delete:", record.filePaths);
-
-      const deletePromises = record.filePaths.map(async (filePath) => {
-        let s3Key;
-        try {
-          const urlPrefix = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/`;
-          s3Key = filePath.replace(urlPrefix, "");
-          s3Key = decodeURIComponent(s3Key); // Decode %20 to space
-        } catch (error) {
-          console.error("Failed to parse S3 key from:", filePath, error);
-          return Promise.resolve();
-        }
-
-        if (!s3Key || s3Key === filePath) {
-          console.error("No valid S3 key extracted from:", filePath);
-          return Promise.resolve();
-        }
-
-        console.log("Deleting S3 key:", s3Key);
-
-        const params = {
-          Bucket: process.env.AWS_S3_BUCKET_NAME,
-          Key: s3Key,
-        };
-
-        try {
-          const result = await s3.deleteObject(params).promise();
-          console.log("S3 delete result:", result);
-          return result;
-        } catch (s3Error) {
-          console.error("S3 delete failed:", s3Error);
-          throw s3Error; // Propagate the error
-        }
+      return res.status(404).json({
+        errorCode: "RECORD_NOT_FOUND",
+        message: "Record not found",
       });
-
-      await Promise.all(deletePromises);
     }
-
-    // Remove the record from medicalHistory
+    if (record.filePaths && record.filePaths.length > 0) {
+      await Promise.all(record.filePaths.map(deleteFileFromS3));
+    }
     patient.medicalHistory.pull(recordId);
     await patient.save();
-
-    res.status(200).json({
-      message: "Medical record and associated files deleted successfully",
-    });
+    res.status(200).json({ message: "Medical record deleted successfully" });
   } catch (error) {
-    console.error("Error deleting medical record:", error);
+    logger.error("Error in deletemedicalHistory:", error);
     res.status(500).json({
       errorCode: "SERVER_ERROR",
       message: "Error deleting medical record",

@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Typography } from "antd";
+import { Typography, Alert } from "antd";
 import UploadSection from "../../components/diagnose/UploadSection";
 import LoadingSection from "../../components/diagnose/LoadingSection";
 import ResultsSection from "../../components/diagnose/ResultsSection";
-import PatientTabs from "../../components/diagnose/PatientTabs";
 import ImageModal from "../../components/diagnose/ImageModal";
 
 const { Title } = Typography;
@@ -48,10 +47,20 @@ const Diagnose = ({
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <Title level={2} className="text-gray-900 mb-6 font-semibold text-left ">
-        Diagnose <span className="text-blue-500 font-medium">{disease}</span>
-      </Title>
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="flex items-center mb-8 bg-gradient-to-r from-blue-50 to-white p-4 rounded-xl shadow-sm border border-indigo-100">
+        <div className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 shadow-md mr-4">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
+            <path d="M2 3h20M16 3v18H8V3M12 7v2M12 14v2"/>
+          </svg>
+        </div>
+        <div>
+          <Title level={2} className="text-gray-900 mb-0 font-semibold text-xl md:text-2xl">
+            Diagnose <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-600 font-medium">{disease}</span>
+          </Title>
+          <p className="text-gray-600 text-sm mt-1">Upload a retinal scan to analyze and diagnose potential conditions</p>
+        </div>
+      </div>
 
       {!isSubmitting && !prediction?.type && !errorMessage && (
         <UploadSection
@@ -84,14 +93,14 @@ const Diagnose = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
-          className="mt-4"
+          className="mt-6"
         >
           <Alert
             message="Error Occurred"
             description={errorMessage}
             type="error"
             showIcon
-            className="mb-6 rounded-md shadow-sm"
+            className="rounded-xl shadow-md border border-red-200"
           />
         </motion.div>
       )}

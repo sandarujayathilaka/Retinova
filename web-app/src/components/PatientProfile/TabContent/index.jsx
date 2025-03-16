@@ -6,7 +6,7 @@ import DiagnosisHistory from "./DiagnosisHistory";
 
 const TabContent = ({ activeTab, patient, getMaxConfidence, openImage, isFromPreMonitoring }) => {
   return (
-    <div className="p-6">
+    <div className="space-y-12">
       {activeTab === "basic" && <BasicInfo patient={patient} />}
       {activeTab === "contact" && <ContactInfo patient={patient} />}
       {activeTab === "medical" && <MedicalHistory patient={patient} />}
@@ -15,7 +15,7 @@ const TabContent = ({ activeTab, patient, getMaxConfidence, openImage, isFromPre
           patient={patient}
           getMaxConfidence={getMaxConfidence}
           openImage={openImage}
-          isFromPreMonitoring={isFromPreMonitoring} // Pass the prop
+          isFromPreMonitoring={isFromPreMonitoring}
         />
       )}
     </div>

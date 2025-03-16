@@ -15,31 +15,40 @@ import MonitoringPatientsPage from "./pages/MonitoringPatientsPage";
 import PreMonitoringPatientsPage from "./pages/PreMonitoringPatientsPage";
 import CompletedPatientsPage from "./pages/CompletedPatientsPage";
 import ReviewPatientsPage from "./pages/ReviewPatientsPage";
-import Dashboard from "./pages/Dashboard";
-import MonitoringPatients from "./pages/Nurse/MonitoringPatients";
-import PublishedPatients from "./pages/Nurse/PublishedPatients";
-import AddPatient from "./pages/Nurse/AddPatient";
-import View from "./pages/Nurse/View";
+import Dashboard from "./pages/Nurse/AdminDashboard/Dashboard";
+import MonitoringPatients from "./pages/Nurse/MonitoringPatients/MonitoringPatients";
+import PublishedPatients from "./pages/Nurse/PublishedPatients/PublishedPatients";
+import AddPatient from "./pages/Nurse/AddPatient/AddPatient";
+import View from "./pages/Nurse/View/ViewPatient";
 import RVO from "./pages/diseases/RVO";
-import DoctorsList from "./pages/doctors/List";
-import Add from "./pages/doctors/New";
+import DoctorsList from "@/pages/admin/DoctorList.jsx";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/auth/ResetPassword";
 import { Roles } from "./constants/roles";
 import ProtectedRoute from "./middleware/ProtectedRoute";
+import Login from "./pages/auth/Login";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 // import PatientProfile from "./pages/testrecord/PatientProfile";
 import TestRecords from "./pages/testrecord/TestRecords";
 import NurseProfile from "./pages/Nurse/NurseProfile";
 import NurseDashboard from "./pages/Nurse/NurseDashboard";
+import NurseList from "@/pages/admin/NurseList";
+import AdminList from "./pages/admin/AdminList";
+import TestList from "./pages/admin/TestList";
 // import AllPatientList from "./pages/testrecord/AllPatientList";
+import DoctorDashboard from "./pages/Nurse/DoctorDashboard/DoctorDashboard";
+import AddPatientWizard from "./pages/Nurse/AddPatient/AddPatientWizard";
+import ReviewPatients from "./pages/Nurse/ReviewPatients/ReviewPatients";
 
 const App = () => {
-  const SAMPLE_NURSE_ID = '67d1eec052a3868b43b617d3'; // Replace with a real ID
+  const SAMPLE_NURSE_ID = "67d1eec052a3868b43b617d3"; // Replace with a real ID
   return (
     <BrowserRouter>
       <Toaster position="top-right" />
       <Routes>
-        <Route path="/" element={<Diagnose />} />
+        <Route path="/" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* common routes - for all roles */}
         <Route
@@ -48,11 +57,14 @@ const App = () => {
           }
         >
           <Route path="/" element={<Diagnose />} />
-          <Route path="/monitoringPatients" element={<MonitoringPatients />} />
-          <Route path="/publishedPatients" element={<PublishedPatients />} />
-          <Route path="/addPatient" element={<AddPatient />} />
-          <Route path="/monitoringPatients/view/:id" element={<View />} />
+          <Route path="/monitoring-patients" element={<MonitoringPatients />} />
+          <Route path="/published-patients" element={<PublishedPatients />} />
+          <Route path="/review-patients" element={<ReviewPatients />} />
+          <Route path="/addPatientt" element={<AddPatient />} />
+          <Route path="/add-patient" element={<AddPatientWizard />} />
+          <Route path="/monitoring-patients/view/:id" element={<View />} />
 
+          <Route path="/doctordashboard" element={<DoctorDashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/diagnose/dr" element={<DR />} />
           <Route path="/diagnose/amd" element={<AMD />} />
@@ -67,7 +79,6 @@ const App = () => {
           <Route path="/review-patients" element={<ReviewPatientsPage />} />
 
           <Route path="/doctors" element={<DoctorsList />} />
-          <Route path="/add" element={<Add />} />
 
           <Route path="/patients/:patientId" element={<PatientProfile />} />
           <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
@@ -75,21 +86,19 @@ const App = () => {
           <Route path="/nursedashboard" element={<NurseDashboard />} />
           <Route path="/profile" element={<NurseProfile nurseId={SAMPLE_NURSE_ID} />} />
           {/* <Route path="/profile/:nurseId" element={<NurseProfileWrapper />} /> */}
+          <Route path="/nurses" element={<NurseList />} />
+          <Route path="/admins" element={<AdminList />} />
+          <Route path="/tests" element={<TestList />} />
         </Route>
 
-        <Route path="/reset-password" element={<ResetPassword />} />
+        {/* <Route path="/allp" element={<AllPatientList />} /> */}
+        <Route path="/patients/:patientId" element={<PatientProfile />} />
+        <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
 
-       
-
-
-
-          {/* <Route path="/allp" element={<AllPatientList />} /> */}
-         
-
-          {/* 404 Not Found Page */}
-          <Route path="*" element={<NotFound />} />
-          <Route path="/404" element={<NotFound />} />
-        </Routes>
+        {/* 404 Not Found Page */}
+        <Route path="*" element={<NotFound />} />
+        <Route path="/404" element={<NotFound />} />
+      </Routes>
     </BrowserRouter>
   );
 };

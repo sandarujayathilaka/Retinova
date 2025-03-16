@@ -1,42 +1,15 @@
-// // Main Patient Schema
-// const patientSchema = new mongoose.Schema(
-//   {
-//     patientId: { type: String, required: true, unique: true },
-//     fullName: { type: String, required: true },
-//     category: { type: [String], enum: ["DR", "AMD", "Glaucoma", "RVO", "Others"] },
-//     birthDate: {
-//       type: Date,
-//       required: true,
-//     },
-//     age: {
-//       type: Number, // Added age field to store pre-computed age
-//     },
-//     gender: { type: String, enum: ["Male", "Female", "Other"], required: true },
-//     contactNumber: { type: String, required: true },
-//     email: { type: String, required: false, lowercase: true },
-//     address: { type: String, required: true },
-//     nic: {
-//       type: String,
-//       required: true,
-//       unique: true,
-//     },
-//     medicalHistory: [medicalHistorySchema], // Array of medical history entries
-//     diagnoseHistory: [diagnoseSchema], // Array of past diagnoses
-//   },
-//   { timestamps: true }
-// ); // Automatically adds createdAt & updatedAt fields
-
 const mongoose = require("mongoose");
 
 const diagnoseSchema = new mongoose.Schema({
   imageUrl: String,
-  diagnosis: { type: String, default: "Processing" },
+  diagnosis: { type: String, default: "N/A" },
+  doctorDiagnosis: { type: String, default: "N/A" },
   eye: { type: String, enum: ["LEFT", "RIGHT"] },
   uploadedAt: { type: Date, default: Date.now },
   doctorId: { type: mongoose.Schema.Types.ObjectId, ref: "Doctor" },
   status: {
     type: String,
-    enum: ["Unchecked", "Test Completed", "Checked"],
+    enum: ["Unchecked", "Completed", "Checked", "Test Completed"],
     default: "Unchecked",
   },
   confidenceScores: [Number],
@@ -51,10 +24,21 @@ const diagnoseSchema = new mongoose.Schema({
           default: "Pending",
         },
         attachmentURL: String,
+        addedAt: { type: Date, default: Date.now } 
       },
     ],
     note: { type: String },
   },
+  revisitTimeFrame: {
+    type: String,
+    enum: ["Monthly", "Quarterly", "Bi-annually", "Annually", "As needed"],
+    default: "Monthly"
+  },
+  reviewInfo: [{
+    recommendedMedicine: String,
+    notes: String,
+    updatedAt: { type: Date, default: Date.now },
+  }]
 });
 
 // Schema for patient medical history
@@ -69,6 +53,14 @@ const medicalHistorySchema = mongoose.Schema(
     date: {
       type: Date,
       default: Date.now,
+    },
+     isChronicCondition: {
+      type: Boolean,
+      default: false, // False means it's an acute condition
+    },
+    notes: {
+      type: String,
+      default: "No additional notes",
     },
     filePaths: {
       type: [String],
@@ -88,6 +80,12 @@ const calculateAge = (birthDate) => {
   return age;
 };
 
+const emergencyContactSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  relationship: { type: String, required: true },
+  phone: { type: String, required: true }
+});
+
 // Main Patient Schema with Indexes
 const patientSchema = new mongoose.Schema(
   {
@@ -103,7 +101,7 @@ const patientSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    age: { type: Number, required: false, index: true }, // Index for range queries
+    // age: { type: Number, required: false, index: true }, // Index for range queries
     gender: {
       type: String,
       enum: ["Male", "Female", "Other"],
@@ -116,7 +114,12 @@ const patientSchema = new mongoose.Schema(
       unique: true,
     },
     contactNumber: { type: String, required: true },
-    email: { type: String, required: false },
+    email: { type: String, required: true },
+    bloodType: { type: String, required: false },
+    height: { type: Number, required: false },
+    weight: { type: Number, required: false },
+    allergies: { type: [String], required: false },
+    primaryPhysician : { type: mongoose.Schema.Types.ObjectId, ref: "Doctor" , required: false },
     address: { type: String, required: false },
     medicalHistory: [medicalHistorySchema],
     diagnoseHistory: [diagnoseSchema],
@@ -133,24 +136,40 @@ const patientSchema = new mongoose.Schema(
       index: true,
     },
     nextVisit: { type: Date },
+    emergencyContact: { type: emergencyContactSchema, required: false },
     doctorId: { type: mongoose.Schema.Types.ObjectId, ref: "Doctor" },
   },
-  { timestamps: true } // Automatically adds createdAt & updatedAt fields
+  { timestamps: true ,
+    toJSON: { virtuals: true }, 
+    toObject: { virtuals: true }
+  } // Automatically adds createdAt & updatedAt fields
 );
 
-patientSchema.index({ birthDate: 1 });
-patientSchema.pre("save", function (next) {
+
+// patientSchema.pre("save", function (next) {
+
+//   if (this.birthDate && !isNaN(new Date(this.birthDate))) {
+//     this.age = calculateAge(this.birthDate);
+//   } else {
+//     this.age = undefined; // or handle the error appropriately
+//   }
+//   next();
+// });
+
+patientSchema.virtual('age').get(function() {
   if (this.birthDate && !isNaN(new Date(this.birthDate))) {
-    this.age = calculateAge(this.birthDate);
-  } else {
-    this.age = undefined; // or handle the error appropriately
+    return calculateAge(this.birthDate);
   }
-  next();
+  return undefined;
 });
 
+patientSchema.index({ birthDate: 1 });
 // Compound index for common query combinations (optional)
 patientSchema.index({ category: 1, gender: 1 }); // For queries filtering by both category and gender
-patientSchema.index({ age: 1, createdAt: -1 }); // For sorting by age and creation date
+// patientSchema.index({ age: 1, createdAt: -1 }); // For sorting by age and creation date
+patientSchema.index({ createdAt: -1 }); // For sorting by age and creation date
+
+patientSchema.index({ patientId: 1 }, { unique: true });
 
 const Patient = mongoose.model("Patient", patientSchema);
 module.exports = Patient;

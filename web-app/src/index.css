@@ -100,6 +100,34 @@
   }
 }
 
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-pulse {
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
 .animate-fade-in-down {
   animation: fadeInDown 0.3s ease-out forwards;
 }
@@ -140,4 +168,36 @@
   box-sizing: border-box; /* Include padding/border in width */
   /* Temporary debug border */
   border: 1px solid red;
+}
+
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 8px;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #9ca3af; /* Grey color */
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280; /* Darker grey on hover */
+}
+
+/* For IE and Edge */
+body {
+  -ms-overflow-style: none;
+}
+
+/* Optional: Add smooth scrolling to the entire app */
+html {
+  scroll-behavior: smooth;
 }

@@ -70,15 +70,21 @@ const MonitoringPatientsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Monitoring Patients</h1>
-      <Filters
-        filters={filters}
-        handleFilterChange={handleFilterChange}
-        handleSearch={handleSearch}
-      />
-      <PatientsTable patients={patients} loading={loading} handleViewPatient={handleViewPatient} />
-      <Pagination pagination={pagination} handlePageChange={handlePageChange} />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">Monitoring Patients</h1>
+        <Filters
+          filters={filters}
+          handleFilterChange={handleFilterChange}
+          handleSearch={handleSearch}
+        />
+        <PatientsTable
+          patients={patients}
+          loading={loading}
+          handleViewPatient={handleViewPatient}
+        />
+        <Pagination pagination={pagination} handlePageChange={handlePageChange} />
+      </div>
     </div>
   );
 };

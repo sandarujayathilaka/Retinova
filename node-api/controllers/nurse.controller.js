@@ -63,15 +63,22 @@ const updateNurse = async (req, res) => {
     return res.status(404).json({ error: "Nurse not found" });
   }
 
-  if (nurse.email !== req.body.email) {
-    const existingNurse = await Nurse.findOne({ email: req.body.email });
+  // if (nurse.email !== req.body.email) {
+  //   const existingNurse = await Nurse.findOne({ email: req.body.email });
 
-    if (existingNurse) {
-      return res
-        .status(400)
-        .json({ error: "Nurse with this email already exists" });
-    }
+  //   if (existingNurse) {
+  //     return res
+  //       .status(400)
+  //       .json({ error: "Nurse with this email already exists" });
+  //   }
+  // }
+
+  // Prevent email update by removing it from req.body
+  if (req.body.email && req.body.email !== nurse.email) {
+    return res.status(400).json({ error: "Email cannot be changed" });
   }
+
+  delete req.body.email; // Ensure email is not updated
 
   const updatedNurse = await Nurse.findByIdAndUpdate(
     req.params.id,
