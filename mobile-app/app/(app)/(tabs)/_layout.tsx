@@ -41,12 +41,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="diagnosis-history"
         options={{
-          title: "Appointments",
+          title: "Diagnosis",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? "calendar" : "calendar-outline"}
+              name={focused ? "document-text" : "document-text-outline"}
               size={24}
               color={color}
             />
@@ -54,7 +54,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="appointments"
+        name="tests"
         options={{
           title: "Tests",
           tabBarIcon: ({ color, focused }) => (
