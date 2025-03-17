@@ -3,7 +3,7 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import TestRecordItem from "../../components/testrecords/TestRecordItem";
 import TestRecordConfirmModal from "../../components/testrecords/TestRecordConfirmModal";
-import { TestTubes, AlertCircle, RefreshCw } from "lucide-react";
+import { TestTubes, AlertCircle, RefreshCw , ClipboardCheck} from "lucide-react";
 
 function TestRecords({ patientId }) {
   const [records, setRecords] = useState([]);
@@ -126,7 +126,7 @@ function TestRecords({ patientId }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-50">
+      <div>
         <div className="flex flex-col items-center justify-center space-y-4 p-8 bg-white rounded-xl shadow-md">
           <div className="animate-spin text-blue-600">
             <RefreshCw className="h-12 w-12" />
@@ -160,14 +160,13 @@ function TestRecords({ patientId }) {
   }
 
   return (
-    <div className="min-h-screen bg-blue-50 py-6 px-4 sm:px-6 lg:px-8">
+    <div>
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-blue-800 flex items-center gap-2">
-            <TestTubes className="h-7 w-7 text-blue-600" /> 
-            <span>Patient Test Records</span>
-          </h2>
-          
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="bg-blue-100 p-3 rounded-full flex-shrink-0">
+            <ClipboardCheck className="h-6 w-6 text-indigo-700" />
+          </div>
+          <h2 className="text-2xl font-bold text-blue-900">Required Tests for Patient</h2>
         </div>
         
         {records.length > 0 ? (
