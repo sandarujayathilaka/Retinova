@@ -36,10 +36,10 @@ app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
-// app.use("/api/patients", patientRoutes);
+app.use("/api/patients", patientRoutes);
 
 app.use("/api/auth", userRoutes);
-app.use("/api/patients", patientNurseRoutes);
+// app.use("/api/patients", patientNurseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/util", utilRoutes);
 app.use("/api/doctors", doctorRoutes);

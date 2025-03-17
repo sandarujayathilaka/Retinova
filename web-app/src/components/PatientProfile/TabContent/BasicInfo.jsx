@@ -78,10 +78,6 @@ const BasicInfo = ({ patient }) => {
                   : "No known allergies"}
               </span>
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm text-gray-500 mb-1">Primary Physician</span>
-              <span className="text-gray-900">{patient.primaryPhysician || "Not assigned"}</span>
-            </div>
           </div>
         </div>
       </div>

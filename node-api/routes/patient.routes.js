@@ -21,6 +21,7 @@ const {
     deletemedicalHistory,
     uploadMedicalHistoryImage,
 } = require("../controllers/patient.controller");
+
 // const upload = require("../middleware/upload");
 
 router.post("/add", addPatient);
@@ -40,6 +41,7 @@ router.post("/:patientId/medical-records", upload.any(), addmedicalHistory);
 router.get("/:patientId/medical-records/:recordId/files", getmedicalHistoryFiles);
 router.put("/:patientId/medical-records/:recordId", upload.any(), updateMedicalHistory);
 router.delete("/:patientId/medical-records/:recordId", deletemedicalHistory);
+
 // router.post("/:patientId/medical-records", upload.any(), addmedicalHistory);
 // router.get("/:patientId/medical-records/:recordId", getmedicalHistory);
 // router.put("/:patientId/medical-records/:recordId", upload.any(),updatemedicalHistory);

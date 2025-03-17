@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Filters from "../components/PatientsPage/Filters";
 import PatientsTable from "../components/PatientsPage/PatientsTable";
 import Pagination from "../components/PatientsPage/Pagination";
+import { ErrorAlert } from "@/components/error/ErrorAlert";
 
 const MonitoringPatientsPage = () => {
   const [patients, setPatients] = useState([]);

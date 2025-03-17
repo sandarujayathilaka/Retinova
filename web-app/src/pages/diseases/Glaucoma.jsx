@@ -76,7 +76,7 @@ const DR = () => {
       formData.append("file", imageFile);
       formData.append("diagnosis", prediction.type);
       formData.append("confidenceScores", JSON.stringify([prediction.confidence]));
-      formData.append("category", JSON.stringify(["Glaucoma"]));
+      formData.append("category", "Glaucoma");
 
       // Format recommend according to the backend schema
       const recommend = {
