@@ -1,12 +1,9 @@
 import { api } from "../services/api.service";
 
 export const patientService = {
-    /**
-     * Fetch patients with a specific status
-     * @param {string} status - Patient status
-     * @param {object} params - Query parameters
-     * @returns {Promise} API response
-     */
+
+     // Fetch patients with a specific status
+
     fetchPatients: async (status, params = {}) => {
       return api.get("/patients", {
         params: {
@@ -16,13 +13,9 @@ export const patientService = {
       });
     },
     
-    /**
-     * Assign or update revisit details for a patient
-     * @param {string} patientId - Patient ID
-     * @param {string} doctorId - Doctor ID
-     * @param {Date} revisitDate - Revisit date
-     * @returns {Promise} API response
-     */
+  
+     // Assign or update revisit details for a patient
+    
     assignRevisit: async (patientId, doctorId, revisitDate) => {
       const normalizedDate = new Date(
         Date.UTC(revisitDate.getFullYear(), revisitDate.getMonth(), revisitDate.getDate())
@@ -34,11 +27,9 @@ export const patientService = {
       });
     },
     
-    /**
-     * Get patient count for a specific date and doctor
-     * @param {object} params - Query parameters
-     * @returns {Promise} API response
-     */
+   
+     // Get patient count for a specific date and doctor
+     
     getPatientCount: async (params) => {
       return api.get("/patients/count", {
         params,

@@ -24,8 +24,9 @@ const {
 // const upload = require("../middleware/upload");
 
 router.post("/add", addPatient);
-// router.get("/", getAllPatients);
+
 router.get("/", getPatientsByStatus);
+router.get("/all-patients", getAllPatients);
 router.get("/count", getPatientCount);
 // router.get("/patients", getAllPatients);
 router.get("/:patientId", getPatient); // Assuming patient ID is passed as a parameter

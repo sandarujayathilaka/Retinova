@@ -21,7 +21,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { step1Schema, step2Schema } from "../CommonFiles/patientSchemas";
+import { step1Schema, step2Schema } from "../../CommonFiles/patientSchemas";
 
 export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Data, isSubmitting, formErrors, setResetForm }) {
   const [age, setAge] = useState(0);

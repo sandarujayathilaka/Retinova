@@ -1,68 +1,46 @@
 import { api } from "./api.service";
 
-/**
- * Service for dashboard-related API calls
- */
+
+// Service for dashboard-related API calls
+
 export const dashboardService = {
-  /**
-   * Fetch doctor data by ID
-   * 
-   * @param {string} doctorId - Doctor ID
-   * @returns {Promise} API response
-   */
+
+  //Fetch doctor data by ID
   getDoctorById: async (doctorId) => {
     return api.get(`/doctors/${doctorId}`);
   },
   
-  /**
-   * Fetch doctor's patients
-   * 
-   * @param {string} doctorId - Doctor ID
-   * @param {object} params - Query parameters
-   * @returns {Promise} API response
-   */
+ 
+   //Fetch doctor's patients
+
   getDoctorPatients: async (doctorId, params = { type: 'summary' }) => {
     return api.get(`/doctors/${doctorId}/patients`, { params });
   },
   
-  /**
-   * Fetch admin dashboard doctors
-   * 
-   * @param {object} params - Query parameters
-   * @returns {Promise} API response
-   */
+
+   // Fetch admin dashboard doctors
+ 
   getAdminDoctors: async (params = { type: 'summary' }) => {
     return api.get('/dashboard/doctors', { params });
   },
   
-  /**
-   * Fetch admin dashboard nurses
-   * 
-   * @param {object} params - Query parameters
-   * @returns {Promise} API response
-   */
+
+   // Fetch admin dashboard nurses
+ 
   getAdminNurses: async (params = { type: 'summary' }) => {
     return api.get('/dashboard/nurses', { params });
   },
   
-  /**
-   * Fetch admin dashboard patients
-   * 
-   * @param {object} params - Query parameters
-   * @returns {Promise} API response
-   */
+
+   // Fetch admin dashboard patients
+ 
   getAdminPatients: async (params = { type: 'summary' }) => {
     return api.get('/dashboard/patients', { params });
   },
   
-  /**
-   * Fetch patient count by date and doctor
-   * 
-   * @param {string} doctorId - Doctor ID
-   * @param {Date} date - Date to check
-   * @param {string} status - Patient status
-   * @returns {Promise} API response
-   */
+
+   // Fetch patient count by date and doctor
+ 
   getPatientCountByDate: async (doctorId, date, status = 'Review') => {
     const dateString = date instanceof Date ? 
       date.toISOString().split('T')[0] : 
@@ -79,12 +57,9 @@ export const dashboardService = {
   }
 };
 
-/**
- * Process API error and return standardized error message
- * 
- * @param {Error} error - Error object from API call
- * @returns {string} Standardized error message
- */
+
+// Process API error and return standardized error message
+ 
 export const processApiError = (error) => {
   if (error.response) {
     const status = error.response.status;
@@ -109,13 +84,9 @@ export const processApiError = (error) => {
   }
 };
 
-/**
- * Display toast notification for API errors
- * 
- * @param {Error} error - Error object from API call
- * @param {Function} toast - Toast function
- * @param {Function} setError - State setter for error
- */
+
+// Display toast notification for API errors
+
 export const handleApiError = (error, toast, setError = null) => {
   const errorMessage = processApiError(error);
   

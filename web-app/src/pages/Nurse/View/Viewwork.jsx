@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useParams, useNavigate } from "react-router-dom";
-import { api } from "../../services/api.service";
+import { api } from "../../../services/api.service";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { IdCardIcon, UserCircle2Icon, CalendarIcon, User2, Loader2, Smartphone, Mail, Home, Circle, ArrowLeft, Pencil, Save, X, Droplet, Ruler, Scale, AlertTriangle, Stethoscope, Phone } from "lucide-react";
-import MedicalHistory from "./MedicalHistory/MedicalHistoryWork";
+import MedicalHistory from "../MedicalHistory/MedicalHistoryWork";
 import { Input } from "@/components/ui/input";
-import TestRecords from "../testrecord/TestRecords";
+import TestRecords from "../../testrecord/TestRecords";
 import { toast } from "react-hot-toast";
 
 const Viewwork = () => {

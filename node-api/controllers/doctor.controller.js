@@ -4,6 +4,7 @@ const Patient = require("../models/patient");
 const mongoose = require("mongoose");
 const logger = require("../config/logger");
 const { isValidDate } = require("../utils/dateUtils");
+const { fetchDoctors } = require('../utils/doctorService');
 
 const addDoctor = async (req, res) => {
   const {
@@ -53,7 +54,7 @@ const getDoctors = async (req, res) => {
 
 const getDoctorById = async (req, res) => {
   const doctor = await Doctor.findById(req.params.id);
-  console.log("dfdsssf");
+
   if (!doctor) {
     return res.status(404).json({ error: "Doctor not found" });
   }
@@ -114,7 +115,7 @@ const deleteDoctor = async (req, res) => {
 const getDoctorsByIds = async (req, res) => {
   try {
     const { doctorIds } = req.body;
-    console.log("called with doctorIds:", doctorIds);
+
 
     // Validate and convert doctorIds to ObjectIDs
     if (!Array.isArray(doctorIds) || doctorIds.length === 0) {
@@ -132,11 +133,11 @@ const getDoctorsByIds = async (req, res) => {
 
     const doctors = await Doctor.find({ _id: { $in: objectIds } })
       .lean()
-      .select("name type specialty workingHours daysOff"); // Adjusted field name to match schema
+      .select("name type specialty workingHours daysOff"); 
 
-    // Transform the response data
+   
     const transformedDoctors = doctors.map((doctor) => {
-      // Filter workingHours: only include enabled days with startTime and endTime
+     
       const filteredWorkingHours = {};
       for (const day in doctor.workingHours) {
         if (doctor.workingHours[day].enabled) {
@@ -147,7 +148,7 @@ const getDoctorsByIds = async (req, res) => {
         }
       }
 
-      // Filter daysOff: only include startDate and endDate
+   
       const filteredDaysOff = doctor.daysOff.map((dayOff) => ({
         startDate: dayOff.startDate,
         endDate: dayOff.endDate,
@@ -157,7 +158,7 @@ const getDoctorsByIds = async (req, res) => {
         _id: doctor._id,
         name: doctor.name,
         type: doctor.type,
-        specialty: doctor.specialty, // Note: schema uses "specialty", not "speciality"
+        specialty: doctor.specialty, 
         workingHours: filteredWorkingHours,
         daysOff: filteredDaysOff,
       };
@@ -299,35 +300,10 @@ const getDoctorPatientsSummary = async (req, res) => {
   }
 };
 
-// const getDoctorNames = async (req, res) => {
-//   try {
-//     const doctors = await Doctor.find({}, "name _id"); // Select only name and _id
-    
-//     if (!doctors.length) {
-//       return res.status(200).json({
-//         message: "No doctors found",
-//         data: { doctors: [] },
-//       });
-//     }
-//     res.status(200).json({
-//       message: "Doctors fetched successfully",
-//       doctors: doctors.map((doc) => ({
-//         _id: doc._id,
-//         name: doc.name,
-//       })),
-//     });
-//   } catch (error) {
-//     logger.error("Error in getDoctorNames:", error);
-//     res.status(500).json({
-//       errorCode: "SERVER_ERROR",
-//       message: "Error fetching doctor names",
-//       error: error.message,
-//     });
-//   }
-// };
+
 const getDoctorNames = async (req, res) => {
   try {
-    const doctors = await Doctor.find({}, "name _id"); // Select only name and _id
+    const doctors = await Doctor.find({}, "name _id"); 
 
     // Set caching headers
     res.set({

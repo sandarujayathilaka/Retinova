@@ -15,11 +15,11 @@ import MonitoringPatientsPage from "./pages/MonitoringPatientsPage";
 import PreMonitoringPatientsPage from "./pages/PreMonitoringPatientsPage";
 import CompletedPatientsPage from "./pages/CompletedPatientsPage";
 import ReviewPatientsPage from "./pages/ReviewPatientsPage";
-import Dashboard from "./pages/Nurse/AdminDashboard/Dashboard";
-import MonitoringPatients from "./pages/Nurse/MonitoringPatients/MonitoringPatients";
-import PublishedPatients from "./pages/Nurse/PublishedPatients/PublishedPatients";
-import AddPatient from "./pages/Nurse/AddPatient/AddPatient";
-import View from "./pages/Nurse/View/ViewPatient";
+import Dashboard from "./pages/admin/AdminDashboard/Dashboard";
+import MonitoringPatients from "./pages/nurse/MonitoringPatients/MonitoringPatients";
+import PublishedPatients from "./pages/nurse/PublishedPatients/PublishedPatients";
+import AddPatient from "./pages/nurse/AddPatient/AddPatient";
+import View from "./pages/nurse/View/ViewPatient";
 import RVO from "./pages/diseases/RVO";
 import DoctorsList from "@/pages/admin/DoctorList.jsx";
 import NotFound from "./pages/NotFound";
@@ -30,15 +30,20 @@ import Login from "./pages/auth/Login";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 // import PatientProfile from "./pages/testrecord/PatientProfile";
 import TestRecords from "./pages/testrecord/TestRecords";
+import NurseProfile from "./pages/nurse/NurseProfile";
+import NurseDashboard from "./pages/nurse/NurseDashboard";
 import NurseList from "@/pages/admin/NurseList";
 import AdminList from "./pages/admin/AdminList";
 import TestList from "./pages/admin/TestList";
 // import AllPatientList from "./pages/testrecord/AllPatientList";
-import DoctorDashboard from "./pages/Nurse/DoctorDashboard/DoctorDashboard";
-import AddPatientWizard from "./pages/Nurse/AddPatient/AddPatientWizard";
-import ReviewPatients from "./pages/Nurse/ReviewPatients/ReviewPatients";
+import DoctorDashboard from "./pages/DoctorDashboard/DoctorDashboard";
+import AddPatientWizard from "./pages/nurse/AddPatient/AddPatientWizard";
+import ReviewPatients from "./pages/nurse/ReviewPatients/ReviewPatients";
+import AllNursePatients from "./pages/nurse/AllPatients/AllPatients";
+
 
 const App = () => {
+  const SAMPLE_NURSE_ID = "67d1eec052a3868b43b617d3"; // Replace with a real ID
   return (
     <BrowserRouter>
       <Toaster position="top-right" />
@@ -57,10 +62,12 @@ const App = () => {
           <Route path="/monitoring-patients" element={<MonitoringPatients />} />
           <Route path="/published-patients" element={<PublishedPatients />} />
           <Route path="/review-patients" element={<ReviewPatients />} />
-          <Route path="/addPatientt" element={<AddPatient />} />
+          <Route path="/all-patients" element={<AllNursePatients />} />
+          {/* <Route path="/addPatientt" element={<AddPatient />} /> */}
           <Route path="/add-patient" element={<AddPatientWizard />} />
           <Route path="/monitoring-patients/view/:id" element={<View />} />
-
+          <Route path="/all-patients/view/:id" element={<View />} />
+          
           <Route path="/doctordashboard" element={<DoctorDashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/diagnose/dr" element={<DR />} />
@@ -76,6 +83,13 @@ const App = () => {
           <Route path="/review-patients" element={<ReviewPatientsPage />} />
 
           <Route path="/doctors" element={<DoctorsList />} />
+
+          <Route path="/patients/:patientId" element={<PatientProfile />} />
+          <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
+
+          <Route path="/nursedashboard" element={<NurseDashboard />} />
+          <Route path="/profile" element={<NurseProfile nurseId={SAMPLE_NURSE_ID} />} />
+          {/* <Route path="/profile/:nurseId" element={<NurseProfileWrapper />} /> */}
           <Route path="/nurses" element={<NurseList />} />
           <Route path="/admins" element={<AdminList />} />
           <Route path="/tests" element={<TestList />} />

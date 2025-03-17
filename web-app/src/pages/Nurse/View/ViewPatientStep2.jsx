@@ -1,20 +1,25 @@
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { debounce } from "lodash";
-import { api } from "../../../services/api.service";
+import { Droplet, Ruler, Scale, AlertTriangle, Phone, Loader2, Save, ChevronLeft, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Droplet, Ruler, Scale, AlertTriangle, Stethoscope, Phone, User2, Loader2, Save, ChevronLeft, X, Plus } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { step2Schema, validateEmergencyContact } from "../CommonFiles/patientSchemas";
+import { step2Schema, validateEmergencyContact } from "../../CommonFiles/patientSchemas";
 import PropTypes from "prop-types";
+import { showErrorToast, showSuccessToast, showNoChangesToast } from "../../utils/toastUtils"; 
+
 
 const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitting }) => {
   const [emergencyContactError, setEmergencyContactError] = useState(null);
+  const [allergyFields, setAllergyFields] = useState(
+    initialData?.allergies?.length > 0
+      ? initialData.allergies.map((value, index) => ({ id: Date.now() + index, value }))
+      : [{ id: Date.now(), value: "" }]
+  );
+
   const form = useForm({
     resolver: zodResolver(step2Schema),
     defaultValues: initialData || {
@@ -22,46 +27,32 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
       height: "",
       weight: "",
       allergies: [""],
-      primaryPhysician: "",
-      emergencyContact: { name: "", relationship: "", phone: "" },
+      emergencyContact: { name: "", relationship: "None", phone: "" },
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "allergies",
-  });
+  // Handle allergy field addition
+  const addAllergyField = useCallback(() => {
+    setAllergyFields((prev) => [...prev, { id: Date.now(), value: "" }]);
+  }, []);
 
-  const { data: doctors = [], isLoading: doctorsLoading } = useQuery({
-    queryKey: ["doctors"],
-    queryFn: async () => {
-      const response = await api.get("/doctors/names");
-      return response.data.doctors;
-    },
-    onError: () => toast.error("Failed to fetch doctors list."),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  // Handle allergy field removal
+  const removeAllergyField = useCallback((id) => {
+    if (allergyFields.length > 1) {
+      const updatedFields = allergyFields.filter((field) => field.id !== id);
+      setAllergyFields(updatedFields);
+      form.setValue("allergies", updatedFields.map((field) => field.value).filter(Boolean));
+    }
+  }, [allergyFields, form]);
 
-  const [filteredDoctors, setFilteredDoctors] = useState(doctors);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    setFilteredDoctors(doctors);
-  }, [doctors]);
-
-  const handleDoctorSearch = useCallback(
-    debounce((term) => {
-      const filtered = doctors.filter((doctor) => doctor.name.toLowerCase().includes(term.toLowerCase()));
-      setFilteredDoctors(filtered);
-    }, 300),
-    [doctors]
-  );
-
-  const handleSearchChange = (e) => {
-    const term = e.target.value;
-    setSearchTerm(term);
-    handleDoctorSearch(term);
-  };
+  // Handle allergy field value change
+  const handleAllergyChange = useCallback((id, value) => {
+    const updatedFields = allergyFields.map((field) =>
+      field.id === id ? { ...field, value } : field
+    );
+    setAllergyFields(updatedFields);
+    form.setValue("allergies", updatedFields.map((field) => field.value).filter(Boolean));
+  }, [allergyFields, form]);
 
   const handlePrevious = () => {
     const currentData = form.getValues();
@@ -83,9 +74,9 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
         return;
       }
 
-      // Convert "none" to empty string before submission
-      if (data.emergencyContact.relationship === "none") {
-        data.emergencyContact.relationship = "";
+      // If relationship is "None", clear emergency contact data
+      if (data.emergencyContact.relationship === "None") {
+        data.emergencyContact = {};
       }
 
       await onSave(data);
@@ -94,13 +85,13 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
         error.response?.data?.message ||
         error.response?.data?.error ||
         "An error occurred while saving.";
-      toast.error(errorMessage);
+     showErrorToast(errorMessage);
       throw error;
     }
   };
 
   const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-  const relationships = ["Father", "Mother", "Sister", "Brother", "Son", "Daughter", "Friend", "Relative", "Other"];
+  const relationships = ["None", "Father", "Mother", "Sister", "Brother", "Son", "Daughter", "Friend", "Relative", "Other"];
 
   return (
     <Form {...form}>
@@ -108,7 +99,7 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
             <h3 className="text-xl font-bold text-blue-900 mb-4 flex items-center">
-              <Stethoscope className="h-5 w-5 mr-2 text-indigo-600" />
+              <Droplet className="h-5 w-5 mr-2 text-indigo-600" />
               Medical Information
             </h3>
             <FormField
@@ -204,22 +195,23 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
                     Allergies
                   </FormLabel>
                   <div className="space-y-3">
-                    {fields.map((field, index) => (
+                    {allergyFields.map((field, index) => (
                       <div key={field.id} className="flex items-center gap-2">
                         <FormControl>
                           <Input
-                            {...form.register(`allergies.${index}`)}
-                            className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white flex-1"
                             placeholder={`Allergy ${index + 1}`}
+                            value={field.value}
+                            onChange={(e) => handleAllergyChange(field.id, e.target.value)}
+                            className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white flex-1"
                             aria-label={`Allergy ${index + 1}`}
                           />
                         </FormControl>
-                        {fields.length > 1 && (
+                        {allergyFields.length > 1 && (
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            onClick={() => remove(index)}
+                            onClick={() => removeAllergyField(field.id)}
                             className="h-10 w-10 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50"
                             aria-label={`Remove allergy ${index + 1}`}
                           >
@@ -231,7 +223,7 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => append("")}
+                      onClick={addAllergyField}
                       className="mt-3 h-10 px-4 text-sm border-blue-500 text-blue-600 hover:bg-blue-50 rounded-xl flex items-center gap-2"
                       aria-label="Add another allergy"
                     >
@@ -239,49 +231,6 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
                       Add Another Allergy
                     </Button>
                   </div>
-                  <FormMessage className="text-red-500 font-medium" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="primaryPhysician"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-700 font-semibold flex items-center gap-2">
-                    <div className="bg-blue-100 p-2 rounded-full">
-                      <Stethoscope className="h-4 w-4 text-blue-700" />
-                    </div>
-                    Primary Physician
-                  </FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
-                    <FormControl>
-                      <SelectTrigger className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                        <SelectValue placeholder="Select physician" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="bg-white rounded-xl border-gray-200 max-h-60 overflow-y-auto">
-                      <div className="p-2">
-                        <Input
-                          placeholder="Search doctors..."
-                          value={searchTerm}
-                          onChange={handleSearchChange}
-                          className="h-10 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                          onClick={(e) => e.stopPropagation()}
-                          aria-label="Search doctors"
-                        />
-                      </div>
-                      {filteredDoctors.length > 0 ? (
-                        filteredDoctors.map((doctor) => (
-                          <SelectItem key={doctor._id} value={doctor._id} className="py-2 hover:bg-blue-50 rounded-lg">
-                            {doctor.name}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <div className="p-2 text-gray-500">No doctors found</div>
-                      )}
-                    </SelectContent>
-                  </Select>
                   <FormMessage className="text-red-500 font-medium" />
                 </FormItem>
               )}
@@ -307,7 +256,7 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
                 <FormItem>
                   <FormLabel className="text-gray-700 font-semibold flex items-center gap-2">
                     <div className="bg-blue-100 p-2 rounded-full">
-                      <User2 className="h-4 w-4 text-blue-700" />
+                      <Phone className="h-4 w-4 text-blue-700" />
                     </div>
                     Contact Name
                   </FormLabel>
@@ -331,11 +280,11 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
                 <FormItem>
                   <FormLabel className="text-gray-700 font-semibold flex items-center gap-2">
                     <div className="bg-blue-100 p-2 rounded-full">
-                      <User2 className="h-4 w-4 text-blue-700" />
+                      <Phone className="h-4 w-4 text-blue-700" />
                     </div>
                     Relationship
                   </FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                  <Select onValueChange={field.onChange} value={field.value || "None"}>
                     <FormControl>
                       <SelectTrigger
                         className={`h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white ${
@@ -346,9 +295,6 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="bg-white rounded-xl border-gray-200">
-                      <SelectItem value="none" className="py-3 hover:bg-blue-50 rounded-lg">
-                        None
-                      </SelectItem>
                       {relationships.map((relationship) => (
                         <SelectItem key={relationship} value={relationship} className="py-3 hover:bg-blue-50 rounded-lg">
                           {relationship}
@@ -416,7 +362,7 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || doctorsLoading}
+            disabled={isSubmitting}
             className="h-12 px-6 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-all duration-300"
             aria-label="Save changes"
           >

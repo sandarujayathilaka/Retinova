@@ -1,10 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useState, useEffect, useCallback } from "react";
-import { debounce } from "lodash";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../../../services/api.service";
-import { User2, Droplet, Ruler, Scale, AlertTriangle, Stethoscope, Phone, Loader2, ChevronLeft, X, Plus } from "lucide-react";
+import { Droplet, Ruler, Scale, AlertTriangle, Phone, Loader2, ChevronLeft, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -12,23 +9,19 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "react-hot-toast";
-import { step2Schema, validateEmergencyContact } from "../CommonFiles/patientSchemas";
+import { step2Schema, validateEmergencyContact } from "../../CommonFiles/patientSchemas";
 import PropTypes from "prop-types";
+import { showErrorToast, showSuccessToast, showNoChangesToast } from "../../utils/toastUtils"; 
 
-// Sub-component: Medical Details Section (unchanged)
-const MedicalDetailsSection = ({ form, doctors, filteredDoctors, searchTerm, setSearchTerm, handleDoctorSearch }) => {
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "allergies",
-  });
 
+// Sub-component: Medical Details Section
+const MedicalDetailsSection = ({ form, allergyFields, setAllergyFields, handleAllergyChange, addAllergyField, removeAllergyField }) => {
   const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
   return (
     <div className="space-y-6">
-      {/* ... Medical Details Section remains unchanged ... */}
       <h3 className="text-xl font-bold text-blue-900 mb-4 flex items-center">
-        <Stethoscope className="h-5 w-5 mr-2 text-indigo-600" />
+        <Droplet className="h-5 w-5 mr-2 text-indigo-600" />
         Medical Details
       </h3>
 
@@ -80,7 +73,7 @@ const MedicalDetailsSection = ({ form, doctors, filteredDoctors, searchTerm, set
                   placeholder="170"
                   min={0}
                   {...field}
-                  value={field.value}
+                  value={field.value || ""}
                   onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : "")}
                   className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                 />
@@ -106,7 +99,7 @@ const MedicalDetailsSection = ({ form, doctors, filteredDoctors, searchTerm, set
                   placeholder="70"
                   min={0}
                   {...field}
-                  value={field.value}
+                  value={field.value || ""}
                   onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : "")}
                   className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                 />
@@ -129,21 +122,22 @@ const MedicalDetailsSection = ({ form, doctors, filteredDoctors, searchTerm, set
               Allergies
             </FormLabel>
             <div className="space-y-3">
-              {fields.map((field, index) => (
+              {allergyFields.map((field, index) => (
                 <div key={field.id} className="flex items-center gap-2">
                   <FormControl>
                     <Input
                       placeholder={`Allergy ${index + 1}`}
-                      {...form.register(`allergies.${index}`)}
+                      value={field.value}
+                      onChange={(e) => handleAllergyChange(field.id, e.target.value)}
                       className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white flex-1"
                     />
                   </FormControl>
-                  {fields.length > 1 && (
+                  {allergyFields.length > 1 && (
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={() => remove(index)}
+                      onClick={() => removeAllergyField(field.id)}
                       className="h-10 w-10 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50"
                     >
                       <X className="h-5 w-5" />
@@ -154,7 +148,7 @@ const MedicalDetailsSection = ({ form, doctors, filteredDoctors, searchTerm, set
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => append("")}
+                onClick={addAllergyField}
                 className="mt-3 h-10 px-4 text-sm border-blue-500 text-blue-600 hover:bg-blue-50 rounded-xl flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
@@ -165,57 +159,13 @@ const MedicalDetailsSection = ({ form, doctors, filteredDoctors, searchTerm, set
           </FormItem>
         )}
       />
-
-      <FormField
-        control={form.control}
-        name="primaryPhysician"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-gray-700 font-semibold flex items-center gap-2">
-              <div className="bg-blue-100 p-2 rounded-full">
-                <Stethoscope className="h-4 w-4 text-blue-700" />
-              </div>
-              Primary Physician
-            </FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                  <SelectValue placeholder="Select physician" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent className="bg-white rounded-xl border-gray-200 max-h-60 overflow-y-auto">
-                <div className="p-2">
-                  <Input
-                    placeholder="Search doctors..."
-                    value={searchTerm}
-                    onChange={handleDoctorSearch}
-                    className="h-10 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label="Search doctors"
-                  />
-                </div>
-                {filteredDoctors.length > 0 ? (
-                  filteredDoctors.map((doctor) => (
-                    <SelectItem key={doctor._id} value={doctor._id} className="py-2 hover:bg-blue-50 rounded-lg">
-                      {doctor.name}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <div className="p-2 text-gray-500">No doctors found</div>
-                )}
-              </SelectContent>
-            </Select>
-            <FormMessage className="text-red-500 font-medium" />
-          </FormItem>
-        )}
-      />
     </div>
   );
 };
 
 // Sub-component: Emergency Contact Section
 const EmergencyContactSection = ({ form }) => {
-  const relationships = ["Father", "Mother", "Sister", "Brother", "Son", "Daughter", "Friend", "Relative", "Other"];
+  const relationships = ["None", "Father", "Mother", "Sister", "Brother", "Son", "Daughter", "Friend", "Relative", "Other"];
 
   return (
     <div className="space-y-6">
@@ -231,7 +181,7 @@ const EmergencyContactSection = ({ form }) => {
           <FormItem>
             <FormLabel className="text-gray-700 font-semibold flex items-center gap-2">
               <div className="bg-blue-100 p-2 rounded-full">
-                <User2 className="h-4 w-4 text-blue-700" />
+                <Phone className="h-4 w-4 text-blue-700" />
               </div>
               Contact Name
             </FormLabel>
@@ -256,20 +206,17 @@ const EmergencyContactSection = ({ form }) => {
           <FormItem>
             <FormLabel className="text-gray-700 font-semibold flex items-center gap-2">
               <div className="bg-blue-100 p-2 rounded-full">
-                <User2 className="h-4 w-4 text-blue-700" />
+                <Phone className="h-4 w-4 text-blue-700" />
               </div>
               Relationship
             </FormLabel>
-            <Select onValueChange={field.onChange} value={field.value || ""}>
+            <Select onValueChange={field.onChange} value={field.value || "None"}>
               <FormControl>
                 <SelectTrigger className="h-12 rounded-xl border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
                   <SelectValue placeholder="Select relationship" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent className="bg-white rounded-xl border-gray-200">
-                <SelectItem value="none" className="py-3 hover:bg-blue-50 rounded-lg">
-                  None
-                </SelectItem>
                 {relationships.map((relationship) => (
                   <SelectItem key={relationship} value={relationship} className="py-3 hover:bg-blue-50 rounded-lg">
                     {relationship}
@@ -310,151 +257,123 @@ const EmergencyContactSection = ({ form }) => {
           </FormItem>
         )}
       />
-
-      <div className="bg-blue-50 rounded-xl p-6 mt-6 border border-blue-100">
-        <div className="flex items-start gap-3">
-          <div className="bg-blue-600 rounded-full p-2 mt-1">
-            <AlertTriangle className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <h4 className="text-blue-900 font-semibold mb-1">Important</h4>
-            <p className="text-sm text-blue-700">
-              Providing emergency contact information is optional but recommended. This person will be contacted in case of medical emergencies if provided.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
 
 // Main Component: AddPatientStep2
-export default function AddPatientStep2({ step1Data, initialData, onPrevious, onSubmit, isSubmitting, formErrors, setResetForm }) {
+export default function AddPatientStep2({ step1Data, initialData, onPrevious, onSubmit, isSubmitting, setResetForm }) {
   const [emergencyContactError, setEmergencyContactError] = useState(null);
+  const [allergyFields, setAllergyFields] = useState(
+    initialData?.allergies?.length > 0
+      ? initialData.allergies.map((value, index) => ({ id: Date.now() + index, value }))
+      : [{ id: Date.now(), value: "" }]
+  );
 
+  // Initialize form with default values and schema validation
   const form = useForm({
     resolver: zodResolver(step2Schema),
     defaultValues: {
       bloodType: initialData?.bloodType || "",
       height: initialData?.height || "",
       weight: initialData?.weight || "",
-      allergies: initialData?.allergies?.length > 0 ? initialData.allergies : [""],
-      primaryPhysician: initialData?.primaryPhysician || "",
+      allergies: initialData?.allergies || [],
       emergencyContact: {
         name: initialData?.emergencyContact?.name || "",
-        relationship: initialData?.emergencyContact?.relationship || "",
+        relationship: initialData?.emergencyContact?.relationship || "None",
         phone: initialData?.emergencyContact?.phone || "",
       },
     },
   });
 
-  // Fetch doctors using React Query
-  const { data: doctors = [], isLoading, error } = useQuery({
-    queryKey: ["doctors"],
-    queryFn: async () => {
-      const response = await api.get("/doctors/names");
-      return response.data.doctors;
-    },
-    onError: () => toast.error("Failed to fetch doctors list."),
-    staleTime: 5 * 60 * 1000, // 5 minutes: Data is considered fresh for 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes: Data stays in cache for 10 minutes after becoming unused
-  });
-
-  const [filteredDoctors, setFilteredDoctors] = useState(doctors);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    setFilteredDoctors(doctors);
-  }, [doctors]);
-
+  // Set up form reset function for parent component
   useEffect(() => {
     setResetForm(() => () => {
       form.reset({
         bloodType: "",
         height: "",
         weight: "",
-        allergies: [""],
-        primaryPhysician: "",
+        allergies: [],
         emergencyContact: {
           name: "",
-          relationship: "",
+          relationship: "None",
           phone: "",
         },
       });
+      setAllergyFields([{ id: Date.now(), value: "" }]);
     });
   }, [form, setResetForm]);
 
-  const handleDoctorSearch = useCallback(
-    debounce((term) => {
-      const filtered = doctors.filter((doctor) => doctor.name.toLowerCase().includes(term.toLowerCase()));
-      setFilteredDoctors(filtered);
-    }, 300),
-    [doctors]
-  );
+  // Handle allergy field addition
+  const addAllergyField = useCallback(() => {
+    setAllergyFields((prev) => [...prev, { id: Date.now(), value: "" }]);
+  }, []);
 
-  const handleSearchChange = (e) => {
-    const term = e.target.value;
-    setSearchTerm(term);
-    handleDoctorSearch(term);
-  };
+  // Handle allergy field removal
+  const removeAllergyField = useCallback((id) => {
+    if (allergyFields.length > 1) {
+      const updatedFields = allergyFields.filter((field) => field.id !== id);
+      setAllergyFields(updatedFields);
+      form.setValue("allergies", updatedFields.map((field) => field.value).filter(Boolean));
+    }
+  }, [allergyFields, form]);
 
-  const handlePrevious = () => {
+  // Handle allergy field value change
+  const handleAllergyChange = useCallback((id, value) => {
+    const updatedFields = allergyFields.map((field) =>
+      field.id === id ? { ...field, value } : field
+    );
+    setAllergyFields(updatedFields);
+    form.setValue("allergies", updatedFields.map((field) => field.value).filter(Boolean));
+  }, [allergyFields, form]);
+
+  // Handle previous button click
+  const handlePrevious = useCallback(() => {
     const currentData = form.getValues();
     onPrevious(currentData);
-  };
+  }, [form, onPrevious]);
 
-  const handleSubmit = async (data) => {
-    console.log("handleSubmit called with data:", data);
-    try {
-      console.log("relationship:", data.emergencyContact.relationship);
-      setEmergencyContactError(null);
-      const result = validateEmergencyContact(data.emergencyContact);
-      console.log("validation result:", result);
-  
-      if (!result.valid) {
-        if (result.errors && Object.keys(result.errors).length > 0) {
-          Object.entries(result.errors).forEach(([field, message]) => {
-            form.setError(`emergencyContact.${field}`, { type: "manual", message });
-          });
-          setEmergencyContactError("Please fill in all emergency contact fields or leave them all empty.");
-        } else {
-          toast.error("Unexpected validation error occurred.");
+  // Handle form submission
+  const handleSubmit = useCallback(
+    async (data) => {
+      try {
+        setEmergencyContactError(null);
+
+        // Validate emergency contact fields
+        const result = validateEmergencyContact(data.emergencyContact);
+        if (!result.valid) {
+          if (result.errors && Object.keys(result.errors).length > 0) {
+            Object.entries(result.errors).forEach(([field, message]) => {
+              form.setError(`emergencyContact.${field}`, { type: "manual", message });
+            });
+            setEmergencyContactError("Please fill in all emergency contact fields or leave them all empty.");
+          } else {
+            showErrorToast("Unexpected validation error occurred.");
+       
+          }
+          return;
         }
-        return;
-      }
-  
-      // Convert "none" to empty string before submission
-      if (data.emergencyContact.relationship === "none") {
-        data.emergencyContact.relationship = "";
-      }
-  
-      const combinedData = { ...(step1Data || {}), ...data };
-      console.log("Submitting combined data:", combinedData);
-      await onSubmit(combinedData);
-      console.log("onSubmit completed");
-    } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        "Failed to register patient. Please try again.";
-      console.error("Error in handleSubmit:", error);
-      toast.error(errorMessage);
-      throw error;
-    }
-  };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
+        // If relationship is "None", clear emergency contact data
+        if (data.emergencyContact.relationship === "None") {
+          data.emergencyContact = {};
+        }
 
-  if (error) {
-    return <div className="text-red-500 text-center">Error loading doctors. Please try again later.</div>;
-  }
+        // Combine step 1 and step 2 data
+        const combinedData = { ...(step1Data || {}), ...data };
+        await onSubmit(combinedData);
+      } catch (error) {
+        const errorMessage =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message ||
+          "Failed to register patient. Please try again.";
+        showErrorToast(errorMessage);  
+        throw error;
+      }
+    },
+    [form, step1Data, onSubmit]
+  );
 
   return (
     <div className="bg-white min-h-screen p-10">
@@ -463,7 +382,7 @@ export default function AddPatientStep2({ step1Data, initialData, onPrevious, on
           <CardHeader className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white py-10 px-8">
             <div className="flex items-center justify-center space-x-4">
               <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
-                <User2 className="h-8 w-8 text-white" />
+                <Droplet className="h-8 w-8 text-white" />
               </div>
               <div>
                 <CardTitle className="text-3xl font-extrabold tracking-tight">Register New Patient</CardTitle>
@@ -478,14 +397,18 @@ export default function AddPatientStep2({ step1Data, initialData, onPrevious, on
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <MedicalDetailsSection
                     form={form}
-                    doctors={doctors}
-                    filteredDoctors={filteredDoctors}
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                    handleDoctorSearch={handleSearchChange}
+                    allergyFields={allergyFields}
+                    setAllergyFields={setAllergyFields}
+                    handleAllergyChange={handleAllergyChange}
+                    addAllergyField={addAllergyField}
+                    removeAllergyField={removeAllergyField}
                   />
                   <EmergencyContactSection form={form} />
                 </div>
+
+                {emergencyContactError && (
+                  <div className="text-red-500 text-center font-medium">{emergencyContactError}</div>
+                )}
 
                 <Separator className="my-6 bg-blue-100" />
 
@@ -515,7 +438,7 @@ export default function AddPatientStep2({ step1Data, initialData, onPrevious, on
                       </span>
                     ) : (
                       <span className="flex items-center">
-                        <User2 className="h-5 w-5 mr-2" />
+                        <Droplet className="h-5 w-5 mr-2" />
                         Register Patient
                       </span>
                     )}
@@ -530,13 +453,12 @@ export default function AddPatientStep2({ step1Data, initialData, onPrevious, on
   );
 }
 
-// PropTypes for type safety
+// PropTypes for type safety and documentation
 AddPatientStep2.propTypes = {
   step1Data: PropTypes.object,
   initialData: PropTypes.object,
   onPrevious: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
   isSubmitting: PropTypes.bool.isRequired,
-  formErrors: PropTypes.object,
   setResetForm: PropTypes.func.isRequired,
 };

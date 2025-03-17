@@ -119,7 +119,6 @@ const patientSchema = new mongoose.Schema(
     height: { type: Number, required: false },
     weight: { type: Number, required: false },
     allergies: { type: [String], required: false },
-    primaryPhysician : { type: mongoose.Schema.Types.ObjectId, ref: "Doctor" , required: false },
     address: { type: String, required: false },
     medicalHistory: [medicalHistorySchema],
     diagnoseHistory: [diagnoseSchema],

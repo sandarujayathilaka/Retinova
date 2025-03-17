@@ -75,12 +75,12 @@ export function useDashboard(type = 'admin', id = null) {
         // Admin dashboard
         const [doctorsRes, nursesRes, patientsRes] = await Promise.all([
           api.get("/dashboard/doctors?type=summary"),
-          api.get("/dashboard/doctors?type=summary"), // This would be nurses endpoint in production
+          api.get("/dashboard/nurses?type=summary"), // This would be nurses endpoint in production
           api.get("/dashboard/patients?type=summary"),
         ]);
         
         setDoctors(doctorsRes.data.doctors);
-        setNurses(nursesRes.data.doctors); // Using doctors data for nurses temporarily
+        setNurses(nursesRes.data.nurses); // Using doctors data for nurses temporarily
         setPatients(patientsRes.data.patients);
       }
       

@@ -5,7 +5,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { IdCardIcon, CalendarIcon, User2, Smartphone, Mail, Home, Circle, Loader2, ChevronRight, Save, X } from "lucide-react";
-import { step1Schema,step2Schema } from "../CommonFiles/patientSchemas";
+import { step1Schema,step2Schema } from "../../CommonFiles/patientSchemas";
 import PropTypes from "prop-types";
 
 const ViewPatientStep1 = ({ initialData, step2Data, onNext, onSave, onCancel, isSubmitting }) => {

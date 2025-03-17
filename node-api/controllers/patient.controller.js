@@ -6,6 +6,8 @@ const mongoose = require("mongoose");
 const validator = require("validator");
 const logger = require("../config/logger"); // Hypothetical logger (e.g., Winston)
 const { isValidDate, getStartEndOfDay, getStartEndOfMonth } = require("../utils/dateUtils"); // Hypothetical date utilities
+const { format } = require("date-fns");
+
 
 // Utility function to upload files to S3
 const uploadFileToS3 = async (file, patientId) => {
@@ -165,12 +167,47 @@ const updatePatientRevisit = async (req, res) => {
     const normalizedRevisitDate = new Date(revisitDate);
     normalizedRevisitDate.setUTCHours(0, 0, 0, 0);
 
+    // Debug logging to inspect values
+    console.log("Current patient data:", {
+      doctorId: patient.doctorId,
+      nextVisit: patient.nextVisit ? patient.nextVisit.toISOString() : "null",
+      patientStatus: patient.patientStatus,
+    });
+    console.log("New data:", {
+      doctorId,
+      revisitDate: normalizedRevisitDate.toISOString(),
+      patientStatus,
+    });
+
+    // Check for changes with proper null handling
+    const hasChanges =
+      patient.doctorId?.toString() !== doctorId || // Handle null/undefined doctorId
+      (patient.nextVisit?.toISOString() !== normalizedRevisitDate.toISOString() || // Both dates exist and differ
+        (!patient.nextVisit && normalizedRevisitDate) || // From null to a date
+        (patient.nextVisit && !normalizedRevisitDate)) || // From date to null
+      patient.patientStatus !== patientStatus;
+
+    if (!hasChanges) {
+      console.log("No changes detected");
+      return res.status(200).json({
+        message: "No changes have been made",
+        data: {
+          patientId: patient.patientId,
+          doctorId: patient.doctorId,
+          nextVisit: patient.nextVisit,
+          patientStatus: patient.patientStatus,
+        },
+      });
+    }
+
+    // Apply updates
     patient.doctorId = doctorId;
-    patient.nextVisit = normalizedRevisitDate; // Save normalized date
+    patient.nextVisit = normalizedRevisitDate;
     patient.patientStatus = patientStatus;
 
     const updatedPatient = await patient.save();
 
+    console.log("Patient updated");
     res.status(200).json({
       message: "Revisit updated successfully",
       data: {
@@ -189,6 +226,7 @@ const updatePatientRevisit = async (req, res) => {
     });
   }
 };
+
 
 // Get patient counts for a month
 const getPatientCountsForMonth = async (req, res) => {
@@ -223,21 +261,73 @@ const getPatientCountsForMonth = async (req, res) => {
   }
 };
 
-// Fetch all patients with pagination
+const sanitizeRegex = (input) => validator.escape(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+
 const getAllPatients = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, search, gender, status } = req.query;
     const skip = (page - 1) * limit;
-    const patients = await Patient.find()
+
+    // Build query
+    let query = {};
+    if (search) {
+      query.$or = [
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { patientId: { $regex: search, $options: "i" } },
+      ];
+    }
+    if (gender && gender !== "all") {
+      query.gender = gender;
+    }
+    if (status && status !== "all") {
+      query.patientStatus = status;
+    }
+
+    // Fetch patients
+    const patients = await Patient.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(Number(limit))
-      .lean();
-    const total = await Patient.countDocuments();
+      .limit(Number(limit));
+
+    const total = await Patient.countDocuments(query);
+
+    // Compute and format fields for each patient
+    const patientsWithComputedFields = patients.map((patient) => {
+      const latestDiagnosis = patient.diagnoseHistory
+        ?.slice()
+        .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))[0];
+
+      let diagnosisDate;
+      let diagnosisTime;
+      if (patient.patientStatus === "Published" && latestDiagnosis?.recommend?.tests?.length > 0) {
+        const latestTest = latestDiagnosis.recommend.tests
+          .slice()
+          .sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt))[0];
+        diagnosisDate = latestTest?.addedAt || latestDiagnosis?.uploadedAt;
+        diagnosisTime = latestTest?.addedAt || latestDiagnosis?.uploadedAt;
+      } else {
+        diagnosisDate = latestDiagnosis?.uploadedAt;
+        diagnosisTime = latestDiagnosis?.uploadedAt;
+      }
+
+      const revisitTimeFrame = latestDiagnosis?.revisitTimeFrame || "N/A";
+
+      const patientData = patient.toObject({ virtuals: true });
+      patientData.diagnosisDate = diagnosisDate ? format(new Date(diagnosisDate), "dd MMM yyyy") : "N/A";
+      patientData.diagnosisTime = diagnosisTime ? format(new Date(diagnosisTime), "HH:mm:ss") : "N/A";
+      patientData.revisitTimeFrame = revisitTimeFrame;
+      patientData.nextVisit = patient.nextVisit ? format(new Date(patient.nextVisit), "dd MMM yyyy") : "N/A";
+
+      return patientData;
+    });
+
     res.status(200).json({
       message: "Patients retrieved",
       data: {
-        patients,
+        patients: patientsWithComputedFields,
         pagination: {
           currentPage: Number(page),
           totalPages: Math.ceil(total / limit),
@@ -257,7 +347,9 @@ const getAllPatients = async (req, res) => {
 };
 
 // Fetch patients by status with filtering and pagination
-const sanitizeRegex = (input) => validator.escape(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+
+
 const getPatientsByStatus = async (req, res) => {
   try {
     const { status, page = 1, limit = 10, search, gender } = req.query;
@@ -267,6 +359,7 @@ const getPatientsByStatus = async (req, res) => {
         message: "Status is required",
       });
     }
+
     const query = { patientStatus: status };
     if (search) {
       const safeSearch = sanitizeRegex(search);
@@ -277,17 +370,14 @@ const getPatientsByStatus = async (req, res) => {
         { email: { $regex: safeSearch, $options: "i" } },
       ];
     }
-    if (gender) query.gender = gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
-    const skip = (page - 1) * limit;
-    // const patients = await Patient.find(query)
-    //   .sort({ createdAt: -1 })
-    //   .skip(skip)
-    //   .limit(Number(limit))
-    //   .select("patientId fullName nic gender contactNumber email address diagnoseHistory birthDate age")
-    //   .lean();
-    let selectFields = "patientId fullName nic gender contactNumber email address diagnoseHistory birthDate age";
+    if (gender) {
+      query.gender = gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase();
+    }
 
-    // Add doctorId and nextVisit if status is "Review"
+    const skip = (page - 1) * limit;
+    
+    // Define fields to select, always include nextVisit for Review
+    let selectFields = "patientId fullName nic gender contactNumber email address diagnoseHistory birthDate";
     if (status.toLowerCase() === "review") {
       selectFields += " doctorId nextVisit";
     }
@@ -297,13 +387,44 @@ const getPatientsByStatus = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit))
-      .select(selectFields)
-      .lean();
+      .select(selectFields);
+
     const total = await Patient.countDocuments(query);
+
+    // Compute and format fields for each patient
+    const patientsWithComputedFields = patients.map((patient) => {
+      const latestDiagnosis = patient.diagnoseHistory
+        ?.slice()
+        .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))[0];
+
+      let diagnosisDate;
+      let diagnosisTime;
+      if (patient.patientStatus === "Published" && latestDiagnosis?.recommend?.tests?.length > 0) {
+        const latestTest = latestDiagnosis.recommend.tests
+          .slice()
+          .sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt))[0];
+        diagnosisDate = latestTest?.addedAt || latestDiagnosis?.uploadedAt;
+        diagnosisTime = latestTest?.addedAt || latestDiagnosis?.uploadedAt;
+      } else {
+        diagnosisDate = latestDiagnosis?.uploadedAt;
+        diagnosisTime = latestDiagnosis?.uploadedAt;
+      }
+
+      const revisitTimeFrame = latestDiagnosis?.revisitTimeFrame || "N/A";
+
+      const patientData = patient.toObject({ virtuals: true });
+      patientData.diagnosisDate = diagnosisDate ? format(new Date(diagnosisDate), "dd MMM yyyy") : "N/A";
+      patientData.diagnosisTime = diagnosisTime ? format(new Date(diagnosisTime), "HH:mm:ss") : "N/A";
+      patientData.revisitTimeFrame = revisitTimeFrame;
+      patientData.nextVisit = patient.nextVisit ? format(new Date(patient.nextVisit), "dd MMM yyyy") : "N/A";
+
+      return patientData;
+    });
+
     res.status(200).json({
       message: "Patients retrieved",
       data: {
-        patients,
+        patients: patientsWithComputedFields,
         pagination: {
           currentPage: Number(page),
           totalPages: Math.ceil(total / limit),
@@ -321,6 +442,8 @@ const getPatientsByStatus = async (req, res) => {
     });
   }
 };
+
+
 
 // Add a new patient
 // const addPatient = async (req, res) => {
@@ -426,7 +549,6 @@ const addPatient = async (req, res) => {
       height,
       weight,
       allergies,
-      primaryPhysician,
       emergencyContact,
     } = req.body;
 
@@ -473,24 +595,6 @@ const addPatient = async (req, res) => {
       });
     }
 
-    // Validate primary physician ID if provided
-    let physicianId;
-    if (primaryPhysician) {
-      if (!mongoose.Types.ObjectId.isValid(primaryPhysician)) {
-        return res.status(400).json({
-          errorCode: "INVALID_PHYSICIAN_ID",
-          message: "Invalid primaryPhysician ID format",
-        });
-      }
-      const doctorExists = await Doctor.findById(primaryPhysician);
-      if (!doctorExists) {
-        return res.status(400).json({
-          errorCode: "PHYSICIAN_NOT_FOUND",
-          message: "Primary physician not found",
-        });
-      }
-      physicianId = new mongoose.Types.ObjectId(primaryPhysician);
-    }
 
     // Generate patient ID
     const lastPatient = await Patient.findOne().sort({ createdAt: -1 }).select("patientId");
@@ -510,7 +614,6 @@ const addPatient = async (req, res) => {
       height: height ? Number(height) : undefined,
       weight: weight ? Number(weight) : undefined,
       allergies,
-      primaryPhysician: physicianId,
       emergencyContact,
     });
 
@@ -539,16 +642,46 @@ const addPatient = async (req, res) => {
 // Get a single patient by ID
 const getPatient = async (req, res) => {
   try {
-    console.log(req)
     const { patientId } = req.params;
-    const patient = await Patient.findOne({ patientId }).lean();
+    const patient = await Patient.findOne({ patientId });
+
     if (!patient) {
       return res.status(404).json({
         errorCode: "PATIENT_NOT_FOUND",
         message: "Patient not found",
       });
     }
-    res.status(200).json({ message: "Patient retrieved", data: patient });
+
+    // Compute diagnosisDate, diagnosisTime, and revisitTimeFrame
+    const latestDiagnosis = patient.diagnoseHistory
+      ?.slice()
+      .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))[0];
+
+    let diagnosisDate;
+    let diagnosisTime;
+    if (patient.patientStatus === "Published" && latestDiagnosis?.recommend?.tests?.length > 0) {
+      const latestTest = latestDiagnosis.recommend.tests
+        .slice()
+        .sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt))[0];
+      diagnosisDate = latestTest?.addedAt || latestDiagnosis?.uploadedAt;
+      diagnosisTime = latestTest?.addedAt || latestDiagnosis?.uploadedAt;
+    } else {
+      diagnosisDate = latestDiagnosis?.uploadedAt;
+      diagnosisTime = latestDiagnosis?.uploadedAt;
+    }
+
+    const revisitTimeFrame = latestDiagnosis?.revisitTimeFrame || "N/A";
+
+    // Convert to plain object and add computed fields
+    const patientData = patient.toObject({ virtuals: true });
+    
+    // Format dates as day-only (e.g., "16 Mar 2025")
+    patientData.diagnosisDate = diagnosisDate ? format(new Date(diagnosisDate), "dd MMM yyyy") : "N/A";
+    patientData.diagnosisTime = diagnosisTime ? format(new Date(diagnosisTime), "HH:mm:ss") : "N/A"; // Time in HH:mm:ss
+    patientData.revisitTimeFrame = revisitTimeFrame;
+    patientData.nextVisit = patient.nextVisit ? format(new Date(patient.nextVisit), "dd MMM yyyy") : "N/A";
+
+    res.status(200).json({ message: "Patient retrieved", data: patientData });
   } catch (error) {
     logger.error("Error in getPatient:", error);
     res.status(500).json({
@@ -647,6 +780,7 @@ const getPatient = async (req, res) => {
 
 const editPatient = async (req, res) => {
   try {
+    console.log(req.body);
     const { patientId } = req.params;
     const {
       nic,
@@ -660,7 +794,6 @@ const editPatient = async (req, res) => {
       height,
       weight,
       allergies,
-      primaryPhysician,
       emergencyContact,
     } = req.body;
 
@@ -713,27 +846,6 @@ const editPatient = async (req, res) => {
       });
     }
 
-    // Validation: Primary physician (optional field)
-    let physicianId;
-    if (primaryPhysician !== undefined && primaryPhysician !== "" && primaryPhysician !== null) {
-      if (!mongoose.Types.ObjectId.isValid(primaryPhysician)) {
-        return res.status(400).json({
-          errorCode: "INVALID_PHYSICIAN_ID",
-          message: "Invalid primary physician ID format",
-        });
-      }
-      const doctorExists = await Doctor.findById(primaryPhysician);
-      if (!doctorExists) {
-        return res.status(400).json({
-          errorCode: "PHYSICIAN_NOT_FOUND",
-          message: "Primary physician not found",
-        });
-      }
-      physicianId = new mongoose.Types.ObjectId(primaryPhysician);
-    } else {
-      physicianId = undefined; // Keep existing value or allow unset
-    }
-
     // Validation: Emergency contact
     if (emergencyContact !== undefined) {
       const { name, relationship, phone } = emergencyContact || {};
@@ -752,12 +864,11 @@ const editPatient = async (req, res) => {
             message: "Emergency contact phone must be a valid 10-digit number.",
           });
         }
-      } else {
-        emergencyContact = undefined; // If no fields are provided, set to undefined
       }
+      // Removed the reassignment of emergencyContact here
     }
 
-    // Prepare updated data
+    // Prepare updated data with explicit handling for emergencyContact
     const updatedData = {
       fullName: validator.escape(fullName),
       nic: validator.escape(nic),
@@ -770,14 +881,28 @@ const editPatient = async (req, res) => {
       height: height !== undefined ? Number(height) : patient.height,
       weight: weight !== undefined ? Number(weight) : patient.weight,
       allergies: allergies !== undefined ? allergies : patient.allergies,
-      primaryPhysician: physicianId !== undefined ? physicianId : patient.primaryPhysician,
-      emergencyContact: emergencyContact !== undefined ? emergencyContact : patient.emergencyContact,
+      emergencyContact:
+        emergencyContact !== undefined
+          ? Object.keys(emergencyContact).length === 0
+            ? null // Set to null if empty object is sent
+            : emergencyContact
+          : patient.emergencyContact,
     };
 
     // Check if there are any changes
-    const hasChanges = Object.keys(updatedData).some(
-      (key) => JSON.stringify(updatedData[key]) !== JSON.stringify(patient[key])
-    );
+    const hasChanges = Object.keys(updatedData).some((key) => {
+      const newValue = updatedData[key];
+      const oldValue = patient[key];
+      if (key === "emergencyContact") {
+        if (newValue === null && !oldValue) return false; // Both null/undefined, no change
+        if (newValue === null && oldValue) return true; // Clearing emergencyContact
+        if (!newValue && oldValue) return true; // Undefined new vs existing old
+        if (newValue && !oldValue) return true; // New value vs no old value
+        return JSON.stringify(newValue) !== JSON.stringify(oldValue); // Deep compare
+      }
+      return JSON.stringify(newValue) !== JSON.stringify(oldValue);
+    });
+
     if (!hasChanges) {
       return res.status(200).json({
         message: "No changes have been made",
@@ -1013,13 +1138,31 @@ const updateMedicalHistory = async (req, res) => {
         message: "Record not found",
       });
     }
-    record.condition = req.body.condition ? validator.escape(req.body.condition) : record.condition;
-    record.diagnosedAt = req.body.diagnosedAt && isValidDate(req.body.diagnosedAt) ? new Date(req.body.diagnosedAt) : record.diagnosedAt;
-    record.notes = req.body.notes ? validator.escape(req.body.notes) : record.notes;
-    record.isChronicCondition = req.body.isChronicCondition === "true" ? true : record.isChronicCondition;
+
+    // Store original record data for comparison
+    const originalData = {
+      condition: record.condition,
+      diagnosedAt: record.diagnosedAt ? record.diagnosedAt.toISOString() : null,
+      notes: record.notes,
+      isChronicCondition: record.isChronicCondition,
+      medications: JSON.stringify(record.medications || []),
+      filePaths: JSON.stringify(record.filePaths || []),
+    };
+
+    // Prepare updated record data
+    const updatedRecord = {
+      condition: req.body.condition ? validator.escape(req.body.condition) : record.condition,
+      diagnosedAt: req.body.diagnosedAt && isValidDate(req.body.diagnosedAt) ? new Date(req.body.diagnosedAt) : record.diagnosedAt,
+      notes: req.body.notes ? validator.escape(req.body.notes) : record.notes,
+      isChronicCondition: req.body.isChronicCondition === "true" ? true : record.isChronicCondition,
+      medications: record.medications || [],
+      filePaths: [...record.filePaths],
+    };
+
+    // Handle medications
     if (req.body.medications) {
       try {
-        record.medications = JSON.parse(req.body.medications);
+        updatedRecord.medications = JSON.parse(req.body.medications);
       } catch {
         return res.status(400).json({
           errorCode: "INVALID_JSON",
@@ -1027,6 +1170,8 @@ const updateMedicalHistory = async (req, res) => {
         });
       }
     }
+
+    // Handle file removals
     if (req.body.filesToRemove) {
       let filesToRemove;
       try {
@@ -1038,17 +1183,50 @@ const updateMedicalHistory = async (req, res) => {
           message: "Invalid JSON format for filesToRemove",
         });
       }
-      const originalFilePaths = [...record.filePaths];
-      record.filePaths = record.filePaths.filter((path) => !filesToRemove.includes(path));
+      const originalFilePaths = [...updatedRecord.filePaths];
+      updatedRecord.filePaths = updatedRecord.filePaths.filter((path) => !filesToRemove.includes(path));
       try {
         await Promise.all(filesToRemove.map(deleteFileFromS3));
       } catch (s3Error) {
-        record.filePaths = originalFilePaths; // Rollback on failure
+        updatedRecord.filePaths = originalFilePaths; // Rollback on failure
         throw s3Error;
       }
     }
+
+    // Handle new file uploads
     const newFilePaths = await Promise.all(files.map((f) => uploadFileToS3(f, patientId)));
-    record.filePaths.push(...newFilePaths);
+    updatedRecord.filePaths.push(...newFilePaths);
+
+    // Normalize updated data for comparison
+    const updatedData = {
+      condition: updatedRecord.condition,
+      diagnosedAt: updatedRecord.diagnosedAt ? updatedRecord.diagnosedAt.toISOString() : null,
+      notes: updatedRecord.notes,
+      isChronicCondition: updatedRecord.isChronicCondition,
+      medications: JSON.stringify(updatedRecord.medications),
+      filePaths: JSON.stringify(updatedRecord.filePaths),
+    };
+
+    // Check if there are any changes
+    const hasChanges = Object.keys(updatedData).some(
+      (key) => updatedData[key] !== originalData[key]
+    );
+
+    if (!hasChanges) {
+      return res.status(200).json({
+        message: "No changes have been made",
+        data: { medicalHistory: record },
+      });
+    }
+
+    // Apply updates to the record
+    record.condition = updatedRecord.condition;
+    record.diagnosedAt = updatedRecord.diagnosedAt;
+    record.notes = updatedRecord.notes;
+    record.isChronicCondition = updatedRecord.isChronicCondition;
+    record.medications = updatedRecord.medications;
+    record.filePaths = updatedRecord.filePaths;
+
     await patient.save();
     res.status(200).json({
       message: "Record updated successfully",
