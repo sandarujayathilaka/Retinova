@@ -14,6 +14,8 @@ const {
   updateAdmin,
   deleteAdmin,
 } = require("../controllers/user.controller");
+const { requireAuth } = require("../middleware/require-auth");
+const { ROLES } = require("../constants/roles");
 
 router.post("/signup", signUp);
 router.post("/signin", signIn);
@@ -24,10 +26,10 @@ router.post("/request-password-reset-link", requestPasswordResetLink);
 
 router.get("/user/:id", getUser);
 
-router.post("/admins", addAdmin);
-router.get("/admins", getAdmins);
-router.get("/admins/:id", getAdminById);
-router.put("/admins/:id", updateAdmin);
-router.delete("/admins/:id", deleteAdmin);
+router.post("/admins", requireAuth([ROLES.ADMIN]), addAdmin);
+router.get("/admins", requireAuth([ROLES.ADMIN]), getAdmins);
+router.get("/admins/:id", requireAuth([ROLES.ADMIN]), getAdminById);
+router.put("/admins/:id", requireAuth([ROLES.ADMIN]), updateAdmin);
+router.delete("/admins/:id", requireAuth([ROLES.ADMIN]), deleteAdmin);
 
 module.exports = router;
