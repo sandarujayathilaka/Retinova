@@ -12,30 +12,95 @@ import {
   SafeAreaView,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
+import { useRequestPasswordResetLink } from "@/services/auth.service";
+import { z } from "zod";
+
+// Define a validation schema with Zod
+const emailSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
+
+type ValidationError = {
+  email?: string;
+};
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<ValidationError>({});
+  const [touched, setTouched] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  // Use the password reset link request mutation
+  const resetLinkMutation = useRequestPasswordResetLink();
+  const isLoading = resetLinkMutation.isPending;
+
+  // Validate email function
+  const validateEmail = (value: string): boolean => {
+    try {
+      emailSchema.parse({ email: value });
+      setError({});
+      return true;
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        const errorMessage = validationError.errors[0]?.message;
+        setError({ email: errorMessage });
+      }
+      return false;
+    }
+  };
+
+  // Handle email field blur
+  const handleBlur = () => {
+    setTouched(true);
+    validateEmail(email);
+  };
+
+  // Clear any API errors when email changes
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    setApiError(null);
+    if (touched) validateEmail(text);
+  };
 
   const handleResetPassword = () => {
     if (!email) return;
 
-    setIsLoading(true);
-    // Simulate password reset request
-    setTimeout(() => {
-      setIsLoading(false);
-      setResetSent(true);
-    }, 1500);
-  };
+    // Clear any previous API errors
+    setApiError(null);
 
-  const goBack = () => {
-    // Navigate back to login screen
-    router.back();
+    // Validate email before submitting
+    if (!validateEmail(email)) {
+      Alert.alert("Validation Error", "Please enter a valid email address.");
+      return;
+    }
+
+    resetLinkMutation.mutate(email, {
+      onSuccess: (response) => {
+        // Set reset sent to true on successful API call
+        setResetSent(true);
+      },
+      onError: (error: any) => {
+        console.log(error);
+        // Get error message from API response
+        const errorMessage =
+          error.response?.data?.error ||
+          "Failed to send reset link. Please try again.";
+
+        // Handle specific error cases with nice UI
+        if (errorMessage === "Email not found") {
+          setApiError(errorMessage);
+        } else {
+          // For other errors, use Alert
+          Alert.alert("Error", errorMessage);
+        }
+      },
+    });
   };
 
   return (
@@ -48,18 +113,14 @@ export default function ForgotPasswordScreen() {
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
             className="flex-1 px-5"
-            contentContainerClassName="py-10 flex-grow justify-center"
+            contentContainerStyle={{
+              paddingVertical: 40,
+              flexGrow: 1,
+              justifyContent: "center",
+            }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Back Button */}
-            <TouchableOpacity
-              onPress={goBack}
-              className="absolute top-0 left-0 p-4 z-10"
-            >
-              <Ionicons name="arrow-back" size={24} color="#4A5568" />
-            </TouchableOpacity>
-
             {/* Logo and App Name */}
             <View className="items-center mb-8">
               <Image
@@ -107,7 +168,14 @@ export default function ForgotPasswordScreen() {
                       </Text>
                     </TouchableOpacity>
                   </Link>
-                  <TouchableOpacity onPress={() => setResetSent(false)}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setResetSent(false);
+                      setEmail("");
+                      setTouched(false);
+                      setApiError(null);
+                    }}
+                  >
                     <Text className="text-blue-500 text-sm">
                       Try another email
                     </Text>
@@ -115,29 +183,72 @@ export default function ForgotPasswordScreen() {
                 </View>
               ) : (
                 <>
-                  {/* Email Input */}
-                  <View className="flex-row items-center border border-gray-200 rounded-xl mb-6 bg-gray-50">
-                    <View className="p-3">
-                      <Ionicons name="mail-outline" size={22} color="#4A5568" />
+                  {/* API Error Message */}
+                  {apiError && (
+                    <View className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <View className="flex-row items-center">
+                        <Ionicons
+                          name="alert-circle"
+                          size={20}
+                          color="#EF4444"
+                        />
+                        <Text className="text-red-600 font-medium ml-2">
+                          Email Not Found
+                        </Text>
+                      </View>
+                      <Text className="text-gray-600 text-sm mt-2">
+                        Please try another email.
+                      </Text>
                     </View>
-                    <TextInput
-                      className="flex-1 py-3 text-base text-gray-800"
-                      placeholder="Email Address"
-                      placeholderTextColor="#A0AEC0"
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      value={email}
-                      onChangeText={setEmail}
-                    />
+                  )}
+
+                  {/* Email Input with Validation */}
+                  <View>
+                    <View
+                      className={`flex-row items-center border ${
+                        (error.email && touched) || apiError
+                          ? "border-red-500"
+                          : "border-gray-200"
+                      } rounded-xl mb-1 bg-gray-50`}
+                    >
+                      <View className="p-3">
+                        <Ionicons
+                          name="mail-outline"
+                          size={22}
+                          color={
+                            (error.email && touched) || apiError
+                              ? "#EF4444"
+                              : "#4A5568"
+                          }
+                        />
+                      </View>
+                      <TextInput
+                        className="flex-1 py-3 text-base text-gray-800"
+                        placeholder="Email Address"
+                        placeholderTextColor="#A0AEC0"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        value={email}
+                        onChangeText={handleEmailChange}
+                        onBlur={handleBlur}
+                      />
+                    </View>
+                    {error.email && touched && !apiError && (
+                      <Text className="text-red-500 text-xs ml-2 mb-4">
+                        {error.email}
+                      </Text>
+                    )}
                   </View>
 
                   {/* Submit Button */}
                   <TouchableOpacity
-                    className={`rounded-xl py-4 items-center ${
-                      !email ? "bg-gray-400" : "bg-blue-600"
+                    className={`rounded-xl py-4 items-center mt-4 ${
+                      !email || (touched && error.email)
+                        ? "bg-gray-400"
+                        : "bg-blue-600"
                     }`}
                     onPress={handleResetPassword}
-                    disabled={!email || isLoading}
+                    disabled={!email || isLoading || (touched && !!error.email)}
                   >
                     {isLoading ? (
                       <ActivityIndicator color="#FFFFFF" />
