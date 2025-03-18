@@ -6,7 +6,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -15,14 +15,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
-
+import { Card, CardContent } from "@/components/ui/card";
 import { useAddAdmin, useGetAdminById, useUpdateAdmin } from "@/services/admin.service";
 import { useDeleteImage, useUploadImage } from "@/services/util.service";
-import { Loader2, Mail, PlusIcon } from "lucide-react";
+import { Loader2, Mail, PlusIcon, Upload, Trash2, UserCog } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { PushSpinner } from "react-spinners-kit";
 
 export const adminSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -30,20 +30,19 @@ export const adminSchema = z.object({
   image: z.object({
     Location: z
       .string()
-      .min(10, { message: "Please upload an image" }) // Image URL is required
-      .url({ message: "Invalid image URL" }), // Check if it's a valid URL
+      .min(10, { message: "Please upload an image" })
+      .url({ message: "Invalid image URL" }),
     Key: z.string().optional(),
   }),
 });
 
 function AdminForm({ mode = "add", adminId = null, trigger, open, onOpenChange }) {
-  const [isOpen, setIsOpen] = useState(false); // Track the dialog state
+  const [isOpen, setIsOpen] = useState(false);
 
   // Fetch admin data if in edit mode
   const { data: admin, isLoading } = useGetAdminById(adminId, {
     enabled: mode === "edit" && Boolean(adminId) && (mode === "edit" ? open : isOpen),
   });
-  console.log("admin", admin);
 
   // Create a form instance
   const form = useForm({
@@ -60,7 +59,7 @@ function AdminForm({ mode = "add", adminId = null, trigger, open, onOpenChange }
     register,
     setValue,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = form;
 
   const mutationAdd = useAddAdmin();
@@ -80,17 +79,17 @@ function AdminForm({ mode = "add", adminId = null, trigger, open, onOpenChange }
   const mutationDelete = useDeleteImage();
 
   const inputRef = useRef(null);
-  const [loading, setLoading] = useState(false); // Track loading state
+  const [loading, setLoading] = useState(false);
 
   const handleUpload = event => {
     const file = event.target.files[0];
     if (file) {
-      setLoading(true); // Start loading
+      setLoading(true);
       mutationUpload.mutate(file, {
         onSuccess: data => {
-          setLoading(false); // Stop loading
-          setValue("image", data.data); // Save uploaded image
-          event.target.value = ""; // Reset the input value
+          setLoading(false);
+          setValue("image", data.data);
+          event.target.value = "";
         },
         onError: error => {
           setLoading(false);
@@ -103,7 +102,6 @@ function AdminForm({ mode = "add", adminId = null, trigger, open, onOpenChange }
 
   const handleDelete = () => {
     const imageKey = watch("image.Key");
-    console.log(imageKey);
     if (!imageKey) return;
 
     mutationDelete.mutate(
@@ -126,17 +124,13 @@ function AdminForm({ mode = "add", adminId = null, trigger, open, onOpenChange }
 
   // Handle form submission
   const onSubmit = values => {
-    // Get complete form data
     const formData = form.getValues();
 
-    // Choose operation based on mode
     if (mode === "edit" && adminId) {
-      // Update existing admin
       mutationUpdate.mutate(
         { id: adminId, data: formData },
         {
           onSuccess: data => {
-            console.log("Admin updated successfully:", data);
             handleReset();
             toast.success("Admin updated successfully!");
             onOpenChange(false);
@@ -148,10 +142,8 @@ function AdminForm({ mode = "add", adminId = null, trigger, open, onOpenChange }
         },
       );
     } else {
-      // Add new admin
       mutationAdd.mutate(formData, {
         onSuccess: data => {
-          console.log("Admin added successfully:", data);
           handleReset();
           toast.success("Admin added successfully!");
           setIsOpen(false);
@@ -176,14 +168,12 @@ function AdminForm({ mode = "add", adminId = null, trigger, open, onOpenChange }
   }, [admin, isLoading, form, mode, open]);
 
   const handleDemo = () => {
-    // Set random type, name, specialist, phone, email, and address
     const formValues = {
       name: `${["Smith", "Jones", "Taylor", "Brown", "Williams"][Math.floor(Math.random() * 5)]}`,
       email: `test${Math.floor(Math.random() * 10000)}@example.com`,
       image: { Location: "", Key: "" },
     };
 
-    // Update the form with random values
     form.reset(formValues);
   };
 
@@ -195,159 +185,210 @@ function AdminForm({ mode = "add", adminId = null, trigger, open, onOpenChange }
       <DialogTrigger asChild>
         {trigger ||
           (mode === "add" && (
-            <Button variant="primary">
-              <PlusIcon />
+            <Button variant="default" className="bg-blue-600 hover:bg-blue-700">
+              <PlusIcon className="mr-1 h-4 w-4" />
               Add Admin
             </Button>
           ))}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{mode === "edit" ? "Edit admin" : "Add new admin"}</DialogTitle>
+          <DialogTitle className="flex items-center text-xl font-semibold text-blue-700">
+            <UserCog className="mr-2 h-5 w-5" />
+            {mode === "edit" ? "Edit Administrator" : "Add New Administrator"}
+          </DialogTitle>
+          <DialogDescription>
+            {mode === "edit"
+              ? "Update the administrator details below."
+              : "Fill in the details to add a new administrator to the system."}
+          </DialogDescription>
         </DialogHeader>
 
         {isLoading && mode === "edit" ? (
-          <div className="flex items-center justify-center h-32">
-            <PushSpinner size={30} color="#3B82F6" />
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <span className="ml-3 text-slate-600">Loading administrator data...</span>
           </div>
         ) : (
           <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-6 p-6 border rounded-lg w-[450px]"
-            >
-              <div className="space-y-4">
-                <div className="space-y-4 text-start">
-                  <div>
-                    <div className="gap-3 flex items-center">
-                      <Avatar className="size-14 ">
-                        <AvatarImage
-                          src={
-                            watch("image.Location") ||
-                            "https://static.vecteezy.com/system/resources/previews/003/337/584/large_2x/default-avatar-photo-placeholder-profile-icon-vector.jpg"
-                          }
-                          alt="Staff Avatar"
-                          className={` ${loading ? "opacity-50" : ""}`} // Reduce opacity when loading
-                        />
-                        {loading && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-full">
-                            <Loader2 className="animate-spin text-main size-8" />
-                          </div>
-                        )}
-                      </Avatar>
-                      <div className="flex flex-col justify-between gap-1">
-                        <div className="flex gap-2 items-center">
-                          <input
-                            type="file"
-                            hidden
-                            ref={inputRef} // Attach the ref to the input
-                            onChange={handleUpload}
-                          />
-                          <Button
-                            variant="ghost2"
-                            onClick={e => {
-                              e.preventDefault();
-                              inputRef.current.click();
-                            }}
-                            className="text-main"
-                          >
-                            Upload Photo
-                          </Button>
-                          <Separator orientation="vertical" className="min-h-6 w-[1.5px]" />
-                          <Button
-                            variant="ghost2"
-                            className="text-destructive"
-                            onClick={e => {
-                              e.preventDefault();
-                              handleDelete();
-                            }}
-                            disabled={!watch("image.Key")}
-                          >
-                            Delete
-                          </Button>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Card className="border-slate-200">
+                <CardContent className="pt-6">
+                  <div className="space-y-6">
+                    {/* Avatar Section */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-slate-700">Profile Photo</label>
+                      <div className="flex items-start gap-4">
+                        <div className="relative">
+                          <Avatar className="h-16 w-16 border-2 border-slate-200">
+                            <AvatarImage
+                              src={
+                                watch("image.Location") ||
+                                "https://static.vecteezy.com/system/resources/previews/003/337/584/large_2x/default-avatar-photo-placeholder-profile-icon-vector.jpg"
+                              }
+                              alt="Admin Avatar"
+                              className={loading ? "opacity-50" : ""}
+                            />
+                            {loading && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-full">
+                                <Loader2 className="animate-spin text-blue-600 h-8 w-8" />
+                              </div>
+                            )}
+                          </Avatar>
                         </div>
-                        <p className="text-xs text-slate-500 ml-4">
-                          An image of the person, it's best if it has the same height and width.
-                        </p>
+
+                        <div className="flex-1 space-y-2">
+                          <div className="flex gap-2">
+                            <input
+                              type="file"
+                              hidden
+                              ref={inputRef}
+                              onChange={handleUpload}
+                              accept="image/*"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={e => {
+                                e.preventDefault();
+                                inputRef.current.click();
+                              }}
+                              className="h-8 px-2 text-blue-700"
+                            >
+                              <Upload className="mr-1 h-3.5 w-3.5" />
+                              Upload
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={e => {
+                                e.preventDefault();
+                                handleDelete();
+                              }}
+                              disabled={!watch("image.Key")}
+                              className="h-8 px-2 text-red-700"
+                            >
+                              <Trash2 className="mr-1 h-3.5 w-3.5" />
+                              Remove
+                            </Button>
+                          </div>
+                          <p className="text-xs text-slate-500">
+                            Upload a square profile photo (JPG or PNG, max 2MB)
+                          </p>
+                          {errors.image?.Location && (
+                            <p className="text-xs text-red-600 font-medium mt-1">
+                              {errors.image.Location.message}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    {errors.image?.Location && (
-                      <span className="text-sm text-destructive">
-                        {errors.image.Location.message}
-                      </span>
-                    )}
-                  </div>
 
-                  <div className="space-y-2">
-                    <label
-                      htmlFor={`name-field`}
-                      className="block text-sm font-medium text-primary"
-                    >
-                      Name
-                    </label>
-                    <Input
-                      id="name-field"
-                      {...register("name")}
-                      className="block w-full p-2 border rounded-md"
-                    />
-                    {errors.name && (
-                      <span className="text-sm text-destructive">{errors.name.message}</span>
-                    )}
-                  </div>
+                    <Separator />
 
-                  <div className="space-y-2">
-                    <label htmlFor="email-field" className="block text-sm font-medium text-primary">
-                      Email Address
-                    </label>
-                    <Input
-                      id="email-field"
-                      {...register("email")}
-                      className="block w-full p-2 border rounded-md"
-                      readOnly={mode === "edit"}
-                    />
-                    {errors.email && (
-                      <span className="text-sm text-destructive">{errors.email.message}</span>
-                    )}
-                  </div>
-                </div>
+                    {/* Name Field */}
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="name-field"
+                        className="block text-sm font-medium text-slate-700"
+                      >
+                        Full Name
+                      </label>
+                      <Input
+                        id="name-field"
+                        {...register("name")}
+                        placeholder="Enter administrator name"
+                        className={`${errors.name ? "border-red-300 focus-visible:ring-red-400" : ""}`}
+                      />
+                      {errors.name && (
+                        <p className="text-xs text-red-600 font-medium mt-1">
+                          {errors.name.message}
+                        </p>
+                      )}
+                    </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    {mode === "add" && (
-                      <Button type="button" variant="outline" onClick={handleDemo}>
-                        Demo
-                      </Button>
-                    )}
+                    {/* Email Field */}
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="email-field"
+                        className="block text-sm font-medium text-slate-700"
+                      >
+                        Email Address
+                      </label>
+                      <div className="relative">
+                        <Mail className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                        <Input
+                          id="email-field"
+                          {...register("email")}
+                          placeholder="admin@example.com"
+                          className={`pl-9 ${errors.email ? "border-red-300 focus-visible:ring-red-400" : ""} ${mode === "edit" ? "bg-slate-50" : ""}`}
+                          readOnly={mode === "edit"}
+                        />
+                      </div>
+                      {errors.email && (
+                        <p className="text-xs text-red-600 font-medium mt-1">
+                          {errors.email.message}
+                        </p>
+                      )}
+                      {mode === "edit" && (
+                        <p className="text-xs text-slate-500">
+                          Email addresses cannot be changed after creation.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  {mode === "add" && (
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => {
-                        handleReset();
-                      }}
+                      size="sm"
+                      onClick={handleDemo}
+                      className="text-slate-700"
                     >
-                      Reset
+                      Demo Data
                     </Button>
-                  </div>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReset}
+                    disabled={!isDirty}
+                    className="text-slate-700"
+                  >
+                    Reset
+                  </Button>
+                </div>
 
-                  <div className="flex justify-end gap-4">
-                    <DialogClose asChild>
-                      <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      disabled={mutationAdd.isPending || mutationUpdate.isPending}
-                      className="min-w-[120px]"
-                    >
-                      {mutationAdd.isPending || mutationUpdate.isPending ? (
-                        <Loader2 className="animate-spin size-4" />
-                      ) : mode === "edit" ? (
-                        "Update Admin"
-                      ) : (
-                        "Add Admin"
-                      )}
+                <div className="flex justify-end gap-3">
+                  <DialogClose asChild>
+                    <Button variant="outline" className="border-slate-300">
+                      Cancel
                     </Button>
-                  </div>
+                  </DialogClose>
+                  <Button
+                    type="submit"
+                    disabled={mutationAdd.isPending || mutationUpdate.isPending}
+                    className="bg-blue-600 hover:bg-blue-700 min-w-[100px]"
+                  >
+                    {mutationAdd.isPending || mutationUpdate.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {mode === "edit" ? "Updating..." : "Adding..."}
+                      </>
+                    ) : (
+                      <>{mode === "edit" ? "Update" : "Add Admin"}</>
+                    )}
+                  </Button>
                 </div>
               </div>
             </form>

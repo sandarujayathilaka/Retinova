@@ -13,6 +13,8 @@ const {
   getAdminById,
   updateAdmin,
   deleteAdmin,
+  toggleUserStatus,
+  getAllUsers,
 } = require("../controllers/user.controller");
 const { requireAuth } = require("../middleware/require-auth");
 const { ROLES } = require("../constants/roles");
@@ -31,5 +33,8 @@ router.get("/admins", requireAuth([ROLES.ADMIN]), getAdmins);
 router.get("/admins/:id", requireAuth([ROLES.ADMIN]), getAdminById);
 router.put("/admins/:id", requireAuth([ROLES.ADMIN]), updateAdmin);
 router.delete("/admins/:id", requireAuth([ROLES.ADMIN]), deleteAdmin);
+
+router.get("/users", requireAuth([ROLES.ADMIN]), getAllUsers);
+router.patch("/users/:id/status", requireAuth([ROLES.ADMIN]), toggleUserStatus);
 
 module.exports = router;

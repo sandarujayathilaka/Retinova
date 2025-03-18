@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useRequestPasswordResetLink } from "@/services/auth.service";
-import { AlertCircle, CircleCheckBig } from "lucide-react";
+import { AlertCircle, AtSignIcon, CircleCheckBig } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -55,7 +55,7 @@ export default function ForgotPasswordForm({ className, ...props }) {
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <div>
         <div className="mb-8 flex flex-col gap-4">
-          <div className="text-2xl font-bold">Reset your password</div>
+          <div className="text-2xl font-bold text-blue-950">Reset your password</div>
           <p className="text-sm text-gray-600">
             Enter your email address and we will send you a link to reset your password.
           </p>
@@ -81,32 +81,47 @@ export default function ForgotPasswordForm({ className, ...props }) {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    {/* <FormLabel>Email</FormLabel> */}
+                    <FormLabel className="text-blue-800">Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="Email" {...field} />
+                      <div className="relative">
+                        <AtSignIcon className="absolute left-3 top-3 h-4 w-4 text-blue-500" />
+                        <Input
+                          type="email"
+                          placeholder="Your email address"
+                          className="pl-10 border-blue-200"
+                          {...field}
+                        />
+                      </div>
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-500" />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={requestResetLink.isPending}>
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                disabled={requestResetLink.isPending}
+              >
                 {requestResetLink.isPending ? "Sending..." : "Send password reset email"}
               </Button>
             </form>
           </Form>
 
-          <div className="mt-6 text-center text-sm">
+          <div className="mt-6 text-center text-sm text-blue-800">
             Remember your password?{" "}
-            <Link to="/" className="underline underline-offset-4">
+            <Link
+              to="/"
+              className="font-medium underline underline-offset-4 text-blue-600 hover:text-indigo-600"
+            >
               Log in
             </Link>
           </div>
         </div>
       </div>
-      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
+      {/* <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
         By resetting your password, you agree to our <a href="#">Terms of Service</a> and{" "}
         <a href="#">Privacy Policy</a>.
-      </div>
+      </div> */}
     </div>
   );
 }

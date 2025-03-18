@@ -129,7 +129,7 @@ const resetPassword = async (req, res) => {
   user.passwordChangedAt = new Date(); // Update timestamp
   await user.save();
 
-  res.json({ message: "Password reset successful" });
+  res.json({ message: "Password reset successful", role: user.role });
 };
 
 const requestPasswordResetLink = async (req, res) => {
@@ -271,6 +271,55 @@ const deleteAdmin = async (req, res) => {
   res.status(204).send(admin);
 };
 
+const toggleUserStatus = async (req, res) => {
+  const { id } = req.params; // User ID from URL params
+  const { isActive } = req.body; // Boolean value from request body
+
+  // Validate request body
+  if (typeof isActive !== "boolean") {
+    return res
+      .status(400)
+      .json({ error: "Invalid isActive value. Must be true or false." });
+  }
+
+  console.log("id", id);
+
+  // Find and update the user's status
+  const user = await User.findByIdAndUpdate(
+    id,
+    { isActive },
+    { new: true } // Return updated user with selected fields
+  );
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  res.status(200).json({
+    message: `User ${isActive ? "activated" : "deactivated"} successfully`,
+    user,
+  });
+};
+
+const getAllUsers = async (req, res) => {
+  const users = await User.find().populate("profile", "name image");
+
+  // Transform users with profile overrides
+  const usersWithProfileOverride = users.map((user) => ({
+    id: user.id,
+    name: user.profile?.name || user.name, // Fallback to user's name if no profile
+    image: user.profile?.image,
+    ...user.toObject(),
+    password: undefined,
+    passwordChangedAt: undefined,
+    profile: undefined,
+    __v: undefined,
+    _id: undefined,
+  }));
+
+  res.send(usersWithProfileOverride);
+};
+
 module.exports = {
   signUp,
   signIn,
@@ -283,4 +332,6 @@ module.exports = {
   getAdminById,
   updateAdmin,
   deleteAdmin,
+  toggleUserStatus,
+  getAllUsers,
 };

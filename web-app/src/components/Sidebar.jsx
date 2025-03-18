@@ -14,6 +14,7 @@ import {
   Hospital,
   Shield,
   FlaskConical,
+  Users2,
 } from "lucide-react";
 import { ROLES } from "@/constants/roles"; // Ensure path is correct
 import { FaUserNurse } from "react-icons/fa";
@@ -116,6 +117,13 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
       ],
     },
     {
+      title: "Users",
+      icon: Users2,
+      url: "/users",
+      isExpandable: false,
+      allowedRoles: [ROLES.ADMIN],
+    },
+    {
       title: "Doctors",
       icon: Stethoscope,
       url: "/doctors",
@@ -130,7 +138,7 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
       allowedRoles: [ROLES.ADMIN],
     },
     {
-      title: "Admins",
+      title: "Admin",
       icon: Shield,
       url: "/admins",
       isExpandable: false,
