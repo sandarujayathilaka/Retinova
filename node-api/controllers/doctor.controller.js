@@ -273,7 +273,9 @@ const getDoctorPatientsSummary = async (req, res) => {
             eye: diag.eye,
             confidenceScores: diag.confidenceScores,
             recommend: diag.recommend,
+            
           })),
+          diagnosisDoctor:id,
           patientStatus: patient.patientStatus,
           createdAt: patient.createdAt,
           nextVisit: patient.nextVisit,

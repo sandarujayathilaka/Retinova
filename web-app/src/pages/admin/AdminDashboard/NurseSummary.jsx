@@ -1,83 +1,3 @@
-// import React from "react";
-// import { Card, CardHeader, CardContent } from "@/components/ui/card";
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-// import { Stethoscope } from "lucide-react";
-// import { LiaUserNurseSolid } from "react-icons/lia";
-// const NurseSummary = ({ nurses, nurseFilter, setNurseFilter, className }) => {
-//   const totalNurses = nurses.length;
-//   const nurseTypes = [...new Set(nurses.map((nurse) => nurse.type.toLowerCase()))];
-//   const nurseSpecialties = [...new Set(nurses.map((nurse) => nurse.specialty.toLowerCase()))];
-
-//   return (
-//     <Card className={`shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl ${className}`}>
-//       <CardHeader className="bg-teal-500 text-white py-4">
-//         <div className="text-lg font-semibold flex items-center gap-2">
-//           <LiaUserNurseSolid className="h-5 w-5" /> Nurses
-//         </div>
-//       </CardHeader>
-//       <CardContent className="p-6 flex flex-col flex-grow">
-//         {totalNurses === 0 ? (
-//           <div className="flex justify-center items-center h-full">
-//             <p className="text-2xl font-bold text-teal-600">Total Nurses: 0</p>
-//           </div>
-//         ) : (
-//           <div className="flex flex-col items-center w-full flex-grow">
-//             <Select value={nurseFilter} onValueChange={setNurseFilter}>
-//               <SelectTrigger className="w-[220px] bg-white text-teal-700 mt-2">
-//                 <SelectValue placeholder="Filter Nurses" />
-//               </SelectTrigger>
-//               <SelectContent>
-//                 <SelectItem value="total">Total Nurses</SelectItem>
-//                 <SelectItem value="type">By Type</SelectItem>
-//                 <SelectItem value="specialty">By Specialty</SelectItem>
-//               </SelectContent>
-//             </Select>
-//             <div className="w-full text-teal-600 mt-4 flex flex-col justify-center items-center flex-grow">
-//               {nurseFilter === "total" && (
-//                 <div className="flex justify-center items-center h-full">
-//                   <p className="text-2xl font-bold text-teal-600">Total Nurses: {totalNurses}</p>
-//                 </div>
-//               )}
-//               {nurseFilter === "type" && (
-//                 <div className="text-left w-full mb-4">
-//                   <p className="text-lg font-semibold mb-2">Nurse Types:</p>
-//                   <ul className="list-disc pl-5">
-//                     {nurseTypes.map((type) => {
-//                       const count = nurses.filter((nurse) => nurse.type.toLowerCase() === type).length;
-//                       return (
-//                         <li key={type} className="text-lg">
-//                           {type.charAt(0).toUpperCase() + type.slice(1)}: {count}
-//                         </li>
-//                       );
-//                     })}
-//                   </ul>
-//                 </div>
-//               )}
-//               {nurseFilter === "specialty" && (
-//                 <div className="text-left w-full mb-4">
-//                   <p className="text-lg font-semibold mb-2">Nurse Specialties:</p>
-//                   <ul className="list-disc pl-5">
-//                     {nurseSpecialties.map((specialty) => {
-//                       const count = nurses.filter((nurse) => nurse.specialty.toLowerCase() === specialty).length;
-//                       return (
-//                         <li key={specialty} className="text-lg">
-//                           {specialty.charAt(0).toUpperCase() + specialty.slice(1)}: {count}
-//                         </li>
-//                       );
-//                     })}
-//                   </ul>
-//                 </div>
-//               )}
-//             </div>
-//           </div>
-//         )}
-//       </CardContent>
-//     </Card>
-//   );
-// };
-
-// export default NurseSummary;
-
 import React from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -212,7 +132,7 @@ const NurseSummary = ({ nurses, nurseFilter, setNurseFilter, className }) => {
                         const count = nurses.filter((nurse) => nurse.specialty?.toLowerCase() === specialty).length;
                         const percentage = Math.round((count / totalNurses) * 100);
                         
-                        // Generate a color based on index
+                      
                         const colors = [
                           'bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 
                           'bg-purple-500', 'bg-cyan-500', 'bg-sky-500'

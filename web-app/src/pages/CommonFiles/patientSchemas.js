@@ -1,5 +1,3 @@
-
-// patientSchemas.js
 import { z } from "zod";
 
 export const step1Schema = z.object({

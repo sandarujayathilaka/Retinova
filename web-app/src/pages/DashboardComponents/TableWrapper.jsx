@@ -2,17 +2,7 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-/**
- * Wrapper component for tables
- * 
- * @param {Object} props - Component props
- * @param {React.ReactNode} props.children - Table component
- * @param {string} props.title - Table title
- * @param {React.ReactNode} props.icon - Icon component
- * @param {string} props.className - Additional CSS classes
- * @param {Function} props.onSeeAll - Function to call when "See All" is clicked
- * @param {boolean} props.loading - Whether data is loading
- */
+
 const TableWrapper = ({ 
   children, 
   title, 

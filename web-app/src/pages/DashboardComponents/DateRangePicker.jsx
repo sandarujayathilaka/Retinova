@@ -9,16 +9,7 @@ import {
 } from "@/components/ui/popover";
 import { format } from 'date-fns';
 
-/**
- * Date range picker component for filtering dashboard data
- * 
- * @param {Object} props - Component props
- * @param {Date} props.startDate - Start date
- * @param {Date} props.endDate - End date
- * @param {Function} props.onStartDateChange - Function to call when start date changes
- * @param {Function} props.onEndDateChange - Function to call when end date changes
- * @param {string} props.className - Additional CSS classes
- */
+
 export const DateRangePicker = ({
   startDate,
   endDate,

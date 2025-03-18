@@ -1,12 +1,7 @@
 import React from 'react';
 import { Loader2 } from "lucide-react";
 
-/**
- * Loading state component for dashboards
- * 
- * @param {Object} props - Component props
- * @param {string} props.message - Loading message
- */
+
 export const LoadingState = ({ message = "Loading dashboard..." }) => {
   return (
     <div className="flex justify-center items-center h-screen bg-gray-50">

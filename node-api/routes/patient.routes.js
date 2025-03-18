@@ -29,9 +29,9 @@ router.get("/", getPatientsByStatus);
 router.get("/all-patients", getAllPatients);
 router.get("/count", getPatientCount);
 // router.get("/patients", getAllPatients);
-router.get("/:patientId", getPatient); // Assuming patient ID is passed as a parameter
-router.put("/edit/:patientId", editPatient); // Route for updating a patient
-router.delete("/delete/:patientId", deletePatient); // Route for deleting a patient
+router.get("/:patientId", getPatient); 
+router.put("/edit/:patientId", editPatient);
+router.delete("/delete/:patientId", deletePatient); 
 router.put("/:patientId/revisit", updatePatientRevisit);
 
 router.get("/counts", getPatientCountsForMonth);
@@ -41,7 +41,4 @@ router.post("/:patientId/medical-records", upload.any(), addmedicalHistory);
 router.get("/:patientId/medical-records/:recordId/files", getmedicalHistoryFiles);
 router.put("/:patientId/medical-records/:recordId", upload.any(), updateMedicalHistory);
 router.delete("/:patientId/medical-records/:recordId", deletemedicalHistory);
-// router.post("/:patientId/medical-records", upload.any(), addmedicalHistory);
-// router.get("/:patientId/medical-records/:recordId", getmedicalHistory);
-// router.put("/:patientId/medical-records/:recordId", upload.any(),updatemedicalHistory);
 module.exports = router;

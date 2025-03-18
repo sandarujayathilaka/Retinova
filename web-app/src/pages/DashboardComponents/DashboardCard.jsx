@@ -1,16 +1,7 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
-/**
- * Dashboard card component for encapsulating dashboard sections
- * 
- * @param {Object} props - Component props
- * @param {React.ReactNode} props.children - Card content
- * @param {string} props.title - Card title
- * @param {React.ReactNode} props.icon - Icon component
- * @param {string} props.className - Additional CSS classes
- * @param {string} props.minHeight - Minimum height of the card
- */
+
 export const DashboardCard = ({ 
   children, 
   title, 

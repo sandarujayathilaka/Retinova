@@ -2,14 +2,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { ActivitySquare, Loader2, RefreshCw } from "lucide-react";
 
-/**
- * Dashboard header component with title and refresh button
- * 
- * @param {Object} props - Component props
- * @param {string} props.title - Dashboard title
- * @param {Function} props.onRefresh - Refresh function
- * @param {boolean} props.isRefreshing - Whether data is refreshing
- */
+
 export const DashboardHeader = ({ title, onRefresh, isRefreshing }) => {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">

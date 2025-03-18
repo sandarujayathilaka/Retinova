@@ -20,7 +20,7 @@ const PatientFilters = ({
   setPagination,
   title,
   customClass = "",
-  showStatusFilter = false // New prop to control status filter visibility
+  showStatusFilter = false 
 }) => {
   const handleSearch = (e) => {
     const newSearchTerm = e.target.value;

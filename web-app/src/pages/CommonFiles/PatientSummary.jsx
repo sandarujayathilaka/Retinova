@@ -1,123 +1,3 @@
-// import React from "react";
-// import { Card, CardHeader, CardContent } from "@/components/ui/card";
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-// import { User2 } from "lucide-react";
-
-// const PatientSummary = ({ patients, patientFilter, setPatientFilter, className }) => {
-//   const totalPatients = patients.length;
-//   const diseaseCategories = [...new Set(patients.flatMap((p) => p.category))];
-//   const diseaseStages = [...new Set(patients.flatMap((p) => p.diagnoseHistory.map((d) => d.diagnosis)))];
-//   const patientStatus = [
-//     ...new Set(patients.map((p) => (p.patientStatus ? p.patientStatus.toLowerCase() : "Unknown"))),
-//   ];
-
-//   return (
-//     <Card className={`shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl ${className}`}>
-//       <CardHeader className="bg-teal-500 text-white py-4">
-//         <div className="text-lg font-semibold flex items-center gap-2">
-//           <User2 className="h-5 w-5" /> Patients
-//         </div>
-//       </CardHeader>
-//       <CardContent className="p-6 flex flex-col flex-grow">
-//         {totalPatients === 0 ? (
-//           <div className="flex justify-center items-center h-full">
-//             <p className="text-2xl font-bold text-teal-600">Total Patients: 0</p>
-//           </div>
-//         ) : (
-//           <div className="flex flex-col items-center w-full flex-grow">
-//             <Select value={patientFilter} onValueChange={setPatientFilter}>
-//               <SelectTrigger className="w-[220px] bg-white text-teal-700 mt-2">
-//                 <SelectValue placeholder="Filter Patients" />
-//               </SelectTrigger>
-//               <SelectContent>
-//                 <SelectItem value="total">Total Patients</SelectItem>
-//                 <SelectItem value="stage">By Stages</SelectItem>
-//                 <SelectItem value="category">By Categories</SelectItem>
-//                 <SelectItem value="status">By Status</SelectItem>
-//               </SelectContent>
-//             </Select>
-
-//             <div className="w-full text-teal-600 mt-4 flex flex-col justify-center items-center flex-grow">
-//               {patientFilter === "total" && (
-//                 <div className="flex justify-center items-center h-full">
-//                   <p className="text-2xl font-bold text-teal-600">Total Patients: {totalPatients}</p>
-//                 </div>
-//               )}
-
-//               {patientFilter === "stage" && (
-//                 <div className="text-left w-full mb-4">
-//                   <p className="text-lg font-semibold mb-2">Patient Stages:</p>
-//                   <ul className="list-disc pl-5">
-//                     {diseaseStages.length === 0 ? (
-//                       <li className="text-lg text-gray-500">No stages available</li>
-//                     ) : (
-//                       diseaseStages.map((stage) => {
-//                         const count = patients.filter((p) =>
-//                           p.diagnoseHistory.some((d) => d.diagnosis === stage)
-//                         ).length;
-//                         return (
-//                           <li key={stage} className="text-lg">
-//                             {stage.charAt(0).toUpperCase() + stage.slice(1)}: {count}
-//                           </li>
-//                         );
-//                       })
-//                     )}
-//                   </ul>
-//                 </div>
-//               )}
-
-//               {patientFilter === "category" && (
-//                 <div className="text-left w-full mb-4">
-//                   <p className="text-lg font-semibold mb-2">Disease Categories:</p>
-//                   <ul className="list-disc pl-5">
-//                     {diseaseCategories.length === 0 ? (
-//                       <li className="text-lg text-gray-500">No categories available</li>
-//                     ) : (
-//                       diseaseCategories.map((category) => {
-//                         const count = patients.filter((p) => p.category.includes(category)).length;
-//                         return (
-//                           <li key={category} className="text-lg">
-//                             {category.charAt(0).toUpperCase() + category.slice(1)}: {count}
-//                           </li>
-//                         );
-//                       })
-//                     )}
-//                   </ul>
-//                 </div>
-//               )}
-
-//               {patientFilter === "status" && (
-//                 <div className="text-left w-full mb-4">
-//                   <p className="text-lg font-semibold mb-2">Patient Status:</p>
-//                   <ul className="list-disc pl-5">
-//                     {patientStatus.length === 0 || (patientStatus.length === 1 && patientStatus[0] === "Unknown") ? (
-//                       <li className="text-lg text-gray-500">No status available</li>
-//                     ) : (
-//                       patientStatus.map((status) => {
-//                         if (!status || status === "Unknown") return null;
-//                         const count = patients.filter(
-//                           (p) => p.patientStatus?.toLowerCase() === status
-//                         ).length;
-//                         return (
-//                           <li key={status} className="text-lg">
-//                             {status.charAt(0).toUpperCase() + status.slice(1)}: {count}
-//                           </li>
-//                         );
-//                       })
-//                     )}
-//                   </ul>
-//                 </div>
-//               )}
-//             </div>
-//           </div>
-//         )}
-//       </CardContent>
-//     </Card>
-//   );
-// };
-
-// export default PatientSummary;
-
 import React from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -129,11 +9,11 @@ import {
   Filter, 
   Activity,
   LoaderCircleIcon,
-  // MessageSquareAlert,
+  IdCard,
   ChevronRight
 } from "lucide-react";
 
-const PatientSummary = ({ patients, patientFilter, setPatientFilter, className,doctorId }) => {
+const PatientSummary = ({ patients, patientFilter, setPatientFilter, className, doctorId }) => {
   const totalPatients = patients.length;
   const diseaseCategories = [...new Set(patients.flatMap((p) => p.category))];
   const diseaseStages = [...new Set(patients.flatMap((p) => p.diagnoseHistory.map((d) => d.diagnosis)))];
@@ -141,31 +21,76 @@ const PatientSummary = ({ patients, patientFilter, setPatientFilter, className,d
     ...new Set(patients.map((p) => (p.patientStatus ? p.patientStatus : "Unknown"))),
   ].filter(Boolean);
 
-  // Calculate counts for each status
-  // const statusCounts = {
-  //   "Pre-Monitoring": patients.filter(p => p.patientStatus === "Pre-Monitoring").length,
-  //   "Published": patients.filter(p => p.patientStatus === "Published").length,
-  //   "Review": patients.filter(p => p.patientStatus === "Review").length,
-  //   "Completed": patients.filter(p => p.patientStatus === "Completed").length,
-  //   "Monitoring": patients.filter(p => p.patientStatus === "Monitoring").length
-  // };
+  // Debug: Log the raw patients data and doctorId
+  console.log("Raw patients data:", patients);
+  console.log("doctorId passed to PatientSummary:", doctorId);
+
+
+  const normalizedDoctorId = doctorId ? doctorId.toString() : null;
+
+  // Calculate status counts with conditional doctorId filtering
   const statusCounts = {
-    "Pre-Monitoring": patients.filter(p => 
-      p.patientStatus === "Pre-Monitoring" && (!doctorId || p.doctorId === doctorId)
-    ).length,
-    "Published": patients.filter(p => 
-      p.patientStatus === "Published" && (!doctorId || p.doctorId === doctorId)
-    ).length,
-    "Review": patients.filter(p => 
-      p.patientStatus === "Review" && (!doctorId || p.doctorId === doctorId)
-    ).length,
-    "Completed": patients.filter(p => 
-      p.patientStatus === "Completed" && (!doctorId || p.doctorId === doctorId)
-    ).length,
-    "Monitoring": patients.filter(p => 
-      p.patientStatus === "Monitoring" && (!doctorId || p.doctorId === doctorId)
-    ).length
+    "Pre-Monitoring": patients.filter(p => {
+      const matchesStatus = p.patientStatus === "Pre-Monitoring";
+      const patientDoctorId = p.doctorId ? p.doctorId.toString() : null;
+      const patientDiagnosisDoctor = p.diagnosisDoctor ? p.diagnosisDoctor.toString() : null;
+      const matchesDoctor = !normalizedDoctorId || (patientDoctorId && patientDoctorId === normalizedDoctorId) || 
+                           (patientDiagnosisDoctor && patientDiagnosisDoctor === normalizedDoctorId);
+      const result = matchesStatus && matchesDoctor;
+    
+      return result;
+    }).length,
+    "Published": patients.filter(p => {
+      const matchesStatus = p.patientStatus === "Published";
+      const patientDoctorId = p.doctorId ? p.doctorId.toString() : null;
+      const patientDiagnosisDoctor = p.diagnosisDoctor ? p.diagnosisDoctor.toString() : null;
+      const matchesDoctor = !normalizedDoctorId || (patientDoctorId && patientDoctorId === normalizedDoctorId) || 
+                           (patientDiagnosisDoctor && patientDiagnosisDoctor === normalizedDoctorId);
+      const result = matchesStatus && matchesDoctor;
+    
+      return result;
+    }).length,
+    "Review": patients.filter(p => {
+      const matchesStatus = p.patientStatus === "Review";
+      const patientDoctorId = p.doctorId ? p.doctorId.toString() : null;
+      const matchesDoctor = !normalizedDoctorId || (patientDoctorId && patientDoctorId === normalizedDoctorId);
+      const result = matchesStatus && matchesDoctor;
+    
+      return result;
+    }).length,
+    "Completed": patients.filter(p => {
+      const matchesStatus = p.patientStatus === "Completed";
+      const patientDoctorId = p.doctorId ? p.doctorId.toString() : null;
+      const matchesDoctor = !normalizedDoctorId || (patientDoctorId && patientDoctorId === normalizedDoctorId);
+      const result = matchesStatus && matchesDoctor;
+      
+      return result;
+    }).length,
+    "Monitoring": patients.filter(p => {
+      const matchesStatus = p.patientStatus === "Monitoring";
+      const patientDoctorId = p.doctorId ? p.doctorId.toString() : null;
+      const patientDiagnosisDoctor = p.diagnosisDoctor ? p.diagnosisDoctor.toString() : null;
+      const matchesDoctor = !normalizedDoctorId || (patientDoctorId && patientDoctorId === normalizedDoctorId) || 
+                           (patientDiagnosisDoctor && patientDiagnosisDoctor === normalizedDoctorId);
+      const result = matchesStatus && matchesDoctor;
+   
+      return result;
+    }).length,
+    "New": patients.filter(p => {
+      const matchesStatus = p.patientStatus === "New";
+      const patientDoctorId = p.doctorId ? p.doctorId.toString() : null;
+      const patientDiagnosisDoctor = p.diagnosisDoctor ? p.diagnosisDoctor.toString() : null;
+      const matchesDoctor = !normalizedDoctorId || (patientDoctorId && patientDoctorId === normalizedDoctorId) || 
+                           (patientDiagnosisDoctor && patientDiagnosisDoctor === normalizedDoctorId);
+      const result = matchesStatus && matchesDoctor;
+    
+      return result;
+    }).length
   };
+
+  // Debug: Log the calculated status counts
+  console.log("Calculated statusCounts:", statusCounts);
+
   // Calculate new patients in the last 30 days
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -175,40 +100,28 @@ const PatientSummary = ({ patients, patientFilter, setPatientFilter, className,d
   const today = new Date();
   const nextWeek = new Date();
   nextWeek.setDate(today.getDate() + 7);
-  // const upcomingAppointments = patients.filter(p => 
-  //   p.nextVisit && new Date(p.nextVisit) >= today && new Date(p.nextVisit) <= nextWeek
-  // ).length;
 
-
-// Calculate upcoming appointments with doctorId and patientStatus conditions
-const upcomingAppointments = patients.filter(p => {
-  const hasNextVisit = p.nextVisit && 
-    new Date(p.nextVisit) >= today && 
-    new Date(p.nextVisit) <= nextWeek;
-  
-  const isReviewStatus = p.patientStatus === "Review";
-  
-  const doctorIdCondition = !doctorId || p.doctorId === doctorId;
-  
-
-  return hasNextVisit && isReviewStatus && doctorIdCondition;
-}).length;
-
+  const upcomingAppointments = patients.filter(p => {
+    const hasNextVisit = p.nextVisit && 
+      new Date(p.nextVisit) >= today && 
+      new Date(p.nextVisit) <= nextWeek;
+    const isReviewStatus = p.patientStatus === "Review";
+    const patientDoctorId = p.doctorId ? p.doctorId.toString() : null;
+    const matchesDoctor = !normalizedDoctorId || (patientDoctorId && patientDoctorId === normalizedDoctorId);
+    const result = hasNextVisit && isReviewStatus && matchesDoctor;
+    console.log(`Upcoming check for patient ${p.fullName}: nextVisit=${hasNextVisit}, review=${isReviewStatus}, doctorId=${patientDoctorId}, matchesDoctor=${matchesDoctor}, result=${result}`);
+    return result;
+  }).length;
 
   const getStatusIcon = (status) => {
     switch(status) {
-      case 'Pre-Monitoring':
-        return <ClipboardList className="h-4 w-4 text-blue-500" />;
-      case 'Published':
-        return <LoaderCircleIcon className="h-4 w-4 text-green-500" />;
-      case 'Review':
-        return <Clock className="h-4 w-4 text-amber-500" />;
-      case 'Completed':
-        return <ClipboardCheck className="h-4 w-4 text-indigo-500" />;
-      case 'Monitoring':
-        return <Activity className="h-4 w-4 text-purple-500" />;
-      default:
-        return null;
+      case 'Pre-Monitoring': return <ClipboardList className="h-4 w-4 text-blue-500" />;
+      case 'Published': return <LoaderCircleIcon className="h-4 w-4 text-green-500" />;
+      case 'Review': return <Clock className="h-4 w-4 text-amber-500" />;
+      case 'Completed': return <ClipboardCheck className="h-4 w-4 text-indigo-500" />;
+      case 'Monitoring': return <Activity className="h-4 w-4 text-purple-500" />;
+      case 'New': return <IdCard className="h-4 w-4 text-gray-500" />;  
+      default: return null;
     }
   };
 
@@ -223,7 +136,6 @@ const upcomingAppointments = patients.filter(p => {
     }
   };
 
-console.log(statusCounts["Review"])
   return (
     <Card className={`rounded-xl overflow-hidden bg-white transition-all duration-300 border-none ${className}`}>
       <CardHeader className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white p-4">
@@ -308,7 +220,7 @@ console.log(statusCounts["Review"])
                     <div className="text-center py-4 text-gray-500">No status information available</div>
                   ) : (
                     <div className="space-y-3">
-                      {["Review", "Monitoring", "Pre-Monitoring", "Published", "Completed"].map((status) => {
+                      {["Review", "Monitoring", "Pre-Monitoring", "Published", "Completed", "New"].map((status) => {
                         if (!patientStatus.includes(status)) return null;
                         
                         const count = statusCounts[status];
@@ -353,7 +265,6 @@ console.log(statusCounts["Review"])
                         const count = patients.filter((p) => p.category.includes(category)).length;
                         const percentage = Math.round((count / totalPatients) * 100);
                         
-                        // Determine color based on category
                         let categoryColor;
                         switch(category) {
                           case 'DR': categoryColor = 'bg-blue-500'; break;

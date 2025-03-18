@@ -2,16 +2,7 @@ import React from 'react';
 import { PlusCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
-/**
- * Empty state component for dashboards when no data is available
- * 
- * @param {Object} props - Component props
- * @param {string} props.title - Empty state title
- * @param {string} props.description - Empty state description
- * @param {string} props.buttonText - Text for action button
- * @param {Function} props.buttonAction - Function to call when button is clicked
- * @param {React.ReactNode} props.icon - Icon component
- */
+
 export const EmptyState = ({
   title = "No data available",
   description = "There is no data to display at this time.",

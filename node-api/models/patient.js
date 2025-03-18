@@ -130,6 +130,7 @@ const patientSchema = new mongoose.Schema(
         "Review",
         "Completed",
         "Monitoring",
+        "New"
       ],
       default: "Monitoring",
       index: true,

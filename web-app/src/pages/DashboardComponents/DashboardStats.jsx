@@ -1,12 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 
-/**
- * Component for displaying dashboard statistics
- * 
- * @param {Object} props - Component props
- * @param {Array} props.stats - Array of stat objects
- */
 const DashboardStats = ({ stats = [] }) => {
   if (!stats || stats.length === 0) {
     return null;

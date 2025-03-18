@@ -1,13 +1,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 
-/**
- * Error state component for dashboards
- * 
- * @param {Object} props - Component props
- * @param {string} props.error - Error message
- * @param {Function} props.onRetry - Retry function
- */
+
 export const ErrorState = ({ error, onRetry }) => {
   return (
     <div className="flex justify-center items-center h-screen bg-gray-50">

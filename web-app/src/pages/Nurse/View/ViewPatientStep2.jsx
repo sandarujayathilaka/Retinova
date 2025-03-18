@@ -9,10 +9,9 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { toast } from "react-hot-toast";
 import { step2Schema, validateEmergencyContact } from "../../CommonFiles/patientSchemas";
 import PropTypes from "prop-types";
-import { showErrorToast, showSuccessToast, showNoChangesToast } from "../../utils/toastUtils"; 
+import { showErrorToast, showSuccessToast, showNoChangesToast } from "../../utils/toastUtils";
 
-
-const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitting }) => {
+const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitting, normalizeData }) => {
   const [emergencyContactError, setEmergencyContactError] = useState(null);
   const [allergyFields, setAllergyFields] = useState(
     initialData?.allergies?.length > 0
@@ -59,37 +58,117 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
     onPrevious(currentData);
   };
 
+
+  const validateEmergencyContact = (contact) => {
+    if (!contact) return { valid: true };
+    
+    // Handle null values in the contact object
+    const name = contact.name || "";
+    const relationship = contact.relationship || "";
+    const phone = contact.phone || "";
+    
+    // If relationship is "None", we should treat it as empty
+    if (relationship === "None") {
+      // If any other field is filled, we need all fields filled
+      if (name || phone) {
+        return { 
+          valid: false, 
+          message: "Please fill in all emergency contact fields or leave them all empty."
+        };
+      }
+      return { valid: true }; // All fields empty, valid state
+    }
+    
+    // If any field is filled, all must be filled
+    if (name || relationship || phone) {
+      if (!(name && relationship && phone)) {
+        return {
+          valid: false,
+          message: "Please fill in all emergency contact fields or leave them all empty."
+        };
+      }
+      
+      // Check phone format
+      if (!/^\d{10}$/.test(phone)) {
+        return {
+          valid: false,
+          message: "Emergency contact phone must be a valid 10-digit number."
+        };
+      }
+    }
+    
+    return { valid: true }; // Validation passed
+  };
+
   const handleSubmit = async (data) => {
     try {
       setEmergencyContactError(null);
-      const result = validateEmergencyContact(data.emergencyContact);
-
-      if (!result.valid) {
-        if (result.errors && Object.keys(result.errors).length > 0) {
-          Object.entries(result.errors).forEach(([field, message]) => {
-            form.setError(`emergencyContact.${field}`, { type: "manual", message });
-          });
-          setEmergencyContactError("Please fill in all emergency contact fields or leave them all empty.");
+      
+      // Handle null/undefined values in the form data
+      if (!data.emergencyContact) {
+        data.emergencyContact = { name: "", relationship: "None", phone: "" };
+      }
+      
+      // Validate emergency contact
+      const emergencyValidation = validateEmergencyContact(data.emergencyContact);
+      if (!emergencyValidation.valid) {
+        setEmergencyContactError(emergencyValidation.message);
+        
+        // If validation fails, highlight fields by setting form errors
+        if (data.emergencyContact) {
+          if (!data.emergencyContact.name) {
+            form.setError("emergencyContact.name", {
+              type: "manual",
+              message: "Required if other fields are filled"
+            });
+          }
+          if (!data.emergencyContact.relationship || data.emergencyContact.relationship === "None") {
+            form.setError("emergencyContact.relationship", {
+              type: "manual",
+              message: "Required if other fields are filled"
+            });
+          }
+          if (!data.emergencyContact.phone) {
+            form.setError("emergencyContact.phone", {
+              type: "manual",
+              message: "Required if other fields are filled"
+            });
+          }
         }
+        
         return;
       }
-
-      // If relationship is "None", clear emergency contact data
-      if (data.emergencyContact.relationship === "None") {
-        data.emergencyContact = {};
+      
+      // Process allergies - filter out empty values
+      const cleanedAllergies = data.allergies ? data.allergies.filter(Boolean) : [];
+      
+      // Normalize emergency contact data
+      let emergencyContact = null;
+      if (data.emergencyContact && 
+          data.emergencyContact.relationship && 
+          data.emergencyContact.relationship !== "None" && 
+          data.emergencyContact.name && 
+          data.emergencyContact.phone) {
+        emergencyContact = {
+          name: data.emergencyContact.name,
+          relationship: data.emergencyContact.relationship,
+          phone: data.emergencyContact.phone
+        };
       }
-
-      await onSave(data);
+      
+      // Prepare normalized data for saving
+      const formattedData = {
+        ...data,
+        allergies: cleanedAllergies,
+        emergencyContact: emergencyContact
+      };
+      
+      await onSave(formattedData);
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "An error occurred while saving.";
-     showErrorToast(errorMessage);
-      throw error;
-    }
-  };
-
+      console.error("Error in ViewPatientStep2 handleSubmit:", error);
+      setEmergencyContactError(error.message || "An error occurred");
+    }}
+    
   const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
   const relationships = ["None", "Father", "Mother", "Sister", "Brother", "Son", "Daughter", "Friend", "Relative", "Other"];
 
@@ -390,6 +469,7 @@ ViewPatientStep2.propTypes = {
   onSave: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
   isSubmitting: PropTypes.bool.isRequired,
+  normalizeData: PropTypes.func.isRequired,
 };
 
 export default ViewPatientStep2;

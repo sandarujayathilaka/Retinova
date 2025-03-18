@@ -3,9 +3,9 @@ import { Loader2, FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
-/**
- * Component to show while records are loading
- */
+
+ // Component to show while records are loading
+ 
 export const LoadingState = () => (
   <div className="flex flex-col justify-center items-center h-64">
     <Loader2 className="h-12 w-12 text-indigo-600 animate-spin mb-4" />
@@ -13,9 +13,9 @@ export const LoadingState = () => (
   </div>
 );
 
-/**
- * Component to show when no records exist
- */
+
+//Component to show when no records exist
+
 export const EmptyState = ({ onAddRecord }) => (
   <Card className="p-8 bg-white border border-blue-100 rounded-xl text-center">
     <div className="flex flex-col items-center">
@@ -34,9 +34,9 @@ export const EmptyState = ({ onAddRecord }) => (
   </Card>
 );
 
-/**
- * Component for displaying diagnosis date
- */
+
+// Component for displaying diagnosis date
+
 export const DiagnosisDate = ({ date }) => {
   if (!date) return null;
   
@@ -50,9 +50,9 @@ export const DiagnosisDate = ({ date }) => {
   );
 };
 
-/**
- * Component to display condition type badge
- */
+
+// Component to display condition type badge
+
 export const ConditionTypeBadge = ({ isChronicCondition }) => (
   <Badge 
     className={`${isChronicCondition 
@@ -64,9 +64,9 @@ export const ConditionTypeBadge = ({ isChronicCondition }) => (
   </Badge>
 );
 
-/**
- * Component to display last modified timestamp
- */
+
+// Component to display last modified timestamp
+
 export const LastModified = ({ updatedAt }) => {
   if (!updatedAt) return null;
   
@@ -85,9 +85,9 @@ export const LastModified = ({ updatedAt }) => {
   );
 };
 
-/**
- * Action buttons for records
- */
+
+// Action buttons for records
+
 export const RecordActions = ({ onEdit, onDelete, disabled }) => (
   <div className="flex gap-2">
     <Button

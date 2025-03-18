@@ -22,7 +22,11 @@ const getYears = () => {
   const currentYear = new Date().getFullYear();
   return Array.from({ length: 10 }, (_, i) => (currentYear - i).toString());
 };
-
+const getStage = (disease) => {
+  const upperCaseDisease = disease?.toUpperCase() || '';
+  const normalStages = ['NO_DR', 'NO_AMD', 'NO_GLACOMA', 'NO_RVO'];
+  return normalStages.includes(upperCaseDisease) ? 'NORMAL' : upperCaseDisease;
+};
 export function PatientCategoryChart({ data }) {
   const months = getMonths();
   const years = getYears();
@@ -30,7 +34,7 @@ export function PatientCategoryChart({ data }) {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedCategories, setSelectedCategories] = useState(["all"]);
-  
+  console.log("bar",data)
   const categoryMapping = {
     'PDR': 'DR',
     'NPDR': 'DR',
@@ -41,7 +45,9 @@ export function PatientCategoryChart({ data }) {
     'CRVO': 'RVO',
     'BRVO': 'RVO',
     'NO_DR': 'NORMAL',
-    'NORMAL': 'NORMAL',
+    'NO_AMD': 'NORMAL',
+    'NO_RVO': 'NORMAL',
+    'No_GLACOMA': 'NORMAL',
   };
   
   const defaultCategories = ['AMD', 'DR', 'GLAUCOMA', 'RVO', 'NORMAL'];
@@ -285,12 +291,18 @@ export function DiseaseStageChart({ data }) {
     }
   };
 
+  // Function to map disease stages to NORMAL or keep the original stage
+  const getStage = (disease) => {
+    const upperCaseDisease = disease?.toUpperCase() || '';
+    const normalStages = ['NO_DR', 'NO_AMD', 'NO_GLACOMA', 'NO_RVO'];
+    return normalStages.includes(upperCaseDisease) ? 'NORMAL' : upperCaseDisease;
+  };
+
   const filteredData = data.filter((entry) => {
     const entryDate = new Date(entry.date);
     const entryMonth = entryDate.toLocaleString("en-US", { month: "long" });
     const entryYear = entryDate.getFullYear().toString();
-    // Map 'No_DR' to 'NORMAL' if present, handle case-insensitivity
-    const stage = entry.disease ? (entry.disease.toUpperCase() === 'NO_DR' ? 'NORMAL' : entry.disease.toUpperCase()) : '';
+    const stage = getStage(entry.disease);
 
     const isMonthMatch = selectedMonth && selectedMonth !== "all" ? entryMonth === selectedMonth : true;
     const isYearMatch = entryYear === selectedYear;
@@ -449,8 +461,7 @@ function transformDataStage(rawData, selectedYear, stageOptions) {
   rawData.forEach((entry) => {
     const entryDate = new Date(entry.date);
     const month = entryDate.toLocaleString("en-US", { month: "long" });
-    // Map 'No_DR' to 'NORMAL' if present
-    const stage = entry.disease ? (entry.disease.toUpperCase() === 'NO_DR' ? 'NORMAL' : entry.disease.toUpperCase()) : '';
+    const stage = getStage(entry.disease); // Use the getStage function
     const value = entry.value || 0;
 
     if (groupedData[month] && stageOptions.includes(stage)) {

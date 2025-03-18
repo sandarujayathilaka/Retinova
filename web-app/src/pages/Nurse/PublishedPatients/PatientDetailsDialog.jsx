@@ -9,7 +9,7 @@ import { api } from "../../../services/api.service";
 import { useDebounce } from "../../../hooks/useDebounce";
 import { MdMeetingRoom } from "react-icons/md";
 
-// Create memo-ized sub-components for better performance
+// Memoized sub-components (PatientInfo and DoctorInfo remain unchanged)
 const PatientInfo = memo(({ patient }) => {
   const isContactValid = patient?.contactNumber && /^\+?[\d\s-]{10,}$/.test(patient.contactNumber.replace(/\s|-/g, ""));
   const isEmailValid = patient?.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patient.email);
@@ -20,7 +20,6 @@ const PatientInfo = memo(({ patient }) => {
         <User2 className="h-5 w-5 text-indigo-700" />
         Patient Information
       </h3>
-      
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white p-4 rounded-lg border border-blue-50">
           <h4 className="text-sm font-semibold text-gray-500 mb-1 flex items-center gap-1">
@@ -28,7 +27,6 @@ const PatientInfo = memo(({ patient }) => {
           </h4>
           <p className="text-gray-900 font-medium">{patient?.fullName || "N/A"}</p>
         </div>
-        
         <div className="bg-white p-4 rounded-lg border border-blue-50">
           <h4 className="text-sm font-semibold text-gray-500 mb-1 flex items-center gap-1">
             <Circle className="h-3.5 w-3.5 text-blue-500" /> Gender
@@ -45,14 +43,12 @@ const PatientInfo = memo(({ patient }) => {
             ) : "N/A"}
           </p>
         </div>
-        
         <div className="bg-white p-4 rounded-lg border border-blue-50">
           <h4 className="text-sm font-semibold text-gray-500 mb-1 flex items-center gap-1">
             <IdCard className="h-3.5 w-3.5 text-blue-500" /> NIC
           </h4>
           <p className="text-gray-900 font-medium">{patient?.nic || "N/A"}</p>
         </div>
-        
         <div className="bg-white p-4 rounded-lg border border-blue-50">
           <h4 className="text-sm font-semibold text-gray-500 mb-1 flex items-center gap-1">
             <Phone className="h-3.5 w-3.5 text-blue-500" /> Contact
@@ -71,7 +67,6 @@ const PatientInfo = memo(({ patient }) => {
             )}
           </div>
         </div>
-        
         <div className="bg-white p-4 rounded-lg border border-blue-50">
           <h4 className="text-sm font-semibold text-gray-500 mb-1 flex items-center gap-1">
             <Mail className="h-3.5 w-3.5 text-blue-500" /> Email
@@ -90,27 +85,24 @@ const PatientInfo = memo(({ patient }) => {
             )}
           </div>
         </div>
-        
         <div className="bg-white p-4 rounded-lg border border-blue-50">
           <h4 className="text-sm font-semibold text-gray-500 mb-1 flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5 text-blue-500" /> Address
           </h4>
           <p className="text-gray-900 font-medium">{patient?.address || "N/A"}</p>
         </div>
-
         <div className="bg-white p-4 rounded-lg border border-blue-50">
           <h4 className="text-sm font-semibold text-gray-500 mb-1 flex items-center gap-1">
             <CalendarCheck className="h-3.5 w-3.5 text-blue-500" /> Diagnosed Date
           </h4>
           <p className="text-gray-900 font-medium">{patient?.diagnosisDate || "N/A"}</p>
         </div>
-        
         <div className="bg-white p-4 rounded-lg border border-blue-50">
           <h4 className="text-sm font-semibold text-gray-500 mb-1 flex items-center gap-1">
             <MdMeetingRoom className="h-3.5 w-3.5 text-blue-500" /> Revisit Time Frame
           </h4>
           <p className="text-gray-900 font-medium">{patient?.revisitTimeFrame || "N/A"}</p>
-          </div>
+        </div>
       </div>
     </div>
   );
@@ -145,7 +137,6 @@ const DoctorInfo = memo(({ doctor }) => {
             </p>
           </div>
         </div>
-        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="bg-white p-3 rounded-lg border border-blue-50">
             <p className="text-sm font-medium text-gray-500 mb-1 flex items-center gap-1">
@@ -161,7 +152,6 @@ const DoctorInfo = memo(({ doctor }) => {
                 ))}
             </ul>
           </div>
-          
           <div className="bg-white p-3 rounded-lg border border-blue-50">
             <p className="text-sm font-medium text-gray-500 mb-1 flex items-center gap-1">
               <CalendarCheck className="h-3.5 w-3.5 text-blue-500" /> Days Off
@@ -184,7 +174,6 @@ const DoctorInfo = memo(({ doctor }) => {
   );
 });
 
-
 PatientInfo.displayName = 'PatientInfo';
 DoctorInfo.displayName = 'DoctorInfo';
 
@@ -204,11 +193,9 @@ const PatientDetailsDialog = ({
   const [loading, setLoading] = useState(false);
   const [localSelectedDoctorId, setLocalSelectedDoctorId] = useState(selectedDoctorId || "");
   const [localRevisitDate, setLocalRevisitDate] = useState(revisitDate);
-  const [patientIncluded, setPatientIncluded] = useState({});
   const isSubmitting = useRef(false);
   const lastFetchedRef = useRef(null);
 
-  // Sync local and parent state
   useEffect(() => {
     setLocalSelectedDoctorId(selectedDoctorId || "");
   }, [selectedDoctorId]);
@@ -222,41 +209,26 @@ const PatientDetailsDialog = ({
   }, [localSelectedDoctorId, setSelectedDoctorId]);
 
   useEffect(() => {
-    setRevisitDate(localRevisitDate);
-  }, [localRevisitDate, setRevisitDate]);
-
-  // Reset submission flag on unmount
-  useEffect(() => {
     return () => {
       isSubmitting.current = false;
     };
   }, []);
 
-  // Memoize the doctor label function
   const getDoctorLabel = useCallback((doctor) => {
     if (!doctor || !patient) return `${doctor.name || "N/A"} (${doctor.specialty || "N/A"})`;
-
-    const latestDiagnosis = patient.diagnoseHistory
-      ?.slice()
-      .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))[0];
+    const latestDiagnosis = patient.diagnoseHistory?.slice().sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))[0];
     const isLatest = latestDiagnosis?.doctorId === doctor._id?.toString();
     const isRelated = patient.diagnoseHistory?.some((d) => d.doctorId === doctor._id?.toString());
-
     let label = `${doctor.name || "N/A"} (${doctor.specialty || "N/A"})`;
-    if (isLatest) {
-      label += " - Latest";
-    } else if (isRelated) {
-      label += " - Related";
-    }
+    if (isLatest) label += " - Latest";
+    else if (isRelated) label += " - Related";
     return label;
   }, [patient]);
 
-  // Check if date is disabled for the selected doctor
   const checkDateDisabled = useCallback((date) => {
-    if (!localSelectedDoctorId) return false;
+    if (!localSelectedDoctorId) return true; // Disable all dates if no doctor is selected
     const doctor = doctors.find((d) => d._id?.toString() === localSelectedDoctorId);
-    if (!doctor) return false;
-
+    if (!doctor) return true; // Disable if doctor not found
     const day = date.toLocaleString("en-US", { weekday: "long" });
     const isWorkingDay = !!doctor.workingHours[day];
     const isDayOff = doctor.daysOff?.some((dayOff) => {
@@ -264,75 +236,59 @@ const PatientDetailsDialog = ({
       const end = new Date(dayOff.endDate);
       return date >= start && date <= end;
     }) || false;
-
     return !isWorkingDay || isDayOff;
   }, [localSelectedDoctorId, doctors]);
 
-  // Use debounce for efficient patient count fetching
   const debouncedFetchPatientCount = useDebounce(async (date, doctorId) => {
     if (!date || !doctorId) return;
-
     const dateStr = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())).toISOString().split("T")[0];
     const fetchKey = `${dateStr}-${doctorId}`;
-
     if (lastFetchedRef.current === fetchKey) return;
     lastFetchedRef.current = fetchKey;
-
     try {
       const count = await fetchPatientCountForDate(date, doctorId);
-      setPatientCounts(prev => ({
-        ...prev,
-        [dateStr]: count
-      }));
+      setPatientCounts(prev => ({ ...prev, [dateStr]: count }));
     } catch (error) {
       console.error("Error fetching patient count:", error);
     }
   }, 300);
 
-  // Handle date change
   const handleDateChange = useCallback((date) => {
     if (date && checkDateDisabled(date)) {
       setLocalRevisitDate(null);
+      setRevisitDate(null);
       setPatientCounts({});
     } else {
       setLocalRevisitDate(date);
+      setRevisitDate(date);
       if (date && localSelectedDoctorId) {
         debouncedFetchPatientCount(date, localSelectedDoctorId);
       }
     }
-  }, [localSelectedDoctorId, checkDateDisabled, debouncedFetchPatientCount]);
+  }, [localSelectedDoctorId, checkDateDisabled, debouncedFetchPatientCount, setRevisitDate]);
 
-  // Handle doctor change
   const handleDoctorChange = useCallback((doctorId) => {
     setLocalSelectedDoctorId(doctorId);
     if (localRevisitDate && checkDateDisabled(localRevisitDate)) {
       setLocalRevisitDate(null);
+      setRevisitDate(null);
       setPatientCounts({});
     } else if (localRevisitDate && doctorId) {
       debouncedFetchPatientCount(localRevisitDate, doctorId);
     }
-  }, [localRevisitDate, checkDateDisabled, debouncedFetchPatientCount]);
+  }, [localRevisitDate, checkDateDisabled, debouncedFetchPatientCount, setRevisitDate]);
 
-  // Handle assign revisit
   const handleAssignRevisit = async () => {
-    if (!localSelectedDoctorId || !localRevisitDate) {
-      return;
-    }
-
-    if (isSubmitting.current) {
-      return;
-    }
-
+    if (!localSelectedDoctorId || !localRevisitDate) return;
+    if (isSubmitting.current) return;
     isSubmitting.current = true;
     setLoading(true);
-
     try {
       const normalizedRevisitDate = new Date(Date.UTC(localRevisitDate.getFullYear(), localRevisitDate.getMonth(), localRevisitDate.getDate()));
       const response = await api.put(`/patients/${patient.patientId}/revisit`, {
         doctorId: localSelectedDoctorId,
         revisitDate: normalizedRevisitDate.toISOString(),
       });
-
       onAssignRevisit({ success: true, message: "Revisit date assigned successfully", data: response.data });
     } catch (error) {
       const errorData = error.response?.data || {};
@@ -352,7 +308,6 @@ const PatientDetailsDialog = ({
     }
   };
 
-  // Render day contents with patient count
   const renderDayContents = useCallback((day, date) => {
     const dateStr = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())).toISOString().split("T")[0];
     const count = patientCounts[dateStr] || 0;
@@ -447,7 +402,8 @@ const PatientDetailsDialog = ({
                     filterDate={(date) => !checkDateDisabled(date)}
                     placeholderText="Select a date"
                     renderDayContents={renderDayContents}
-                    disabled={loading}
+                    disabled={loading || !localSelectedDoctorId} // Disable until doctor is selected
+                    shouldCloseOnSelect={true}
                     wrapperClassName="w-full"
                     className="w-full h-12 rounded-xl border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-4"
                   />

@@ -1,14 +1,11 @@
-// hooks/useDashboard.js
+
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { api } from '../services/api.service';
 
-/**
- * Custom hook for handling dashboard data and operations
- * @param {string} type - Dashboard type (doctor or admin)
- * @param {string} id - Entity ID if applicable
- * @returns {Object} Dashboard data and operations
- */
+
+ // Custom hook for handling dashboard data and operations
+
 export function useDashboard(type = 'admin', id = null) {
   // Data states
   const [doctor, setDoctor] = useState(null);
@@ -30,10 +27,9 @@ export function useDashboard(type = 'admin', id = null) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  /**
-   * Fetch dashboard data based on type
-   * @param {boolean} showRefreshing - Whether to show refresh indicator
-   */
+  
+   // Fetch dashboard data based on type
+  
   const fetchData = useCallback(async (showRefreshing = false) => {
     if (showRefreshing) {
       setIsRefreshing(true);
@@ -75,12 +71,12 @@ export function useDashboard(type = 'admin', id = null) {
         // Admin dashboard
         const [doctorsRes, nursesRes, patientsRes] = await Promise.all([
           api.get("/dashboard/doctors?type=summary"),
-          api.get("/dashboard/nurses?type=summary"), // This would be nurses endpoint in production
+          api.get("/dashboard/nurses?type=summary"), 
           api.get("/dashboard/patients?type=summary"),
         ]);
         
         setDoctors(doctorsRes.data.doctors);
-        setNurses(nursesRes.data.nurses); // Using doctors data for nurses temporarily
+        setNurses(nursesRes.data.nurses);
         setPatients(patientsRes.data.patients);
       }
       
@@ -95,10 +91,9 @@ export function useDashboard(type = 'admin', id = null) {
     }
   }, [type, id]);
 
-  /**
-   * Handle API errors
-   * @param {Error} error - The error object
-   */
+
+  // Handle API errors
+ 
   const handleApiError = (error) => {
     if (error.response) {
       const status = error.response.status;
@@ -169,7 +164,7 @@ export function useDashboard(type = 'admin', id = null) {
           const hasNextVisit = p.nextVisit && !isNaN(new Date(p.nextVisit).getTime());
           isNew = diagnoseCount <= 2 && !hasNextVisit;
         } else {
-          // Doctor dashboard logic
+   
           isNew = p.isNew;
         }
         

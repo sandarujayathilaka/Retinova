@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback,useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../../services/api.service";
 import { toast } from "react-hot-toast";
@@ -24,12 +24,16 @@ const MonitoringPatients = () => {
   
   const navigate = useNavigate();
   const [hasShownToast, setHasShownToast] = useState(false);
+  const isFetching = useRef(false); 
 
   // Data fetching with useCallback for memoization
   const fetchMonitoringPatients = useCallback(async (page = 1) => {
+    if (isFetching.current) return; 
+    isFetching.current = true;
+
     try {
       setLoading(true);
-      setHasShownToast(false);
+      setError(null);
       
       const response = await api.get("/patients", {
         params: {
@@ -39,12 +43,13 @@ const MonitoringPatients = () => {
           search: searchTerm || undefined,
           gender: selectedGender === "all" ? undefined : selectedGender,
         },
+        headers: { "Cache-Control": "no-cache" },
       });
       
       if (!response.data || !Array.isArray(response.data.data.patients)) {
         throw new Error("Invalid API response format");
       }
-console.log(response.data)
+
       setPatients(response.data.data.patients);
       setPagination(prev => ({
         currentPage: page,
@@ -53,35 +58,29 @@ console.log(response.data)
         limit: prev.limit,
       }));
       
-      setError(null);
+      setHasShownToast(false);
     } catch (error) {
       console.error("Fetch Error:", error);
       if (!hasShownToast) {
         showErrorToast("Failed to fetch monitoring patients. Please try again.");
-        setError(`Failed to load patients: ${error.message}`);
         setHasShownToast(true);
       }
+      setError(`Failed to load patients: ${error.message}`);
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
-  }, [pagination.limit, searchTerm, selectedGender, hasShownToast]);
+  }, [pagination.limit, searchTerm, selectedGender]);
 
   
   useEffect(() => {
-    let isMounted = true;
-    
-    const fetchData = async () => {
-      if (isMounted) {
-        await fetchMonitoringPatients(pagination.currentPage);
-      }
-    };
-    
-    fetchData();
-    
-    return () => {
-      isMounted = false;
-    };
+    fetchMonitoringPatients(pagination.currentPage);
   }, [pagination.currentPage, fetchMonitoringPatients]);
+
+
+  useEffect(() => {
+    fetchMonitoringPatients(1);
+  }, [searchTerm, selectedGender, fetchMonitoringPatients]);
 
   // Memoize handler functions to prevent unnecessary re-renders
   const handleViewPatient = useCallback((patient) => {
@@ -91,6 +90,7 @@ console.log(response.data)
   
   const handlePageChange = useCallback((newPage) => {
     setPagination(prev => ({ ...prev, currentPage: newPage }));
+    setHasShownToast(false); 
   }, []);
 
   return (
@@ -133,12 +133,6 @@ console.log(response.data)
               customClass="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm mb-6"
             />
             
-            {error ? (
-              <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 flex items-center gap-3 mb-6">
-                <AlertCircle className="h-5 w-5 text-red-500" />
-                <p>{error}</p>
-              </div>
-            ) : null}
             
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <PatientTable

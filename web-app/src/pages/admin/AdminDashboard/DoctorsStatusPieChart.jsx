@@ -1,32 +1,3 @@
-// import React from "react";
-// import { Card, CardHeader, CardContent, CardDescription } from "@/components/ui/card";
-// import { PieChartComponent } from "@/components/ui/pieChart";
-// import { Stethoscope } from "lucide-react";
-// import { FaUserDoctor } from "react-icons/fa6";
-// const DoctorsStatusPieChart = ({ data, config, doctors }) => {
-//   return (
-//     <Card className="shadow-lg rounded-2xl overflow-hidden bg-white transition-all duration-200 hover:shadow-xl">
-//       <CardHeader className="bg-teal-500 text-white py-4">
-//         <div className="text-lg font-semibold flex items-center gap-2">
-//           <Stethoscope className="h-5 w-5" /> Doctors Status
-//         </div>
-//         <CardDescription className="text-teal-100">Online vs Offline</CardDescription>
-//       </CardHeader>
-//       <CardContent className="p-6">
-//         <PieChartComponent
-//           data={data}
-//           config={config}
-//           title=""
-//           description=""
-//           showDatePicker={false}
-//           doctorsData={doctors}
-//         />
-//       </CardContent>
-//     </Card>
-//   );
-// };
-
-// export default DoctorsStatusPieChart;
 
 import React from "react";
 import { Card, CardHeader, CardContent, CardDescription } from "@/components/ui/card";
@@ -50,7 +21,7 @@ const DoctorsStatusPieChart = ({ data, config, doctors }) => {
       </CardHeader>
       <CardContent className="p-4 flex-1 flex flex-col">
         <div className="flex flex-row items-center justify-between gap-4 h-full w-full">
-          {/* Ensure full width for the pie chart container */}
+
           <div className="w-full h-full">
             <PieChartComponent
               data={data}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "../../../services/api.service";
 import { toast } from "react-hot-toast";
 import PatientTable from "../../CommonFiles/PatientTable";
@@ -6,8 +6,8 @@ import PatientFilters from "../../CommonFiles/PatientFilters";
 import PatientDetailsDialog from "./PatientDetailsDialog";
 import PaginationControls from "../../CommonFiles/PaginationControls";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Loader2, Users, AlertCircle } from "lucide-react";
-import { showErrorToast, showSuccessToast, showNoChangesToast } from "../../utils/toastUtils"; 
+import { Loader2, Users } from "lucide-react";
+import { showErrorToast, showSuccessToast } from "../../utils/toastUtils";
 
 const PublishedPatients = () => {
   const [patients, setPatients] = useState([]);
@@ -26,11 +26,17 @@ const PublishedPatients = () => {
   const [selectedDoctorId, setSelectedDoctorId] = useState("");
   const [revisitDate, setRevisitDate] = useState(null);
   const [patientCounts, setPatientCounts] = useState({});
+  const [hasShownToast, setHasShownToast] = useState(false);
+  const isFetching = useRef(false);
 
   const fetchPublishedPatientsAndDoctors = useCallback(
     async (page = 1) => {
+      if (isFetching.current) return; 
+      isFetching.current = true;
+
       try {
         setLoading(true);
+        setError(null);
 
         const patientResponse = await api.get("/patients", {
           params: {
@@ -46,42 +52,44 @@ const PublishedPatients = () => {
           throw new Error("Invalid patient API response format");
         }
 
-        const doctorResponse = await api.get("/doctors/for-revisit");
+        const doctorResponse = await api.get("/doctors/for-revisit", {
+          headers: { "Cache-Control": "no-cache" },
+        });
 
         setPatients(patientResponse.data.data.patients);
-        setPagination({
+        setPagination((prev) => ({
+          ...prev,
           currentPage: page,
           totalPages: patientResponse.data.data.pagination?.totalPages || 1,
           totalPatients: patientResponse.data.data.pagination?.totalPatients || patientResponse.data.data.patients.length,
-          limit: pagination.limit,
-        });
+        }));
         setDoctors(doctorResponse.data.doctors || []);
-        setError(null);
+        setHasShownToast(false);
       } catch (error) {
         console.error("Fetch Error:", error);
+        if (!hasShownToast) {
+          showErrorToast("Failed to load data. Please try again.");
+          setHasShownToast(true);
+        }
         setError(`Failed to load data: ${error.message}`);
       } finally {
         setLoading(false);
+        isFetching.current = false;
       }
     },
     [pagination.limit, searchTerm, selectedGender]
   );
 
+ 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchData = async () => {
-      if (isMounted) {
-        await fetchPublishedPatientsAndDoctors(pagination.currentPage);
-      }
-    };
-
-    fetchData();
-
-    return () => {
-      isMounted = false;
-    };
+    fetchPublishedPatientsAndDoctors(pagination.currentPage);
   }, [pagination.currentPage, fetchPublishedPatientsAndDoctors]);
+
+  
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    fetchPublishedPatientsAndDoctors(1);
+  }, [searchTerm, selectedGender, fetchPublishedPatientsAndDoctors]);
 
   const fetchPatientCountForDate = useCallback(
     async (date, doctorId) => {
@@ -103,8 +111,10 @@ const PublishedPatients = () => {
         return response.data.data.totalCount || 0;
       } catch (error) {
         console.error("Error fetching patient count:", error);
-        showErrorToast(`Error fetching patient count: ${error}`)
-
+        if (!hasShownToast) {
+          showErrorToast(`Error fetching patient count: ${error.message}`);
+          setHasShownToast(true);
+        }
         return 0;
       }
     },
@@ -114,16 +124,15 @@ const PublishedPatients = () => {
   const handleAssignRevisit = useCallback(
     (result) => {
       if (result.error) {
-        showErrorToast(result.error)
+        showErrorToast(result.error);
       } else if (result.success) {
-        showSuccessToast(result.message)
+        showSuccessToast(result.message);
         setPatients((prev) => prev.filter((p) => p.patientId !== selectedPatient.patientId));
         setPagination((prev) => ({
           ...prev,
           totalPatients: prev.totalPatients - 1,
           totalPages: Math.ceil((prev.totalPatients - 1) / prev.limit),
         }));
-
         setSelectedPatient(null);
         setSelectedDoctorId("");
         setRevisitDate(null);
@@ -136,11 +145,9 @@ const PublishedPatients = () => {
   const handleViewPatient = useCallback(
     (patient) => {
       setSelectedPatient(patient);
-
       const latestDiagnosis = patient.diagnoseHistory
         ?.slice()
         .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))[0];
-
       setSelectedDoctorId(latestDiagnosis?.doctorId || "");
       setRevisitDate(null);
       setPatientCounts({});
@@ -150,6 +157,7 @@ const PublishedPatients = () => {
 
   const handlePageChange = useCallback((newPage) => {
     setPagination((prev) => ({ ...prev, currentPage: newPage }));
+    setHasShownToast(false); 
   }, []);
 
   return (
@@ -187,23 +195,16 @@ const PublishedPatients = () => {
               setSearchTerm={setSearchTerm}
               selectedGender={selectedGender}
               setSelectedGender={setSelectedGender}
-              setPagination={(newState) => setPagination((prev) => ({ ...prev, currentPage: 1 }))}
+              setPagination={setPagination}
               title=""
               customClass="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm mb-6"
             />
-
-            {error ? (
-              <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 flex items-center gap-3 mb-6">
-                <AlertCircle className="h-5 w-5 text-red-500" />
-                <p>{error}</p>
-              </div>
-            ) : null}
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <PatientTable
                 patients={patients}
                 loading={loading}
-                error={null}
+                error={error}
                 onViewPatient={handleViewPatient}
                 showStatus={true}
                 showStatusColumn={false}

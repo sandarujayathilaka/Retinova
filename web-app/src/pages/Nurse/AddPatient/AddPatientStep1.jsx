@@ -55,7 +55,7 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
     setAge(calculatedAge);
   };
 
-  // Update form values when initialData changes (e.g., after reset)
+  // Update form values when initialData changes 
   useEffect(() => {
     form.reset({
       fullName: initialData?.fullName || "",
@@ -94,7 +94,7 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
         address: "",
         email: "",
       });
-      setAge(0); // Reset age as well
+      setAge(0); // Reset age
     });
   }, [form, setResetForm]);
 
@@ -107,7 +107,7 @@ export default function AddPatientStep1({ onNext, onSubmit, initialData, step2Da
   const handleSubmit = async (data) => {
     try {
       await onSubmit(data); // Call the parent's onSubmit and wait for it to resolve
-      // Reset will be handled by AddPatientWizard on success
+      
     } catch (error) {
       console.log("Submission failed, form not reset:", error);
     }

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { showErrorToast, showSuccessToast, showNoChangesToast } from "../../utils/toastUtils"; 
 
-// Extract components for better code organization
+
 const MedicationsList = memo(({ medications }) => {
   if (!medications?.length) return null;
 
@@ -104,7 +104,7 @@ const Notes = memo(({ notes }) => {
   );
 });
 
-// Set display names for debugging
+
 MedicationsList.displayName = "MedicationsList";
 Attachments.displayName = "Attachments";
 Notes.displayName = "Notes";
@@ -178,7 +178,7 @@ const RecordItem = ({
       await fetchRecords();
       setEditingRecord(null);
     } catch (error) {
-      // Error handled by toast.promise
+  
     } finally {
       setLocalSaveLoading(false);
     }

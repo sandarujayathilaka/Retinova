@@ -1,13 +1,6 @@
 import React from 'react';
 
-/**
- * Grid layout component for dashboard sections
- * 
- * @param {Object} props - Component props
- * @param {React.ReactNode} props.children - Child components
- * @param {string} props.columns - Grid columns configuration
- * @param {string} props.className - Additional CSS classes
- */
+
 export const GridLayout = ({ 
   children, 
   columns = "grid-cols-1 md:grid-cols-2", 

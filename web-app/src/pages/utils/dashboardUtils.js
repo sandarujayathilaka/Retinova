@@ -12,13 +12,9 @@ export const calculateStatusData = (staff = [], colors = { online: "#34D399", of
     ];
   };
   
-  /**
-   * Calculate patient type data (new vs existing)
-   * 
-   * @param {Array} patients - Array of patients
-   * @param {boolean} isDoctor - Whether calculating for doctor dashboard
-   * @returns {Array} Data formatted for pie chart
-   */
+
+ // Calculate patient type data (new vs existing)
+
   export const calculatePatientTypeData = (patients = [], isDoctor = false) => {
     if (!Array.isArray(patients) || patients.length === 0) {
       return [];
@@ -61,12 +57,9 @@ export const calculateStatusData = (staff = [], colors = { online: "#34D399", of
     }));
   };
   
-  /**
-   * Calculate disease data for charts
-   * 
-   * @param {Array} patients - Array of patients
-   * @returns {Array} Data formatted for bar charts
-   */
+
+// Calculate disease data for charts
+
   export const calculateDiseaseData = (patients = []) => {
     if (!Array.isArray(patients) || patients.length === 0) {
       return [];
@@ -91,12 +84,9 @@ export const calculateStatusData = (staff = [], colors = { online: "#34D399", of
     );
   };
   
-  /**
-   * Calculate condition data for charts
-   * 
-   * @param {Array} patients - Array of patients
-   * @returns {Array} Data formatted for bar charts
-   */
+
+// Calculate condition data for charts
+
   export const calculateConditionData = (patients = []) => {
     if (!Array.isArray(patients) || patients.length === 0) {
       return [];
@@ -121,12 +111,9 @@ export const calculateStatusData = (staff = [], colors = { online: "#34D399", of
     );
   };
   
-  /**
-   * Calculate review patient counts by date
-   * 
-   * @param {Array} patients - Array of patients
-   * @returns {Object} Counts indexed by date
-   */
+
+// Calculate review patient counts by date
+
   export const calculateReviewCounts = (patients = []) => {
     if (!Array.isArray(patients) || patients.length === 0) {
       return {};
@@ -145,12 +132,9 @@ export const calculateStatusData = (staff = [], colors = { online: "#34D399", of
     }, {});
   };
   
-  /**
-   * Group doctors/nurses by specialty for charts
-   * 
-   * @param {Array} staff - Array of staff members (doctors/nurses)
-   * @returns {Object} Grouped data by specialty
-   */
+
+// Group doctors/nurses by specialty for charts
+
   export const groupBySpecialty = (staff = []) => {
     if (!Array.isArray(staff) || staff.length === 0) {
       return {};
@@ -166,12 +150,8 @@ export const calculateStatusData = (staff = [], colors = { online: "#34D399", of
     }, {});
   };
   
-  /**
-   * Format date for consistent display
-   * 
-   * @param {Date|string} date - Date to format
-   * @returns {string} Formatted date
-   */
+
+// Format date for consistent display
   export const formatDate = (date) => {
     if (!date) return "";
     
@@ -188,12 +168,9 @@ export const calculateStatusData = (staff = [], colors = { online: "#34D399", of
     });
   };
   
-  /**
-   * Convert local date to ISO string for API calls
-   * 
-   * @param {Date} date - Date object
-   * @returns {string} ISO date string
-   */
+
+// Convert local date to ISO string for API calls
+
   export const toISODateString = (date) => {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
       return null;

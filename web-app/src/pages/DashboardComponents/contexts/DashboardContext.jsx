@@ -4,14 +4,7 @@ import { useDashboard } from '../../../hooks/useDashboard';
 // Create context
 const DashboardContext = createContext(null);
 
-/**
- * Dashboard context provider for state management across components
- * 
- * @param {Object} props - Component props
- * @param {React.ReactNode} props.children - Child components
- * @param {string} props.dashboardType - Type of dashboard (admin/doctor)
- * @param {string} props.entityId - ID of the entity (doctor) if applicable
- */
+
 export const DashboardProvider = ({ 
   children, 
   dashboardType = 'admin',
@@ -44,7 +37,7 @@ export const DashboardProvider = ({
   
   // Filter data by date range
   const filteredData = useMemo(() => {
-    // This is a placeholder - implement actual filtering logic based on your data structure
+    
     return dashboardData;
   }, [dashboardData, dateRange]);
   
@@ -68,10 +61,7 @@ export const DashboardProvider = ({
   );
 };
 
-/**
- * Custom hook to use the dashboard context
- * @returns {Object} Dashboard context
- */
+
 export const useDashboardContext = () => {
   const context = useContext(DashboardContext);
   
@@ -82,12 +72,7 @@ export const useDashboardContext = () => {
   return context;
 };
 
-/**
- * Higher-order component to wrap dashboard components with context
- * 
- * @param {React.ComponentType} Component - Component to wrap
- * @returns {React.ComponentType} Wrapped component with dashboard context
- */
+
 export const withDashboardContext = (Component) => {
   const WithDashboardContext = (props) => {
     return (

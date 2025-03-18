@@ -12,10 +12,11 @@ const PredictionCard = ({ prediction, imageUrl, isExpanded, toggleExpand, index,
       default: return { color: "gray", icon: null };
     }
   };
+console.log("prediction",prediction)
 
   const { color, icon } = getDiagnosisStyle(prediction.prediction.label);
-  const maxConfidence = Math.max(...prediction.prediction.confidence) * 100;
-
+  const confidence = prediction.prediction.confidence;
+  const maxConfidence = Array.isArray(confidence) ? Math.max(...confidence) * 100 : confidence * 100;
   return (
     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
       <div className={`h-1 bg-${color}-500 -mx-6 -mt-6 mb-6 rounded-t-lg`}></div>

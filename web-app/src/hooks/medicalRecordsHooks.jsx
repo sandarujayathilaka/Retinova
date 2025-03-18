@@ -3,12 +3,9 @@ import { toast } from "react-hot-toast";
 import { api } from "../services/api.service";
 import { FileText } from "lucide-react";
 
-/**
- * Hook for managing medical records
- * 
- * @param {string} patientId - ID of the patient whose records are being managed
- * @returns {object} - Medical record operations and state
- */
+
+// Hook for managing medical records
+
 export function useMedicalRecords(patientId) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -220,12 +217,9 @@ export function useMedicalRecords(patientId) {
   };
 }
 
-/**
- * Hook for managing form state in medical record forms
- * 
- * @param {object} initialRecord - Initial record data
- * @returns {object} - Form state and handlers
- */
+
+//Hook for managing form state in medical record forms
+
 export function useRecordForm(initialRecord = {}) {
   const emptyRecord = {
     condition: "",
@@ -333,12 +327,9 @@ export function useRecordForm(initialRecord = {}) {
   };
 }
 
-/**
- * Hook for managing multiple record forms
- * 
- * @param {array} initialRecords - Initial records data
- * @returns {object} - Forms state and handlers
- */
+
+//Hook for managing multiple record forms
+
 export function useMultipleRecordForms(initialRecords = [{}]) {
   const emptyRecord = {
     condition: "",

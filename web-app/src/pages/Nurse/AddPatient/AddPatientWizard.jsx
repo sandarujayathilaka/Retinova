@@ -20,28 +20,20 @@ export default function AddPatientWizard() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // This is the most aggressive solution - forcibly check the URL on every render
-  // and hide this component if we're not on add-patient
   useEffect(() => {
     const checkPath = () => {
       const currentPath = window.location.pathname;
       if (!currentPath.includes('add-patient')) {
         setShouldRender(false);
-        
-        // EMERGENCY FIX: Try to force the application to show the correct components
-        // by directly manipulating the DOM after a short delay
+    
         setTimeout(() => {
-          // Try to find and remove any hidden add-patient components
           const possibleAddPatientElements = document.querySelectorAll('.bg-white.min-h-screen.p-10, .bg-white.min-h-screen.p-6');
           possibleAddPatientElements.forEach(el => {
-            // Only remove elements that appear to be the add patient form
             if (el.textContent.includes('Register New Patient') || 
                 el.innerHTML.includes('Register New Patient')) {
               el.style.display = 'none';
             }
           });
-          
-          // Force a window resize event to trigger any responsive layouts to update
           window.dispatchEvent(new Event('resize'));
         }, 50);
       } else {
@@ -49,17 +41,9 @@ export default function AddPatientWizard() {
       }
     };
     
-    // Check immediately
     checkPath();
-    
-    // Also set up a periodic check while we're mounted
     const intervalId = setInterval(checkPath, 100);
-    
-    // Listen for navigation events
-    const handleNavigation = () => {
-      checkPath();
-    };
-    
+    const handleNavigation = () => checkPath();
     window.addEventListener('popstate', handleNavigation);
     
     return () => {
@@ -94,65 +78,55 @@ export default function AddPatientWizard() {
     setStep(2);
   }, []);
 
-    const handleStep1Submit = async (data) => {
-      setIsSubmitting(true);
-      setFormErrors({});
-      try {
-        const formattedData = {
-          ...data,
-          ...step2Data,
-          height: step2Data?.height ? Number(step2Data.height) : undefined,
-          weight: step2Data?.weight ? Number(step2Data.weight) : undefined,
-          allergies: step2Data?.allergies?.length > 0 ? step2Data.allergies : undefined,
-          emergencyContact: step2Data?.emergencyContact?.name ? step2Data.emergencyContact : undefined,
-        };
+  const handleStep1Submit = async (data) => {
+    setIsSubmitting(true);
+    setFormErrors({});
+    try {
+      const formattedData = {
+        ...data,
+        ...step2Data,
+        height: step2Data?.height ? Number(step2Data.height) : undefined,
+        weight: step2Data?.weight ? Number(step2Data.weight) : undefined,
+        allergies: step2Data?.allergies?.length > 0 ? step2Data.allergies : undefined,
+        emergencyContact: step2Data?.emergencyContact?.name ? step2Data.emergencyContact : undefined,
+      };
   
-        const response = await api.post("/patients/add", formattedData);
-        await toast.promise(response, {
-          loading: "Saving patient...",
-          success: (response) => {
-            showSuccessToast("Patient registered successfully!"); // Use utility
-            return null; // Prevent default success toast
-          },
-          error: (error) => {
-            const errorMessage = handleError(error);
-            showErrorToast(errorMessage); // Use utility
-            return null; // Prevent default error toast
-          },
-        });
-  
-        resetForm();
-        return response;
-      } catch (error) {
-        if (error.response) {
-          const { errorCode } = error.response.data;
-          if (error.response?.status === 400 && error.response?.data?.errorCode === "VALIDATION_ERROR") {
-            const validationErrors = error.response.data.errors;
-            validationErrors.forEach((err) => {
-              form.setError(err.path, { type: "manual", message: err.message });
-            });
-            showErrorToast("Please correct the validation errors.");
-          }
-          if (errorCode === "DUPLICATE_NIC") {
-            setFormErrors({ nic: "A patient with this NIC already exists." });
-            showErrorToast("A patient with this NIC already exists.");
-          } else if (errorCode === "DUPLICATE_EMAIL") {
-            setFormErrors({ email: "A patient with this email already exists." });
-            showErrorToast("A patient with this email already exists.");
+      await toast.promise(api.post("/patients/add", formattedData), {
+        loading: "Saving patient...",
+        success: (response) => {
+          showSuccessToast("Patient registered successfully!");
+          resetForm();
+          return false; 
+        },
+        error: (error) => {
+          const errorMessage = handleError(error);
+          if (error.response) {
+            const { errorCode, errors } = error.response.data || {};
+            if (errorCode === "DUPLICATE_NIC") {
+              setFormErrors({ nic: "A patient with this NIC already exists." });
+            } else if (errorCode === "DUPLICATE_EMAIL") {
+              setFormErrors({ email: "A patient with this email already exists." });
+            } else if (error.response.status === 400 && errorCode === "VALIDATION_ERROR" && errors) {
+              const validationErrors = errors || [];
+              validationErrors.forEach((err) => {
+                setFormErrors((prev) => ({ ...prev, [err.path]: err.message }));
+              });
+            } else {
+              setFormErrors({ general: "An unexpected error occurred." });
+            }
           } else {
-            setFormErrors({ general: "An unexpected error occurred." });
-            showErrorToast("An unexpected error occurred.");
+            setFormErrors({ general: "No response from the server. Please try again later." });
           }
-        } else {
-          setFormErrors({ general: "No response from the server. Please try again later." });
-          showErrorToast("No response from the server. Please try again later.");
-        }
-        
-        throw error;
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
+          showErrorToast(errorMessage);
+          return false;
+        },
+      });
+    } catch (error) {
+      console.error("Toast promise failed:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleStep2Previous = useCallback((data) => {
     setStep2Data(data);
@@ -171,54 +145,44 @@ export default function AddPatientWizard() {
         allergies: data.allergies?.length > 0 ? data.allergies : undefined,
         emergencyContact: data.emergencyContact?.name ? data.emergencyContact : undefined,
       };
-
-      const response = await api.post("/patients/add", formattedData);
-      await toast.promise(response, {
+  
+      await toast.promise(api.post("/patients/add", formattedData), {
         loading: "Saving patient...",
         success: (response) => {
-          showSuccessToast("Patient registered successfully!"); // Use utility
-          return null; // Prevent default success toast
+          showSuccessToast("Patient registered successfully!");
+          resetForm();
+          return false; 
         },
         error: (error) => {
           const errorMessage = handleError(error);
-          showErrorToast(errorMessage); // Use utility
-          return null; // Prevent default error toast
+          if (error.response) {
+            const { errorCode, errors } = error.response.data || {};
+            if (errorCode === "DUPLICATE_NIC") {
+              setFormErrors({ nic: "A patient with this NIC already exists." });
+            } else if (errorCode === "DUPLICATE_EMAIL") {
+              setFormErrors({ email: "A patient with this email already exists." });
+            } else if (error.response.status === 400 && errorCode === "VALIDATION_ERROR" && errors) {
+              const validationErrors = errors || [];
+              validationErrors.forEach((err) => {
+                setFormErrors((prev) => ({ ...prev, [err.path]: err.message }));
+              });
+            } else {
+              setFormErrors({ general: "An unexpected error occurred." });
+            }
+          } else {
+            setFormErrors({ general: "No response from the server. Please try again later." });
+          }
+          showErrorToast(errorMessage);
+          return false; 
         },
       });
-
-      resetForm();
-      return response;
     } catch (error) {
-      if (error.response) {
-        const { errorCode } = error.response.data;
-        if (errorCode === "DUPLICATE_NIC") {
-          setFormErrors({ nic: "A patient with this NIC already exists." });
-          showErrorToast("A patient with this NIC already exists.");
-        } else if (errorCode === "DUPLICATE_EMAIL") {
-          setFormErrors({ email: "A patient with this email already exists." });
-          showErrorToast("A patient with this email already exists.");
-        } else if (error.response?.status === 400 && errorCode === "VALIDATION_ERROR") {
-          const validationErrors = errors;
-          validationErrors.forEach((err) => {
-            setFormErrors((prev) => ({ ...prev, [err.path]: err.message }));
-          });
-          showErrorToast("Please correct the validation errors.");
-        } else {
-          setFormErrors({ general: "An unexpected error occurred." });
-          showErrorToast("An unexpected error occurred.");
-        }
-      } else {
-        setFormErrors({ general: "No response from the server. Please try again later." });
-        showErrorToast("No response from the server. Please try again later.");
-      }
-      
-      throw error;
+      console.error("Toast promise failed:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // If we're not supposed to render, return null
   if (!shouldRender) {
     return null;
   }
@@ -251,6 +215,4 @@ export default function AddPatientWizard() {
   );
 }
 
-AddPatientWizard.propTypes = {
-  // Add props if any are passed in the future
-};
+AddPatientWizard.propTypes = {};

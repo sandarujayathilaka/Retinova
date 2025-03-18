@@ -368,7 +368,7 @@ export default function AddPatientStep2({ step1Data, initialData, onPrevious, on
           error.response?.data?.error ||
           error.message ||
           "Failed to register patient. Please try again.";
-        showErrorToast(errorMessage);  
+        // showErrorToast(errorMessage);  
         throw error;
       }
     },
