@@ -1089,3 +1089,24 @@ exports.updateTestStatus = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };
+
+// Get a Specific Diagnosis by ID
+exports.getDiagnosisById = async (req, res) => {
+  try {
+    const { patientId, diagnosisId } = req.params;
+    const patient = await Patient.findOne({ patientId });
+
+    if (!patient) return res.status(404).json({ error: "Patient not found" });
+
+    const diagnosis = patient.diagnoseHistory.find(
+      (diag) => diag._id.toString() === diagnosisId
+    );
+
+    if (!diagnosis) return res.status(404).json({ error: "Diagnosis not found" });
+
+    res.json(diagnosis);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};

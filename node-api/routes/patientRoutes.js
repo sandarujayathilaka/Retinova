@@ -14,6 +14,7 @@ const {
   updateDiagnosisRecommendations,
   updateDiagnosisReviewRecommendations,
   updateTestStatus,
+  getDiagnosisById,
 } = require("../controllers/patientController");
 const upload = require("../middleware/upload");
 
@@ -35,6 +36,7 @@ router.put("/:patientId/diagnoses/:diagnosisId/tests/:testId/status", updateTest
 
 // **Get Patient Diagnosis History**
 router.get("/:patientId/history", getPatientHistory);
+router.get("/:patientId/diagnoses/:diagnosisId", getDiagnosisById);
 router.get("/getAllPatients", getAllPatients);
 
 module.exports = router;
