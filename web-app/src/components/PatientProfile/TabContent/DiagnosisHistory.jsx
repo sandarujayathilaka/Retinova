@@ -15,7 +15,7 @@ import {
   AlertCircle,
   Calendar,
   RefreshCw,
-  PlusCircle, // Added for "Add More Tests" button
+  PlusCircle, 
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -45,7 +45,6 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
   });
   const [reviewDiagnosisId, setReviewDiagnosisId] = useState(null);
   const [diagnoseHistory, setDiagnoseHistory] = useState(patient.diagnoseHistory || []);
-  // New state for "Add More Tests" popup
   const [isAddTestModalOpen, setIsAddTestModalOpen] = useState(false);
   const [addTestDiagnosisId, setAddTestDiagnosisId] = useState(null);
   const [newTestName, setNewTestName] = useState("");

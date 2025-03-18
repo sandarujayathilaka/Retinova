@@ -90,7 +90,7 @@ const UploadSection = ({
             ) : (
               <>
                 <p className="text-lg text-gray-800 font-medium mb-2">
-                  Drag & drop your retinal scan here
+                  Drag & drop your retinal Image here
                 </p>
                 <p className="text-base text-gray-600 mb-4">
                   or <span className="text-indigo-600 font-medium">browse files</span>

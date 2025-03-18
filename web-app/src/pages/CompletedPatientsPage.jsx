@@ -42,7 +42,7 @@ const CompletedPatientsPage = () => {
       setPagination(response.data.pagination);
     } catch (error) {
       console.error("Error fetching Completed patients:", error);
-      setError("Failed to fetch Completed patients. Please try again later."); 
+      setError(error.response?.data?.error || "Error fetching Completed patients"); 
     } finally {
       setLoading(false); // Ensure loading is false even if there's an error
     }

@@ -44,7 +44,7 @@ const PreMonitoringPatientsPage = () => {
       setPagination(response.data.pagination);
     } catch (error) {
       console.error("Error fetching Pre-Monitoring patients:", error);
-      setError("Failed to fetch Pre-Monitoring patients. Please try again later.");
+      setError(error.response?.data?.error || "Error fetching Pre-Monitoring patients");
     }
     setLoading(false);
   };

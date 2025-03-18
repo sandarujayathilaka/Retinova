@@ -41,7 +41,7 @@ const MonitoringPatientsPage = () => {
       setPagination(response.data.pagination);
     } catch (error) {
       console.error("Error fetching Monitoring patients:", error);
-      setError("Failed to fetch Monitoring patients");
+      setError(error.response?.data?.error || "Error fetching Monitoring patients");
     }
     setLoading(false);
   };

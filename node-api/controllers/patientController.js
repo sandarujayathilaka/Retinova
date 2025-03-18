@@ -328,7 +328,7 @@ exports.uploadImages = async (req, res) => {
 //   }
 // };
 
-exports.multiImageSave = async (req, res) => {
+exports.multiImagePrediction = async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: "No images uploaded" });

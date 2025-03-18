@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { Card, Typography, Progress, Button, Form, Input, Tabs, Space, Tooltip } from "antd";
 import { motion } from "framer-motion";
 import PatientTabs from "./PatientTabs";
-import PatientReport from "../reports/PatientReport"; 
-import DiagnosisHistory from "../PatientProfile/TabContent/DiagnosisHistory"; // Import DiagnosisHistory
+import PatientReport from "../reports/PatientReport";
+import DiagnosisHistory from "../PatientProfile/TabContent/DiagnosisHistory";
+import ConfirmDialog from "../custom-dialog/ConfirmDialog"; 
+import { FaFilePdf, FaCamera } from "react-icons/fa";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -21,21 +23,22 @@ const ResultsSection = ({
   const [form] = Form.useForm();
   const [activeTab, setActiveTab] = useState("currentResults");
   const [isReportVisible, setIsReportVisible] = useState(false);
+  const [showNewScanDialog, setShowNewScanDialog] = useState(false);
+  const [showQuickSaveDialog, setShowQuickSaveDialog] = useState(false);
+  const [showSavePrescriptionDialog, setShowSavePrescriptionDialog] = useState(false);
 
-  // Helper function for getMaxConfidence (required by DiagnosisHistory)
   const getMaxConfidence = (confidenceScores) => {
     if (!confidenceScores || confidenceScores.length === 0) return "N/A";
     return `${(Math.max(...confidenceScores) * 100).toFixed(1)}%`;
   };
 
-  // Helper function for openImage (required by DiagnosisHistory)
   const openImage = (url) => {
-    setSelectedImage(url); // Use the setSelectedImage prop to open the image
+    setSelectedImage(url);
   };
 
   const getPredictionDetails = (type) => {
     switch (type) {
-      case "advanced" :
+      case "advanced":
       case "PDR":
       case "CRVO":
       case "wet":
@@ -115,7 +118,7 @@ const ResultsSection = ({
             </svg>
           ),
           progressColor: "#22c55e",
-          message: `No signs detected. Continue with regular check-ups.`,
+          message: "No signs detected. Continue with regular check-ups.",
         };
       default:
         return {
@@ -147,21 +150,55 @@ const ResultsSection = ({
 
   const handleImageClick = (url) => setSelectedImage(url);
 
-  console.log(prediction.type)
-
   const predictionDetails = getPredictionDetails(prediction.type);
   const confidencePercent = Math.round(prediction.confidence * 100);
 
-  const handleQuickSave = () => {
+  const handleNewScanClick = () => {
+    setShowNewScanDialog(true);
+  };
+
+  const handleConfirmNewScan = () => {
+    resetForNewUpload();
+    setShowNewScanDialog(false);
+  };
+
+  const handleCancelNewScan = () => {
+    setShowNewScanDialog(false);
+  };
+
+  const handleQuickSaveClick = () => {
+    setShowQuickSaveDialog(true);
+  };
+
+  const handleConfirmQuickSave = () => {
     const emptyPrescription = {
       medicine: "",
       tests: [],
       note: "",
     };
     handleSavePrescription(emptyPrescription);
+    setShowQuickSaveDialog(false);
   };
 
-  const handleExportPDF = ({ patientData, prediction, setSelectedImage }) => {
+  const handleCancelQuickSave = () => {
+    setShowQuickSaveDialog(false);
+  };
+
+  const handleSavePrescriptionClick = () => {
+    setShowSavePrescriptionDialog(true);
+  };
+
+  const handleConfirmSavePrescription = () => {
+    const prescriptionData = form.getFieldsValue();
+    handleSavePrescription(prescriptionData);
+    setShowSavePrescriptionDialog(false);
+  };
+
+  const handleCancelSavePrescription = () => {
+    setShowSavePrescriptionDialog(false);
+  };
+
+  const handleExportPDF = () => {
     setIsReportVisible(true);
   };
 
@@ -171,6 +208,25 @@ const ResultsSection = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      {/* Compact Action Buttons */}
+      <div className="mb-4 flex justify-end gap-3">
+        <Button
+          onClick={handleNewScanClick}
+          className="px-4 py-1 h-auto bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-md shadow-sm hover:shadow transition-all flex items-center justify-center"
+        >
+          <FaCamera className="mr-2 text-gray-500" size={14} />
+          <span>New Scan</span>
+        </Button>
+        
+        <Button
+          onClick={handleExportPDF}
+          className="px-4 py-1 h-auto bg-blue-600 hover:bg-blue-700 text-white border-0 rounded-md shadow-sm hover:shadow transition-all flex items-center justify-center"
+        >
+          <FaFilePdf className="mr-2" size={14} />
+          <span>Export PDF</span>
+        </Button>
+      </div>
+
       <Card className="rounded-xl shadow-md border border-indigo-100 overflow-hidden">
         <Tabs
           activeKey={activeTab}
@@ -302,7 +358,7 @@ const ResultsSection = ({
 
                     <Tooltip title="Save without prescription">
                       <Button
-                        onClick={handleQuickSave}
+                        onClick={handleQuickSaveClick}
                         type="default"
                         className="bg-gray-100 hover:bg-gray-200 text-gray-600 border-gray-200 rounded text-xs py-1 px-2 flex items-center h-auto"
                         disabled={isSaving}
@@ -327,7 +383,7 @@ const ResultsSection = ({
                   <Form
                     form={form}
                     layout="vertical"
-                    onFinish={handleSavePrescription}
+                    onFinish={handleSavePrescriptionClick} // Changed to trigger dialog
                     initialValues={{ tests: [{ testName: "" }] }}
                     className="space-y-5"
                   >
@@ -414,7 +470,7 @@ const ResultsSection = ({
                                   <Tooltip title="Remove test">
                                     <Button
                                       type="text"
-                                      onClick={() => remove(name)}
+                                      onClick={() => remove(name)} // Direct removal without dialog
                                       className="flex items-center justify-center hover:bg-red-50 transition-colors rounded-full w-8 h-8 text-red-500"
                                       icon={
                                         <svg
@@ -559,93 +615,14 @@ const ResultsSection = ({
             key="diagnosisHistory"
           >
             <DiagnosisHistory
-              patient={patientData} 
+              patient={patientData}
               getMaxConfidence={getMaxConfidence}
               openImage={openImage}
-              isFromPreMonitoring={false} 
-            />
-          </TabPane>
-
-          <TabPane
-            tab={
-              <span className="flex items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-4 h-4 mr-2"
-                >
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                </svg>
-                Trend Analysis
-              </span>
-            }
-            key="charts"
-          >
-            <PatientTabs patientData={patientData} setSelectedImage={setSelectedImage} activeTab="charts" />
-          </TabPane>
-
-          <TabPane
-            tab={
-              <span className="flex items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-4 h-4 mr-2"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Export
-              </span>
-            }
-            key="export"
-          >
-            <PatientTabs
-              patientData={patientData}
-              setSelectedImage={setSelectedImage}
-              prediction={prediction}
-              activeTab="export"
-              onExportPDF={handleExportPDF}
+              isFromPreMonitoring={false}
             />
           </TabPane>
         </Tabs>
       </Card>
-
-      <div className="mt-6 text-center">
-        <Button
-          onClick={resetForNewUpload}
-          className="px-6 py-2 h-auto bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-lg shadow-sm transition-colors"
-        >
-          <span className="flex items-center">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-4 h-4 mr-2"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            Upload Another Image
-          </span>
-        </Button>
-      </div>
 
       <PatientReport
         patientData={patientData}
@@ -653,6 +630,34 @@ const ResultsSection = ({
         imageUrl={imageUrl}
         visible={isReportVisible}
         onClose={() => setIsReportVisible(false)}
+      />
+
+      {/* Confirmation Dialogs */}
+      <ConfirmDialog
+        isOpen={showNewScanDialog}
+        onConfirm={handleConfirmNewScan}
+        onCancel={handleCancelNewScan}
+        message="Are you sure you want to start a new scan? Current results will be discarded."
+        confirmText="Yes, Start New Scan"
+        cancelText="Cancel"
+      />
+      
+      <ConfirmDialog
+        isOpen={showQuickSaveDialog}
+        onConfirm={handleConfirmQuickSave}
+        onCancel={handleCancelQuickSave}
+        message="Are you sure you want to save without adding a prescription?"
+        confirmText="Yes, Save"
+        cancelText="Cancel"
+      />
+      
+      <ConfirmDialog
+        isOpen={showSavePrescriptionDialog}
+        onConfirm={handleConfirmSavePrescription}
+        onCancel={handleCancelSavePrescription}
+        message="Are you sure you want to save this prescription? Once saved, it cannot be changed."
+        confirmText="Yes, Save"
+        cancelText="Cancel"
       />
     </motion.div>
   );

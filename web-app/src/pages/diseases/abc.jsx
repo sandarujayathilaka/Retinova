@@ -543,31 +543,6 @@ const Diagnose = ({
               )}
             </TabPane>
 
-            <TabPane tab="Trend Analysis" key="charts">
-              {chartData.length > 0 && (
-                <Card className="shadow-md rounded-xl bg-white">
-                  <Title level={4} className="text-gray-800 mb-4">
-                    Confidence Trend Over Time
-                  </Title>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis unit="%" />
-                      <Tooltip />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="confidence"
-                        stroke="#3B82F6"
-                        activeDot={{ r: 8 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Card>
-              )}
-            </TabPane>
-
             <TabPane tab="Export" key="export">
               <Card className="shadow-md rounded-xl bg-white">
                 <div className="flex gap-4">

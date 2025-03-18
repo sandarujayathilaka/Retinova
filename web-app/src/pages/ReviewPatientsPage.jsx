@@ -41,7 +41,7 @@ const ReviewPatientsPage = () => {
       setPagination(response.data.pagination);
     } catch (error) {
       console.error("Error fetching Review patients:", error);
-      setError("Failed to fetch Review patients");
+      setError(setError(error.response?.data?.error || "Error fetching Completed patients"));
     }
     setLoading(false);
   };

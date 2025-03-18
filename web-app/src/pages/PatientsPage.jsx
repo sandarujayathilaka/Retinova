@@ -42,8 +42,8 @@ const PatientsPage = () => {
       setPatients(response.data.data);
       setPagination(response.data.pagination);
     } catch (error) {
-      console.error("Error fetching patients:", error);
-      setError("Failed to fetch patients. Please try again.");
+      console.error("Error fetching patients:", error.response.data.error);
+      setError(error.response.data.error);
     } finally {
       setLoading(false);
     }
