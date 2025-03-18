@@ -8,7 +8,6 @@ import {
   Users,
   Activity,
   FileText,
-  User,
   LogOut,
   ChevronDown,
   ChevronRight,
@@ -34,22 +33,46 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
     {
       title: "Diagnose",
       icon: Activity,
-      url: "/",
       isExpandable: true,
       section: "diagnose",
       subItems: [
-        { title: "Diagnose Home", url: "/" },
-        { title: "DR", url: "/diagnose/dr" },
-        { title: "AMD", url: "/diagnose/amd" },
-        { title: "Glaucoma", url: "/diagnose/glaucoma" },
-        { title: "RVO", url: "/diagnose/rvo" },
-        { title: "Multi DR", url: "/diagnose/multidr" },
+        {
+          title: "DR",
+          section: "dr",
+          subItems: [
+            { title: "Single Image", url: "/diagnose/dr" },
+            { title: "Multi Image", url: "/diagnose/multidr" },
+          ],
+        },
+        {
+          title: "AMD",
+          section: "amd",
+          subItems: [
+            { title: "Single Image", url: "/diagnose/amd" },
+            { title: "Multi Image", url: "/diagnose/amd/multi" },
+          ],
+        },
+        {
+          title: "RVO",
+          section: "rvo",
+          subItems: [
+            { title: "Single Image", url: "/diagnose/rvo" },
+            { title: "Multi Image", url: "/diagnose/rvo/multi" },
+          ],
+        },
+        {
+          title: "Glaucoma",
+          section: "glaucoma",
+          subItems: [
+            { title: "Single Image", url: "/diagnose/glaucoma" },
+            { title: "Multi Image", url: "/diagnose/glaucoma/multi" },
+          ],
+        },
       ],
     },
     {
       title: "Patients",
       icon: Users,
-      url: "/patients",
       isExpandable: true,
       section: "patients",
       subItems: [
@@ -90,106 +113,168 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
 
   return (
     <div className="flex">
-      {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 bg-gradient-to-b from-indigo-950 via-blue-900 to-indigo-900 text-white transition-all duration-500 ${
-          isOpen ? "w-64" : "w-16"
-        } shadow-2xl flex flex-col justify-between overflow-y-auto overflow-x-hidden`}
+        className={`fixed inset-y-0 left-0 z-50 bg-gradient-to-br from-blue-950 via-indigo-900 to-violet-900 text-white transition-all duration-300 ease-in-out ${
+          isOpen ? "w-72" : "w-20"
+        } shadow-xl flex flex-col justify-between overflow-y-auto overflow-x-hidden`}
       >
         {/* Header */}
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-6">
+        <div className="px-5 py-6">
+          <div className="flex items-center justify-between">
             {isOpen && (
               <div className="flex items-center space-x-3">
-                <Hospital className="h-8 w-8 text-indigo-300" />
+                <div className="p-2 bg-white/10 backdrop-blur-sm rounded-xl">
+                  <Hospital className="h-7 w-7 text-blue-200" />
+                </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white">MediSys</h1>
-                  <p className="text-xs text-indigo-200">Healthcare Dashboard</p>
+                  <h1 className="text-xl font-bold text-white tracking-tight">MediSys</h1>
+                  <p className="text-xs font-medium text-blue-200/80">Healthcare Dashboard</p>
                 </div>
               </div>
             )}
             <button
               onClick={toggleSidebar}
-              className="p-2 rounded-full hover:bg-indigo-700 transition-all duration-300"
+              className={`p-2.5 rounded-lg hover:bg-white/10 transition-all duration-200 ${
+                !isOpen && "mx-auto"
+              }`}
             >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
 
+        {/* Divider */}
+        <div className="mx-5 h-px bg-gradient-to-r from-transparent via-blue-400/20 to-transparent"></div>
+
         {/* Navigation */}
-        <nav className="flex-1 px-2">
-          {navItems.map(item => (
-            <div key={item.title} className="mb-2">
-              <div
-                className={`flex items-center p-3 rounded-lg hover:bg-indigo-700/80 transition-all duration-300 cursor-pointer ${
-                  location.pathname === item.url || expandedSections[item.section]
-                    ? "bg-indigo-700/50"
-                    : ""
-                }`}
-                onClick={() => item.isExpandable && toggleSection(item.section)}
-              >
-                <item.icon className="h-6 w-6 text-indigo-300" />
-                {isOpen && (
-                  <>
-                    <Link to={item.url} className="flex-1 ml-3 text-sm font-medium">
-                      {item.title}
-                    </Link>
-                    {item.isExpandable && (
-                      <div>
-                        {expandedSections[item.section] ? (
-                          <ChevronDown className="h-5 w-5 text-indigo-300" />
-                        ) : (
-                          <ChevronRight className="h-5 w-5 text-indigo-300" />
-                        )}
-                      </div>
-                    )}
-                  </>
+        <nav className="flex-1 px-3 py-4">
+          <div className={`space-y-1.5 ${!isOpen && "flex flex-col items-center"}`}>
+            {navItems.map(item => (
+              <div key={item.title} className="mb-1.5">
+                <Link
+                  to={item.url}
+                  className={`flex items-center px-3.5 py-3 rounded-xl transition-all duration-200 group ${
+                    location.pathname === item.url || expandedSections[item.section]
+                      ? "bg-white/15 backdrop-blur-sm"
+                      : "hover:bg-white/10"
+                  }`}
+                  onClick={() => item.isExpandable && toggleSection(item.section)}
+                >
+                  <div className={`${!isOpen && "mx-auto"} relative`}>
+                    <div className={`absolute inset-0 bg-blue-400/20 rounded-lg blur-xl group-hover:bg-blue-400/30 transition-all duration-200 opacity-0 group-hover:opacity-80 ${
+                      (location.pathname === item.url || expandedSections[item.section]) && "opacity-100"
+                    }`}></div>
+                    <item.icon className={`h-5 w-5 text-blue-200 relative z-10 ${
+                      (location.pathname === item.url || expandedSections[item.section]) && "text-white"
+                    }`} />
+                  </div>
+                  {isOpen && (
+                    <>
+                      <span className={`flex-1 ml-3.5 text-sm font-medium ${
+                        (location.pathname === item.url || expandedSections[item.section]) 
+                          ? "text-white" 
+                          : "text-blue-100"
+                      }`}>
+                        {item.title}
+                      </span>
+                      {item.isExpandable && (
+                        <div>
+                          {expandedSections[item.section] ? (
+                            <ChevronDown className="h-4 w-4 text-blue-300" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-blue-300" />
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </Link>
+                {item.isExpandable && isOpen && expandedSections[item.section] && (
+                  <div className="pl-8 mt-1.5 space-y-1.5 animate-fadeIn">
+                    {item.subItems.map(subItem => (
+                      subItem.subItems ? (
+                        <div key={subItem.title} className="rounded-lg overflow-hidden">
+                          <div
+                            className={`flex items-center px-3 py-2 text-sm text-blue-200 rounded-lg transition-all duration-200 ${
+                              expandedSections[subItem.section] ? "bg-blue-800/50" : "hover:bg-white/5"
+                            }`}
+                            onClick={() => subItem.section && toggleSection(subItem.section)}
+                          >
+                            <span className="flex-1 font-medium">{subItem.title}</span>
+                            <div>
+                              {expandedSections[subItem.section] ? (
+                                <ChevronDown className="h-3.5 w-3.5 text-blue-300" />
+                              ) : (
+                                <ChevronRight className="h-3.5 w-3.5 text-blue-300" />
+                              )}
+                            </div>
+                          </div>
+                          {expandedSections[subItem.section] && (
+                            <div className="pl-4 space-y-1 pt-1.5">
+                              {subItem.subItems.map(nestedItem => (
+                                <Link
+                                  key={nestedItem.title}
+                                  to={nestedItem.url}
+                                  className={`block px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                                    location.pathname === nestedItem.url
+                                      ? "bg-blue-800/50 text-white"
+                                      : "text-blue-200/80 hover:bg-white/5 hover:text-blue-100"
+                                  }`}
+                                >
+                                  {nestedItem.title}
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <Link
+                          key={subItem.title}
+                          to={subItem.url}
+                          className={`block px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                            location.pathname === subItem.url
+                              ? "bg-blue-800/50 text-white"
+                              : "text-blue-200/80 hover:bg-white/5 hover:text-blue-100"
+                          }`}
+                        >
+                          {subItem.title}
+                        </Link>
+                      )
+                    ))}
+                  </div>
                 )}
               </div>
-              {item.isExpandable && isOpen && expandedSections[item.section] && (
-                <div className="pl-8 mt-1 space-y-1 animate-fade-in">
-                  {item.subItems.map(subItem => (
-                    <Link
-                      key={subItem.title}
-                      to={subItem.url}
-                      className={`block p-2 text-sm text-indigo-200 rounded-lg hover:bg-indigo-600/50 transition-all duration-300 ${
-                        location.pathname === subItem.url ? "bg-indigo-600/70" : ""
-                      }`}
-                    >
-                      {subItem.title}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </nav>
 
-        {/* User Section */}
-        <div className="p-4 border-t border-indigo-700/50">
+        {/* User Profile */}
+        <div className="p-4 mt-4">
+          <div className="mx-2 mb-3 h-px bg-gradient-to-r from-transparent via-blue-400/20 to-transparent"></div>
           <div
-            className={`flex items-center p-3 rounded-lg hover:bg-indigo-700/80 transition-all duration-300 ${
+            className={`flex items-center p-3 rounded-xl bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all duration-200 ${
               !isOpen && "justify-center"
             }`}
           >
             <div className="relative">
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="h-10 w-10 rounded-full border-2 border-indigo-400"
-              />
-              <span className="absolute bottom-0 right-0 h-5 w-5 bg-green-400 rounded-full border-2 border-white"></span>
+              <div className="p-0.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400">
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="h-10 w-10 rounded-full object-cover border-2 border-blue-950"
+                />
+              </div>
+              <span className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-green-400 rounded-full border-2 border-blue-950"></span>
             </div>
             {isOpen && (
               <div className="ml-3 flex-1">
                 <p className="text-sm font-semibold text-white">{user.name}</p>
-                <p className="text-xs text-indigo-300">{user.email}</p>
+                <p className="text-xs font-medium text-blue-200/80">{user.email}</p>
               </div>
             )}
             {isOpen && (
-              <button className="p-1 rounded-full hover:bg-indigo-600 transition-all duration-300">
-                <LogOut className="h-5 w-5 text-indigo-300" />
+              <button className="p-2 rounded-lg hover:bg-white/10 transition-all duration-200 text-blue-200 hover:text-white">
+                <LogOut className="h-4.5 w-4.5" />
               </button>
             )}
           </div>
@@ -198,7 +283,7 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
 
       {/* Overlay for mobile */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={toggleSidebar}></div>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden" onClick={toggleSidebar}></div>
       )}
     </div>
   );
