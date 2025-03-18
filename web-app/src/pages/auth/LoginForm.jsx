@@ -18,6 +18,7 @@ import { useState } from "react";
 import { useLogin } from "@/services/auth.service";
 import useUserStore from "@/stores/auth";
 import { Link, useNavigate } from "react-router-dom";
+import { ROLES } from "@/constants/roles";
 
 const loginFormSchema = z.object({
   email: z.string().email({
@@ -36,7 +37,7 @@ export function LoginForm({ className, ...props }) {
 
   const loginMutation = useLogin();
 
-  const { setToken, setUser } = useUserStore();
+  const { setToken, setRefreshToken, setUser } = useUserStore();
 
   const form = useForm({
     resolver: zodResolver(loginFormSchema),
@@ -51,17 +52,26 @@ export function LoginForm({ className, ...props }) {
     loginMutation.mutate(data, {
       onSuccess: response => {
         console.log("Login successful", response);
-        const { token, user } = response.data;
+        const { token, refreshToken, user } = response.data;
 
-        if (user.role === "customer") {
-          setMessage("Invalid credentials");
-          return;
-        }
+        // if (user.role === ROLES.PATIENT) {
+        //   setMessage("Invalid credentials");
+        //   return;
+        // }
 
         setToken(token);
+        setRefreshToken(refreshToken);
         setUser(user);
 
-        navigate("/dashboard");
+        if (user.role === ROLES.ADMIN) {
+          navigate("/doctors");
+        }
+        if (user.role === ROLES.DOCTOR) {
+          navigate("/dashboard");
+        }
+        if (user.role === ROLES.NURSE) {
+          navigate("/monitoring-patients");
+        }
       },
       onError: error => {
         console.error("Login failed", error);
@@ -83,14 +93,15 @@ export function LoginForm({ className, ...props }) {
         className={cn("flex flex-col gap-6", className)}
         {...props}
       >
-        {loginMutation.isError && (
-          <Alert variant="destructive">
-            <AlertDescription className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              {message}
-            </AlertDescription>
-          </Alert>
-        )}
+        {loginMutation.isError ||
+          (message && (
+            <Alert variant="destructive">
+              <AlertDescription className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                {message}
+              </AlertDescription>
+            </Alert>
+          ))}
         <div className="grid gap-6">
           <FormField
             control={form.control}
