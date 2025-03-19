@@ -320,6 +320,19 @@ const getAllUsers = async (req, res) => {
   res.send(usersWithProfileOverride);
 };
 
+const getUserProfile = async (req, res) => {
+  const { id } = req.currentUser;
+
+  console.log("id", req.currentUser);
+
+  const user = await User.findById(id).populate("profile");
+
+  if (!user || !user.profile) {
+    return res.status(404).json({ error: "Profile not found" });
+  }
+
+  res.send(user.profile);
+};
 module.exports = {
   signUp,
   signIn,
@@ -334,4 +347,5 @@ module.exports = {
   deleteAdmin,
   toggleUserStatus,
   getAllUsers,
+  getUserProfile,
 };

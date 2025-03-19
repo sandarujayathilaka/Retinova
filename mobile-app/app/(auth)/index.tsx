@@ -19,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import { useLogin } from "@/services/auth.service";
 import { z } from "zod";
+import useUserStore from "@/stores/auth";
 
 // Define a validation schema with Zod
 const loginSchema = z.object({
@@ -33,13 +34,15 @@ type ValidationErrors = {
 };
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("pasij19921@cybtric.com");
+  const [password, setPassword] = useState("Abcde@12345");
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [touched, setTouched] = useState({ email: false, password: false });
   const [apiError, setApiError] = useState<string | null>(null);
   const router = useRouter();
+
+  const { setToken, setRefreshToken, setUser, refreshProfile } = useUserStore();
 
   // Use the login mutation from auth service
   const loginMutation = useLogin();
@@ -105,48 +108,41 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async (): Promise<void> => {
-    // Clear any previous API errors
     setApiError(null);
 
-    // First validate the form
     if (!validateForm()) {
-      // Show a validation error alert
       Alert.alert("Validation Error", "Please correct the errors in the form.");
       return;
     }
 
     loginMutation.mutate(
+      { email, password },
       {
-        email,
-        password,
-      },
-      {
-        onSuccess: (data) => {
-          // Handle successful login
-          if (data) {
-            console.log(data);
-            // You might want to store the token/user data before navigating
-            // Example: store token in secure storage
-            // await SecureStore.setItemAsync('userToken', response.data.token);
+        onSuccess: async (response) => {
+          console.log("Login successful", response);
+          const { token, refreshToken, user } = response.data;
 
-            // Navigate to main app after successful login
-            // router.replace("/(app)/(tabs)");
+          setToken(token);
+          setRefreshToken(refreshToken);
+          setUser(user);
+
+          try {
+            await refreshProfile(); // ✅ Wait for profile refresh
+            router.replace("/(app)/(tabs)"); // ✅ Navigate only after profile is refreshed
+          } catch (error) {
+            console.error("Profile refresh failed", error);
+            Alert.alert("Error", "Failed to load profile. Please try again.");
           }
         },
         onError: (error: any) => {
           console.error(error);
-          console.error(JSON.stringify(error, null, 2));
-
-          // Get error message from API response
           const errorMessage =
             error.response?.data?.error?.message ||
             "Login failed. Please try again.";
 
-          // Handle specific error cases with nice UI
           if (errorMessage === "Invalid credentials") {
             setApiError("The email or password you entered is incorrect.");
           } else {
-            // For other errors, use Alert
             Alert.alert("Login Error", errorMessage);
           }
         },

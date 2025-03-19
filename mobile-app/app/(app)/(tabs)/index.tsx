@@ -7,135 +7,20 @@ import {
   Image,
   SafeAreaView,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import {
   Ionicons,
   MaterialCommunityIcons,
   FontAwesome5,
 } from "@expo/vector-icons";
-import { Link } from "expo-router";
-
-// Define types based on your MongoDB schema
-interface Test {
-  testName: string;
-  status: "Pending" | "In Progress" | "Completed" | "Reviewed";
-  attachmentURL: string;
-  addedAt: string;
-  _id: string;
-}
-
-interface ReviewInfo {
-  recommendedMedicine: string;
-  notes: string;
-  updatedAt: string;
-  _id: string;
-}
-
-interface Diagnosis {
-  _id: string;
-  imageUrl: string;
-  diagnosis: string;
-  doctorDiagnosis: string;
-  eye: "LEFT" | "RIGHT";
-  status: "Unchecked" | "Completed" | "Checked" | "Test Completed";
-  confidenceScores: number[];
-  recommend: {
-    medicine: string;
-    tests: Test[];
-    note: string;
-  };
-  revisitTimeFrame:
-    | "Monthly"
-    | "Quarterly"
-    | "Bi-annually"
-    | "Annually"
-    | "As needed";
-  uploadedAt: string;
-  reviewInfo: ReviewInfo[];
-}
-
-interface PatientData {
-  _id: string;
-  patientId: string;
-  fullName: string;
-  category: string[];
-  birthDate: string;
-  gender: "Male" | "Female" | "Other";
-  nic: string;
-  contactNumber: string;
-  email: string;
-  patientStatus: string;
-  nextVisit: string;
-  diagnoseHistory: Diagnosis[];
-}
-
-// Sample data - in a real app you would fetch this from an API
-const samplePatient: PatientData = {
-  _id: "67d7150cf61eb9b9649e7d9a",
-  patientId: "P2",
-  fullName: "John",
-  category: [],
-  birthDate: "2025-03-05T00:00:00.000Z",
-  gender: "Male",
-  nic: "2345677654345",
-  contactNumber: "0772321233",
-  email: "em@gmail.com",
-  patientStatus: "Completed",
-  nextVisit: "2025-04-04T00:00:00.000Z",
-  diagnoseHistory: [
-    {
-      _id: "67d71ac3ebc0d8488ede7e17",
-      imageUrl:
-        "https://retinova.s3.amazonaws.com/diagnosis_images/1d6d4f96-c3d3-4e8f-a34b-eea849e5433a_P2_left_20251008.png",
-      diagnosis: "PDR",
-      doctorDiagnosis: "N/A",
-      eye: "LEFT",
-      status: "Checked",
-      confidenceScores: [0.5779826641082764],
-      recommend: {
-        medicine: "",
-        tests: [
-          {
-            testName: "AWS",
-            status: "Reviewed",
-            attachmentURL:
-              "https://patient-test-record-attachments.s3.ap-south-1.amazonaws.com/84ca92e0-d877-43d7-9871-9a1be0159c01-Rubric-PP-2.pdf",
-            _id: "67d71ac3ebc0d8488ede7e18",
-            addedAt: "2025-03-16T18:38:59.210Z",
-          },
-          {
-            testName: "AQW",
-            status: "Reviewed",
-            attachmentURL:
-              "https://patient-test-record-attachments.s3.ap-south-1.amazonaws.com/cff6dd95-2d45-4dad-809e-3074683510e6-WhatsApp%20Image%202025-03-05%20at%2010.18.32.jpeg",
-            addedAt: "2025-03-16T18:50:14.461Z",
-            _id: "67d71d66b25aa4663f414278",
-          },
-        ],
-        note: "",
-      },
-      revisitTimeFrame: "Monthly",
-      uploadedAt: "2025-03-16T18:38:59.216Z",
-      reviewInfo: [
-        {
-          recommendedMedicine: "",
-          notes: "check",
-          updatedAt: "2025-03-16T18:50:14.449Z",
-          _id: "67d71d66b25aa4663f414277",
-        },
-        {
-          recommendedMedicine: "",
-          notes: "ok",
-          updatedAt: "2025-03-16T18:52:28.814Z",
-          _id: "67d71decb25aa4663f414291",
-        },
-      ],
-    },
-  ],
-};
+import { Link, router } from "expo-router";
+import useAuthStore from "@/stores/auth";
+import { api } from "@/services/api.service";
 
 // Helper functions
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string | Date) => {
+  if (!dateString) return "Not scheduled";
   const date = new Date(dateString);
   return new Intl.DateTimeFormat("en-US", {
     weekday: "long",
@@ -144,7 +29,8 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
-const formatTime = (dateString: string) => {
+const formatTime = (dateString: string | Date) => {
+  if (!dateString) return "";
   const date = new Date(dateString);
   return new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
@@ -181,9 +67,11 @@ const QuickActionButton = ({
   );
 };
 
-const DiagnosisCard = ({ diagnosis }: { diagnosis: Diagnosis }) => {
+const DiagnosisCard = ({ diagnosis }: { diagnosis: Diagnose }) => {
   // Map diagnosis types to severity levels
-  const getSeverity = (diagnosisType: string) => {
+  const getSeverity = (diagnosisType: string | undefined) => {
+    if (!diagnosisType) return "Low";
+
     const severityMap: { [key: string]: "Low" | "Medium" | "High" } = {
       PDR: "High",
       NPDR: "Medium",
@@ -205,19 +93,21 @@ const DiagnosisCard = ({ diagnosis }: { diagnosis: Diagnosis }) => {
     <View className="bg-white p-4 rounded-xl shadow-sm">
       <View className="flex-row justify-between items-center mb-2">
         <Text className="text-gray-800 font-semibold text-base">
-          {diagnosis.diagnosis} - {diagnosis.eye} Eye
+          {diagnosis.diagnosis || "Undiagnosed"} - {diagnosis.eye} Eye
         </Text>
         <Text className="text-gray-500 text-xs">
-          {new Date(diagnosis.uploadedAt).toLocaleDateString()}
+          {diagnosis.uploadedAt
+            ? new Date(diagnosis.uploadedAt).toLocaleDateString()
+            : "N/A"}
         </Text>
       </View>
 
-      {diagnosis.recommend.note ? (
+      {diagnosis.recommend?.note ? (
         <Text className="text-gray-600 mb-3">{diagnosis.recommend.note}</Text>
       ) : (
         <Text className="text-gray-600 mb-3">
           AI-assisted diagnosis completed.{" "}
-          {diagnosis.recommend.tests.length > 0
+          {diagnosis.recommend?.tests && diagnosis.recommend.tests.length > 0
             ? `${diagnosis.recommend.tests.length} follow-up tests recommended.`
             : "No additional tests recommended at this time."}
         </Text>
@@ -236,11 +126,16 @@ const DiagnosisCard = ({ diagnosis }: { diagnosis: Diagnosis }) => {
             </Text>
           </View>
         </View>
-        <Link href={`/diagnosis/${diagnosis._id}`} asChild>
-          <TouchableOpacity className="px-3 py-1 bg-blue-50 rounded">
-            <Text className="text-blue-500 font-medium">View Details</Text>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity
+          className="px-3 py-1 bg-blue-50 rounded"
+          onPress={() =>
+            router.push(
+              `/diagnosis/${diagnosis.imageUrl.split("/").pop()?.split("_")[0]}`
+            )
+          }
+        >
+          <Text className="text-blue-500 font-medium">View Details</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -260,7 +155,7 @@ const TipCard = ({
       className="bg-white mr-3 rounded-xl overflow-hidden shadow-sm"
       style={{ width: 200 }}
     >
-      <Image source={image} className="w-full h-24" />
+      <Image source={image} className="w-full h-24" resizeMode="cover" />
       <View className="p-3">
         <Text className="text-gray-800 font-medium mb-1">{title}</Text>
         <Text className="text-gray-600 text-xs" numberOfLines={2}>
@@ -272,51 +167,70 @@ const TipCard = ({
 };
 
 export default function HomeScreen() {
-  // In a real app, you would fetch data here
-  const [patient, setPatient] = useState<PatientData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Simulate API fetch
-    setTimeout(() => {
-      setPatient(samplePatient);
-      setLoading(false);
-    }, 1000);
+  const { profile, refreshProfile, isLoggedIn } = useAuthStore();
 
-    // In a real app you'd do something like:
-    // async function fetchPatientData() {
-    //   try {
-    //     const response = await fetch('your-api-endpoint');
-    //     const data = await response.json();
-    //     setPatient(data);
-    //   } catch (error) {
-    //     console.error('Error fetching patient data:', error);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // }
-    // fetchPatientData();
-  }, []);
+  // useEffect(() => {
+  //   async function loadProfileData() {
+  //     if (!isLoggedIn()) {
+  //       router.replace("/login");
+  //       return;
+  //     }
+
+  //     try {
+  //       setLoading(true);
+  //       await refreshProfile();
+  //       setLoading(false);
+  //     } catch (err) {
+  //       setError("Failed to load profile data. Please try again.");
+  //       setLoading(false);
+  //     }
+  //   }
+
+  //   loadProfileData();
+  // }, []);
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <Text>Loading...</Text>
+      <View className="flex-1 justify-center items-center bg-slate-50">
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text className="mt-4 text-gray-600">Loading your profile...</Text>
       </View>
     );
   }
 
-  if (!patient) {
+  if (error || !profile) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <Text>No patient data found</Text>
+      <View className="flex-1 justify-center items-center bg-slate-50 px-4">
+        <MaterialCommunityIcons
+          name="alert-circle-outline"
+          size={48}
+          color="#ef4444"
+        />
+        <Text className="mt-4 text-gray-800 text-center font-semibold">
+          {error || "No profile data found"}
+        </Text>
+        <TouchableOpacity
+          className="mt-4 bg-blue-500 px-6 py-3 rounded-lg"
+          onPress={() => refreshProfile()}
+        >
+          <Text className="text-white font-semibold">Try Again</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  // Get the latest diagnosis
+  // Get the latest diagnosis by uploadedAt date
   const latestDiagnosis =
-    patient.diagnoseHistory.length > 0 ? patient.diagnoseHistory[0] : null;
+    profile.diagnoseHistory && profile.diagnoseHistory.length > 0
+      ? [...profile.diagnoseHistory].sort((a, b) => {
+          const dateA = a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0;
+          const dateB = b.uploadedAt ? new Date(b.uploadedAt).getTime() : 0;
+          return dateB - dateA; // Sort in descending order (newest first)
+        })[0]
+      : null;
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
@@ -334,7 +248,10 @@ export default function HomeScreen() {
             EyeDiagnosis
           </Text>
         </View>
-        <TouchableOpacity className="p-2 bg-blue-50 rounded-full">
+        <TouchableOpacity
+          className="p-2 bg-blue-50 rounded-full"
+          onPress={() => router.push("/notifications")}
+        >
           <Ionicons name="notifications-outline" size={24} color="#3b82f6" />
         </TouchableOpacity>
       </View>
@@ -343,29 +260,45 @@ export default function HomeScreen() {
       <ScrollView className="flex-1 px-4 pt-4">
         {/* Welcome Section */}
         <View className="bg-blue-500 p-5 rounded-2xl mb-6">
-          <Text className="text-white text-lg font-semibold mb-1">
-            Hello {patient.fullName},
+          <Text className="text-white capitalize text-lg font-semibold mb-1">
+            Hello {profile.fullName},
           </Text>
           <Text className="text-white text-opacity-90 mb-4">
-            Your next visit is scheduled for:
+            {profile.nextVisit
+              ? "Your next visit is scheduled for:"
+              : "No visit scheduled yet"}
           </Text>
-          <View className="bg-white bg-opacity-20 p-4 rounded-xl flex-row items-center justify-between">
+          <View className="bg-white/20 p-4 rounded-xl flex-row items-center justify-between">
             <View className="flex-row items-center">
               <Ionicons name="calendar" size={24} color="white" />
               <View className="ml-3">
-                <Text className="text-white font-bold">
-                  {formatDate(patient.nextVisit)}
-                </Text>
-                <Text className="text-white text-opacity-90">
-                  {formatTime(patient.nextVisit)}
-                </Text>
+                {profile.nextVisit ? (
+                  <>
+                    <Text className="text-white font-bold">
+                      {formatDate(profile.nextVisit)}
+                    </Text>
+                    <Text className="text-white text-opacity-90">
+                      {formatTime(profile.nextVisit)}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Text className="text-white font-bold">No appointment</Text>
+                    <Text className="text-white text-opacity-90">
+                      Contact your doctor to schedule
+                    </Text>
+                  </>
+                )}
               </View>
             </View>
-            <Link href="/appointments" asChild>
-              <TouchableOpacity className="bg-white px-3 py-2 rounded-lg">
-                <Text className="text-blue-500 font-semibold">View</Text>
+            {!profile.nextVisit && (
+              <TouchableOpacity
+                className="bg-white px-3 py-2 rounded-lg"
+                onPress={() => router.push("/appointment/new")}
+              >
+                <Text className="text-blue-500 font-semibold">Schedule</Text>
               </TouchableOpacity>
-            </Link>
+            )}
           </View>
         </View>
 
@@ -379,36 +312,28 @@ export default function HomeScreen() {
             iconProvider={FontAwesome5}
             title="My Records"
             color="#4ade80"
-            onPress={() => {
-              /* Navigate to records */
-            }}
+            onPress={() => router.push("/records")}
           />
           <QuickActionButton
             icon="eye"
             iconProvider={Ionicons}
             title="Self Test"
             color="#f472b6"
-            onPress={() => {
-              /* Navigate to self test */
-            }}
+            onPress={() => router.push("/self-test")}
           />
           <QuickActionButton
             icon="calendar-plus"
             iconProvider={FontAwesome5}
             title="Book Appt"
             color="#60a5fa"
-            onPress={() => {
-              /* Navigate to appointment booking */
-            }}
+            onPress={() => router.push("/appointment/new")}
           />
           <QuickActionButton
             icon="chatbubble"
             iconProvider={Ionicons}
             title="Message"
             color="#fbbf24"
-            onPress={() => {
-              /* Navigate to messaging */
-            }}
+            onPress={() => router.push("/messages")}
           />
         </View>
 
@@ -425,38 +350,69 @@ export default function HomeScreen() {
             </Link>
           </View>
           <View className="bg-white p-4 rounded-xl shadow-sm">
-            <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-gray-800 font-medium">Left Eye (OS)</Text>
-              <View className="flex-row items-center">
-                <Text className="text-gray-600 mr-2">Status:</Text>
-                <Text className="text-blue-500 font-bold">
-                  {patient.diagnoseHistory.find((d) => d.eye === "LEFT")
+            {/* Eyes Side by Side */}
+            <View className="flex-row justify-between">
+              {/* Left Eye */}
+              <View className="flex-1 items-center mr-4">
+                <View className="w-20 h-20 bg-blue-50 rounded-full items-center justify-center mb-2">
+                  <MaterialCommunityIcons
+                    name="eye-outline"
+                    size={32}
+                    color="#3b82f6"
+                  />
+                  <View className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full items-center justify-center">
+                    <Text className="text-xs font-bold text-blue-500">L</Text>
+                  </View>
+                </View>
+                <Text className="text-gray-800 font-medium text-center">
+                  Left Eye (OS)
+                </Text>
+                <Text className="text-blue-500 font-bold text-center mt-1">
+                  {profile.diagnoseHistory?.find((d) => d.eye === "LEFT")
                     ?.diagnosis || "Not tested"}
                 </Text>
+                {profile.diagnoseHistory?.find((d) => d.eye === "LEFT")
+                  ?.uploadedAt && (
+                  <Text className="text-xs text-gray-500 mt-1 text-center">
+                    Last:{" "}
+                    {formatDate(
+                      profile.diagnoseHistory?.find((d) => d.eye === "LEFT")
+                        ?.uploadedAt || ""
+                    )}
+                  </Text>
+                )}
               </View>
-            </View>
-            <View className="h-4 bg-gray-100 rounded-full overflow-hidden mb-4">
-              <View
-                className="h-full bg-blue-500 rounded-full"
-                style={{ width: "70%" }}
-              />
-            </View>
 
-            <View className="flex-row justify-between items-center mb-4">
-              <Text className="text-gray-800 font-medium">Right Eye (OD)</Text>
-              <View className="flex-row items-center">
-                <Text className="text-gray-600 mr-2">Status:</Text>
-                <Text className="text-blue-500 font-bold">
-                  {patient.diagnoseHistory.find((d) => d.eye === "RIGHT")
+              {/* Right Eye */}
+              <View className="flex-1 items-center ml-4">
+                <View className="w-20 h-20 bg-blue-50 rounded-full items-center justify-center mb-2">
+                  <MaterialCommunityIcons
+                    name="eye-outline"
+                    size={32}
+                    color="#3b82f6"
+                  />
+                  <View className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full items-center justify-center">
+                    <Text className="text-xs font-bold text-blue-500">R</Text>
+                  </View>
+                </View>
+                <Text className="text-gray-800 font-medium text-center">
+                  Right Eye (OD)
+                </Text>
+                <Text className="text-blue-500 font-bold text-center mt-1">
+                  {profile.diagnoseHistory?.find((d) => d.eye === "RIGHT")
                     ?.diagnosis || "Not tested"}
                 </Text>
+                {profile.diagnoseHistory?.find((d) => d.eye === "RIGHT")
+                  ?.uploadedAt && (
+                  <Text className="text-xs text-gray-500 mt-1 text-center">
+                    Last:{" "}
+                    {formatDate(
+                      profile.diagnoseHistory?.find((d) => d.eye === "RIGHT")
+                        ?.uploadedAt || ""
+                    )}
+                  </Text>
+                )}
               </View>
-            </View>
-            <View className="h-4 bg-gray-100 rounded-full overflow-hidden">
-              <View
-                className="h-full bg-blue-500 rounded-full"
-                style={{ width: "85%" }}
-              />
             </View>
           </View>
         </View>
@@ -472,56 +428,83 @@ export default function HomeScreen() {
         )}
 
         {/* Recommended Tests */}
-        {latestDiagnosis && latestDiagnosis.recommend.tests.length > 0 && (
-          <View className="mb-6">
-            <Text className="text-gray-700 font-semibold text-lg mb-3">
-              Recommended Tests
-            </Text>
-            <View className="bg-white p-4 rounded-xl shadow-sm">
-              {latestDiagnosis.recommend.tests.map((test, index) => (
-                <View
-                  key={test._id}
-                  className={`flex-row justify-between items-center ${
-                    index < latestDiagnosis.recommend.tests.length - 1
-                      ? "border-b border-gray-100 pb-3 mb-3"
-                      : ""
-                  }`}
-                >
-                  <View>
-                    <Text className="text-gray-800 font-medium">
-                      {test.testName}
-                    </Text>
-                    <Text className="text-gray-500 text-xs">
-                      {new Date(test.addedAt).toLocaleDateString()}
-                    </Text>
-                  </View>
+        {latestDiagnosis &&
+          latestDiagnosis.recommend?.tests &&
+          latestDiagnosis.recommend.tests.length > 0 && (
+            <View className="mb-6">
+              <Text className="text-gray-700 font-semibold text-lg mb-3">
+                Recommended Tests
+              </Text>
+              <View className="bg-white p-4 rounded-xl shadow-sm">
+                {latestDiagnosis.recommend.tests.map((test, index) => (
                   <View
-                    className={`px-2 py-1 rounded ${
-                      test.status === "Reviewed"
-                        ? "bg-green-100"
-                        : test.status === "Completed"
-                        ? "bg-blue-100"
-                        : test.status === "In Progress"
-                        ? "bg-yellow-100"
-                        : "bg-gray-100"
+                    key={index}
+                    className={`flex-row justify-between items-center ${
+                      index < latestDiagnosis.recommend.tests.length - 1
+                        ? "border-b border-gray-100 pb-3 mb-3"
+                        : ""
                     }`}
                   >
-                    <Text
-                      className={`text-xs font-medium ${
+                    <View>
+                      <Text className="text-gray-800 font-medium">
+                        {test.testName}
+                      </Text>
+                      <Text className="text-gray-500 text-xs">
+                        {test.addedAt
+                          ? new Date(test.addedAt).toLocaleDateString()
+                          : "N/A"}
+                      </Text>
+                    </View>
+                    <View
+                      className={`px-2 py-1 rounded ${
                         test.status === "Reviewed"
-                          ? "text-green-800"
+                          ? "bg-green-100"
                           : test.status === "Completed"
-                          ? "text-blue-800"
+                          ? "bg-blue-100"
                           : test.status === "In Progress"
-                          ? "text-yellow-800"
-                          : "text-gray-800"
+                          ? "bg-yellow-100"
+                          : "bg-gray-100"
                       }`}
                     >
-                      {test.status}
+                      <Text
+                        className={`text-xs font-medium ${
+                          test.status === "Reviewed"
+                            ? "text-green-800"
+                            : test.status === "Completed"
+                            ? "text-blue-800"
+                            : test.status === "In Progress"
+                            ? "text-yellow-800"
+                            : "text-gray-800"
+                        }`}
+                      >
+                        {test.status || "Pending"}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+        {/* Medical Category Section */}
+        {profile.category && profile.category.length > 0 && (
+          <View className="mb-6">
+            <Text className="text-gray-700 font-semibold text-lg mb-3">
+              Your Condition Categories
+            </Text>
+            <View className="bg-white p-4 rounded-xl shadow-sm">
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {profile.category.map((category, index) => (
+                  <View
+                    key={index}
+                    className="mr-2 bg-blue-100 px-3 py-1 rounded-lg"
+                  >
+                    <Text className="text-blue-800 font-medium">
+                      {category}
                     </Text>
                   </View>
-                </View>
-              ))}
+                ))}
+              </ScrollView>
             </View>
           </View>
         )}
@@ -551,7 +534,62 @@ export default function HomeScreen() {
               title="Healthy Diet"
               description="Foods rich in vitamins A, C, and E promote eye health."
             />
+            {profile.category?.includes("DR") && (
+              <TipCard
+                image={require("@/assets/images/icon.png")}
+                title="Diabetic Care"
+                description="Regular blood sugar monitoring is crucial for diabetic retinopathy management."
+              />
+            )}
+            {profile.category?.includes("Glaucoma") && (
+              <TipCard
+                image={require("@/assets/images/icon.png")}
+                title="Glaucoma Tips"
+                description="Take your eye drops as prescribed and maintain regular follow-up appointments."
+              />
+            )}
           </ScrollView>
+        </View>
+
+        {/* Patient Status */}
+        <View className="mb-6">
+          <Text className="text-gray-700 font-semibold text-lg mb-3">
+            Your Care Status
+          </Text>
+          <View className="bg-white p-4 rounded-xl shadow-sm">
+            <View className="flex-row justify-between items-center">
+              <Text className="text-gray-800">Current Status:</Text>
+              <View
+                className={`px-3 py-1 rounded ${
+                  profile.patientStatus === "Monitoring"
+                    ? "bg-blue-100"
+                    : profile.patientStatus === "Completed"
+                    ? "bg-green-100"
+                    : profile.patientStatus === "Review"
+                    ? "bg-yellow-100"
+                    : profile.patientStatus === "Pre-Monitoring"
+                    ? "bg-purple-100"
+                    : "bg-gray-100"
+                }`}
+              >
+                <Text
+                  className={`font-medium ${
+                    profile.patientStatus === "Monitoring"
+                      ? "text-blue-800"
+                      : profile.patientStatus === "Completed"
+                      ? "text-green-800"
+                      : profile.patientStatus === "Review"
+                      ? "text-yellow-800"
+                      : profile.patientStatus === "Pre-Monitoring"
+                      ? "text-purple-800"
+                      : "text-gray-800"
+                  }`}
+                >
+                  {profile.patientStatus || "Not Determined"}
+                </Text>
+              </View>
+            </View>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
