@@ -8,7 +8,6 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
-  StyleSheet,
 } from "react-native";
 import {
   Ionicons,
@@ -17,6 +16,7 @@ import {
 } from "@expo/vector-icons";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import { useGetDiagnosisById } from "../../../services/diagnosis.service";
+import useAuthStore from "../../../stores/auth";
 
 // Define interfaces locally
 interface Test {
@@ -105,17 +105,17 @@ const diagnosisInfo: {
       "No Glaucoma - The optic nerve and intraocular pressure are within normal limits, with no signs of glaucomatous damage or visual field defects.",
     severity: "Low",
   },
-  dry: {
+  "Dry AMD": {
     description:
       "Dry Age-Related Macular Degeneration - A progressive condition characterized by drusen deposits and degeneration of the macula, leading to gradual central vision loss.",
     severity: "Medium",
   },
-  wet: {
+  "Wet AMD": {
     description:
       "Wet Age-Related Macular Degeneration - An advanced form of AMD involving abnormal blood vessel growth under the macula, causing leakage, scarring, and rapid central vision loss.",
     severity: "High",
   },
-  No_AMD: {
+  "Normal (No AMD)": {
     description:
       "Normal (No AMD) - No signs of age-related macular degeneration, with a healthy macula and no drusen or abnormal blood vessel growth.",
     severity: "Low",
@@ -143,12 +143,14 @@ const diagnosisInfo: {
   Normal: {
     description: "No signs of retinal abnormalities detected, indicating a healthy retina.",
     severity: "Low",
-  }
+  },
 };
 
 export default function DiagnosisDetailScreen() {
   const { id } = useLocalSearchParams();
-  const patientId = "P1"; // Replace with dynamic patient ID from auth context
+  const { user } = useAuthStore(); // Get the user from auth store
+  const patientId = user?.id?.toString() || "P1"; // Use user.id as patientId, fallback to "P1" if not logged in
+
   const { data: diagnosis = null, isLoading, isError, error } = useGetDiagnosisById(patientId, id as string) as {
     data: Diagnosis | null;
     isLoading: boolean;
@@ -182,7 +184,7 @@ export default function DiagnosisDetailScreen() {
   }
 
   // Get diagnosis info from our mapping, or provide defaults
-  const diagInfo = diagnosisInfo[diagnosis.diagnosis || ""] || {
+  const diagInfo = diagnosisInfo[diagnosis.diagnosis] || {
     description: "Detailed information not available for this diagnosis type.",
     severity: "Medium",
   };

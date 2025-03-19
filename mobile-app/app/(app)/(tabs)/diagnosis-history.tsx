@@ -13,6 +13,7 @@ import {
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { useGetDiagnoses } from "../../../services/diagnosis.service";
+import useAuthStore from "../../../stores/auth";
 
 // Define interfaces locally
 interface Test {
@@ -58,8 +59,27 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
+// Diagnosis severity mapping
+const diagnosisSeverity: { [key: string]: "Low" | "Medium" | "High" } = {
+  PDR: "High",
+  NPDR: "Medium",
+  NODR: "Low",
+  "Early Glaucoma": "Medium",
+  "Advanced Glaucoma": "High",
+  "No Glaucoma": "Low",
+  "Dry AMD": "Medium",
+  "Wet AMD": "High",
+  "Normal (No AMD)": "Low",
+  CRVO: "High",
+  BRVO: "Medium",
+  "Healthy (No RVO)": "Low",
+  DME: "Medium",
+  Normal: "Low",
+};
+
 export default function DiagnosisHistoryScreen() {
-  const patientId = "P1"; // Replace with dynamic patient ID from auth context
+  const { user } = useAuthStore(); 
+  const patientId = user?.id?.toString() || "P1"; 
 
   const { data: diagnoses = [], isLoading, isError, error, refetch } = useGetDiagnoses(patientId) as {
     data: Diagnosis[] | undefined;
@@ -84,13 +104,7 @@ export default function DiagnosisHistoryScreen() {
 
   // Get severity based on diagnosis type
   const getSeverity = (diagnosisType: string) => {
-    const severityMap: { [key: string]: "Low" | "Medium" | "High" } = {
-      PDR: "High",
-      NPDR: "Medium",
-      DME: "Medium",
-      Normal: "Low",
-    };
-    return severityMap[diagnosisType] || "Medium";
+    return diagnosisSeverity[diagnosisType] || "Medium"; // Default to Medium if not found
   };
 
   // Get color classes based on severity
@@ -117,8 +131,20 @@ export default function DiagnosisHistoryScreen() {
 
   if (isError) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <Text>Error: {error?.message}</Text>
+      <View className="flex-1 justify-center items-center p-4">
+        <MaterialCommunityIcons name="alert-circle-outline" size={64} color="#EF4444" />
+        <Text className="text-lg font-medium text-gray-700 mt-4 mb-2">Failed to Load Diagnoses</Text>
+        <Text className="text-gray-500 text-center mb-4">
+          {error?.message.includes("404")
+            ? "No diagnoses found for this patient. Please check the patient ID or contact support."
+            : "An error occurred while fetching diagnoses. Please try again later."}
+        </Text>
+        <TouchableOpacity
+          className="bg-blue-500 px-4 py-2 rounded-lg"
+          onPress={() => refetch()}
+        >
+          <Text className="text-white font-semibold">Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
