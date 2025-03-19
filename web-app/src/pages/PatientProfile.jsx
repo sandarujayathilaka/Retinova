@@ -7,6 +7,7 @@ import TabContent from "../components/PatientProfile/TabContent";
 import Footer from "../components/PatientProfile/Footer";
 import ImageModal from "../components/diagnose/ImageModal";
 import { BadgeAlert, Activity } from "lucide-react";
+import { api } from "@/services/api.service";
 
 const PatientProfile = () => {
   const { patientId } = useParams();
@@ -25,7 +26,7 @@ const PatientProfile = () => {
   useEffect(() => {
     const fetchPatient = async () => {
       try {
-        const response = await axios.get(`http://localhost:4000/api/patients/${patientId}`);
+        const response = await api.get(`patients/${patientId}`);
         setPatient(response.data.data);
         console.log("Patient data:", response.data.data);
       } catch (error) {

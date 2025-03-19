@@ -95,7 +95,7 @@ exports.predictAndFetch = async (req, res) => {
 
     if (!patientIdMatch) {
       return res.status(400).json({
-        error: "Invalid filename format. Expected: patientId_randomtext.jpg",
+        error: "Invalid filename format. Expected: patientId_eyeside_randomtext.jpg",
       });
     }
 
@@ -692,6 +692,7 @@ exports.getAllPatients = async (req, res) => {
 exports.getPatientById = async (req, res) => {
   try {
     const { patientId } = req.params; // Extract patientId from URL parameters
+    console.log("Patient ID:", patientId);
 
     // Validate patientId
     if (!patientId) {
@@ -1146,3 +1147,5 @@ exports.addTestToDiagnose = async (req, res) => {
     });
   }
 };
+
+

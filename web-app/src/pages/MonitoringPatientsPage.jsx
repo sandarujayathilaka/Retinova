@@ -5,6 +5,7 @@ import Filters from "../components/PatientsPage/Filters";
 import PatientsTable from "../components/PatientsPage/PatientsTable";
 import Pagination from "../components/PatientsPage/Pagination";
 import { ErrorAlert } from "@/components/error/ErrorAlert";
+import { api } from "@/services/api.service";
 
 const MonitoringPatientsPage = () => {
   const [patients, setPatients] = useState([]);
@@ -34,7 +35,7 @@ const MonitoringPatientsPage = () => {
   const fetchMonitoringPatients = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:4000/api/patients/status", {
+      const response = await api.get("patients/status", {
         params: filters,
       });
       setPatients(response.data.data);

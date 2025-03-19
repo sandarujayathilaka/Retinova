@@ -43,7 +43,7 @@ app.use("/api/util", utilRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/treatments", treatmentRoutes);
 app.use("/api/patients", patientRoutes);
-app.use("/api/patients", testRecordssRoutes);
+// app.use("/api/patients", testRecordssRoutes);
 app.use("/api/nurses", nurseRoutes);
 app.use("/api/tests", testRoutes);
 

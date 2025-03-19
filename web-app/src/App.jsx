@@ -128,10 +128,8 @@ const App = () => {
           <Route path="/addPatientt" element={<AddPatient />} />
           <Route path="/add-patient" element={<AddPatientWizard />} />
           <Route path="/monitoring-patients/view/:id" element={<View />} />
-
           <Route path="/patients/:patientId" element={<PatientProfile />} />
           <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
-
           <Route path="/nursedashboard" element={<NurseDashboard />} />
           <Route path="/profile" element={<NurseProfile nurseId={SAMPLE_NURSE_ID} />} />
         </Route>

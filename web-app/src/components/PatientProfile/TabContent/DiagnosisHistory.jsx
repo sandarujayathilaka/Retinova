@@ -18,6 +18,7 @@ import {
   PlusCircle, 
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { api } from "@/services/api.service";
 
 const getFileType = (url) => {
   if (!url) return null;
@@ -48,12 +49,29 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
   const [isAddTestModalOpen, setIsAddTestModalOpen] = useState(false);
   const [addTestDiagnosisId, setAddTestDiagnosisId] = useState(null);
   const [newTestName, setNewTestName] = useState("");
+  const [availableTests, setAvailableTests] = useState([]);
 
   const initializeFormData = (diagnosisId) => ({
     medicine: "",
     tests: [{ testName: "", status: "Pending" }],
     note: "",
   });
+
+  
+// Fetch tests from the API
+useEffect(() => {
+  const fetchTests = async () => {
+    try {
+      const response = await api.get("tests");
+      console.log("Available tests:", response.data);
+      setAvailableTests(response.data); 
+    } catch (error) {
+      console.error("Error fetching tests:", error);
+      toast.error("Failed to fetch available tests.");
+    }
+  };
+  fetchTests();
+}, []);
 
   const handleInputChange = (diagnosisId, field, value, testIndex = null) => {
     setFormData((prev) => {
@@ -172,8 +190,8 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
 
     setSubmitting((prev) => ({ ...prev, [addTestDiagnosisId]: true }));
     try {
-      const response = await axios.put(
-        `http://localhost:4000/api/patients/${patient.patientId}/diagnoses/${addTestDiagnosisId}/tests`,
+      const response = await api.put(
+        `patients/${patient.patientId}/diagnoses/${addTestDiagnosisId}/tests`,
         { testName: newTestName }
       );
 
@@ -237,8 +255,8 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
 
     setSubmitting((prev) => ({ ...prev, [diagnosisId]: true }));
     try {
-      await axios.put(
-        `http://localhost:4000/api/patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
+      await api.put(
+        `patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
         {
           medicine: data.medicine,
           tests: data.tests,
@@ -247,7 +265,7 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
       );
       toast.success("Recommendations updated successfully!");
       closeModal();
-      refreshDiagnosisHistory();
+      await refreshDiagnosisHistory();
     } catch (error) {
       console.error("Error updating recommendations:", error.response?.data || error.message);
       toast.error(
@@ -266,8 +284,8 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
     setSubmitting((prev) => ({ ...prev, [reviewDiagnosisId]: true }));
     try {
       const filteredTests = reviewFormData.additionalTests.filter((test) => test.testName.trim());
-      const response = await axios.put(
-        `http://localhost:4000/api/patients/${patient._id}/diagnoses/${reviewDiagnosisId}/review`,
+      const response = await api.put(
+        `patients/${patient._id}/diagnoses/${reviewDiagnosisId}/review`,
         {
           reviewInfo: {
             recommendedMedicine: reviewFormData.recommendedMedicine,
@@ -330,8 +348,8 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
   const handleMarkAsChecked = async (diagnosisId) => {
     setSubmitting((prev) => ({ ...prev, [diagnosisId]: true }));
     try {
-      await axios.put(
-        `http://localhost:4000/api/patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
+      await api.put(
+        `patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
         {
           medicine: "",
           tests: [],
@@ -339,7 +357,7 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
         }
       );
       toast.success("Diagnosis marked as checked successfully!");
-      refreshDiagnosisHistory();
+      await refreshDiagnosisHistory();
     } catch (error) {
       console.error("Error marking diagnosis as checked:", error.response?.data || error.message);
       toast.error(`Failed to mark as checked: ${error.response?.data?.error || error.message}`);
@@ -350,8 +368,8 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
   const handleMarkAsReviewed = async (diagnosisId, testId) => {
     setSubmitting((prev) => ({ ...prev, [testId]: true }));
     try {
-      const response = await axios.put(
-        `http://localhost:4000/api/patients/${patient._id}/diagnoses/${diagnosisId}/tests/${testId}/status`,
+      const response = await api.put(
+        `patients/${patient._id}/diagnoses/${diagnosisId}/tests/${testId}/status`,
         { status: "Reviewed" }
       );
       toast.success("Test marked as reviewed successfully!");
@@ -384,11 +402,13 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
 
   const refreshDiagnosisHistory = async () => {
     try {
-      const response = await axios.get(`http://localhost:4000/api/patients/${patient._id}`);
-      setDiagnoseHistory(response.data.diagnoseHistory || []);
+      console.log(patient._id);
+      const response = await api.get(`patients/${patient.patientId}`);
+      console.log(response);
+      setDiagnoseHistory(response.data.data.diagnoseHistory || []);
     } catch (error) {
       console.error("Error refreshing diagnosis history:", error);
-      toast.error("Failed to refresh diagnosis data");
+      toast.error(error.response?.data?.error || "Failed to refresh diagnosis history");
     }
   };
 
@@ -1061,15 +1081,22 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
             </button>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Add New Test</h3>
             <div className="space-y-4">
-              <div>
+            <div>
                 <label className="block text-sm font-medium text-gray-700">Test Name</label>
-                <input
-                  type="text"
+                <select
                   value={newTestName}
                   onChange={(e) => setNewTestName(e.target.value)}
                   className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  placeholder="Enter test name"
-                />
+                >
+                  <option value="">Select a test</option>
+                  {availableTests
+                    .filter((test) => test.isEnabled)
+                    .map((test) => (
+                      <option key={test._id} value={test.name}>
+                        {test.name}
+                      </option>
+                    ))}
+                </select>
               </div>
               <div className="flex justify-end gap-3">
                 <button

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Diagnose from "./Diagnose";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { api } from "@/services/api.service";
 
 const DR = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,9 +28,9 @@ const DR = () => {
       console.log("Uploading image for prediction:", image.name);
 
       const formData = new FormData();
-      formData.append("file", image); // Matches backend's expected field
+      formData.append("file", image); 
       formData.append("diseaseType", "dr");
-      const response = await axios.post("http://localhost:4000/api/patients/predict", formData, {
+      const response = await api.post("patients/predict", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -91,8 +92,8 @@ const DR = () => {
       };
       formData.append("recommend", JSON.stringify(recommend));
 
-      const response = await axios.post(
-        "http://localhost:4000/api/patients/onedatasave",
+      const response = await api.post(
+        "patients/onedatasave",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -121,7 +122,7 @@ const DR = () => {
     setIsSaving(false);
     setImageFile(null);
   };
-  console.log(patientData);
+
   return (
     <div>
       <Diagnose

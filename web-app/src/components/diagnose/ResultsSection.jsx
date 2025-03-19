@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, Typography, Progress, Button, Form, Input, Tabs, Space, Tooltip } from "antd";
 import { motion } from "framer-motion";
 import PatientTabs from "./PatientTabs";
 import PatientReport from "../reports/PatientReport";
 import DiagnosisHistory from "../PatientProfile/TabContent/DiagnosisHistory";
-import ConfirmDialog from "../custom-dialog/ConfirmDialog"; 
+import ConfirmDialog from "../custom-dialog/ConfirmDialog";
 import { FaFilePdf, FaCamera } from "react-icons/fa";
+import { api } from "@/services/api.service"; // Adjust this import based on your project structure
+import toast from "react-hot-toast"; // Ensure toast is imported if used
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -26,17 +28,37 @@ const ResultsSection = ({
   const [showNewScanDialog, setShowNewScanDialog] = useState(false);
   const [showQuickSaveDialog, setShowQuickSaveDialog] = useState(false);
   const [showSavePrescriptionDialog, setShowSavePrescriptionDialog] = useState(false);
+  const [availableTests, setAvailableTests] = useState([]);
+  const [loadingTests, setLoadingTests] = useState(false); // Added loading state
 
   const getMaxConfidence = (confidenceScores) => {
     if (!confidenceScores || confidenceScores.length === 0) return "N/A";
     return `${(Math.max(...confidenceScores) * 100).toFixed(1)}%`;
   };
 
+  useEffect(() => {
+    const fetchTests = async () => {
+      setLoadingTests(true);
+      try {
+        const response = await api.get("tests");
+        console.log("Available tests:", response.data); 
+        setAvailableTests(response.data); 
+      } catch (error) {
+        console.error("Error fetching tests:", error);
+        toast.error("Failed to fetch available tests.");
+      } finally {
+        setLoadingTests(false);
+      }
+    };
+    fetchTests();
+  }, []);
+
   const openImage = (url) => {
     setSelectedImage(url);
   };
 
   const getPredictionDetails = (type) => {
+    // ... (unchanged, keeping your existing logic)
     switch (type) {
       case "advanced":
       case "PDR":
@@ -217,7 +239,6 @@ const ResultsSection = ({
           <FaCamera className="mr-2 text-gray-500" size={14} />
           <span>New Scan</span>
         </Button>
-        
         <Button
           onClick={handleExportPDF}
           className="px-4 py-1 h-auto bg-blue-600 hover:bg-blue-700 text-white border-0 rounded-md shadow-sm hover:shadow transition-all flex items-center justify-center"
@@ -383,7 +404,7 @@ const ResultsSection = ({
                   <Form
                     form={form}
                     layout="vertical"
-                    onFinish={handleSavePrescriptionClick} // Changed to trigger dialog
+                    onFinish={handleSavePrescriptionClick}
                     initialValues={{ tests: [{ testName: "" }] }}
                     className="space-y-5"
                   >
@@ -439,13 +460,28 @@ const ResultsSection = ({
                                   <Form.Item
                                     {...restField}
                                     name={[name, "testName"]}
-                                    rules={[{ required: true, message: "" }]}
+                                    rules={[{ required: true, message: "Please select a test" }]}
                                     className="mb-0"
                                   >
-                                    <Input
-                                      placeholder={`Test ${index + 1} (e.g., Blood Sugar Test, HbA1c)`}
-                                      className="pl-9 rounded-lg border-gray-200 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                    />
+                                    <select
+                                      className="w-full h-10 pl-9 rounded-lg border-gray-200 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                      disabled={loadingTests}
+                                    >
+                                      {loadingTests ? (
+                                        <option value="">Loading tests...</option>
+                                      ) : (
+                                        <>
+                                          <option value="">Select Test {index + 1}</option>
+                                          {availableTests
+                                            .filter((test) => test.isEnabled)
+                                            .map((test) => (
+                                              <option key={test._id} value={test.name}>
+                                                {test.name}
+                                              </option>
+                                            ))}
+                                        </>
+                                      )}
+                                    </select>
                                   </Form.Item>
                                   <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
                                     <svg
@@ -470,7 +506,7 @@ const ResultsSection = ({
                                   <Tooltip title="Remove test">
                                     <Button
                                       type="text"
-                                      onClick={() => remove(name)} // Direct removal without dialog
+                                      onClick={() => remove(name)}
                                       className="flex items-center justify-center hover:bg-red-50 transition-colors rounded-full w-8 h-8 text-red-500"
                                       icon={
                                         <svg
@@ -641,7 +677,6 @@ const ResultsSection = ({
         confirmText="Yes, Start New Scan"
         cancelText="Cancel"
       />
-      
       <ConfirmDialog
         isOpen={showQuickSaveDialog}
         onConfirm={handleConfirmQuickSave}
@@ -650,7 +685,6 @@ const ResultsSection = ({
         confirmText="Yes, Save"
         cancelText="Cancel"
       />
-      
       <ConfirmDialog
         isOpen={showSavePrescriptionDialog}
         onConfirm={handleConfirmSavePrescription}
