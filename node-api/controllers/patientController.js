@@ -607,7 +607,9 @@ exports.updatePatientDiagnosis = async (req, res) => {
     }
 
     // Update root-level patient.category (add new categories if not already present)
-    patient.category = [...new Set([...patient.category, ...category])]; // Avoid duplicates
+    patient.category = [...new Set([...patient.category, ...category])]; 
+
+    patient.patientStatus = "Monitoring";
 
     // Push new diagnosis into diagnoseHistory
     patient.diagnoseHistory.push({
