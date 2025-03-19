@@ -34,7 +34,7 @@ const MultiDiagnosePage = () => {
       const formData = new FormData();
       images.forEach(image => formData.append("files", image));
       formData.append("patientId", 12345);
-      formData.append("diseaseType", "amd");
+      formData.append("diseaseType", "glaucoma");
       const response = await axios.post("http://localhost:4000/api/patients/multisave", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -134,8 +134,8 @@ console.log(response)
       }));
       console.log("diagnosisData",diagnosisData)
       formData.append("diagnosisData", JSON.stringify(diagnosisData));
-      formData.append("category", "AMD");
-      formData.append("diseaseType", "amd");
+      formData.append("category", "GLAUCOMA");
+      formData.append("diseaseType", "glaucoma");
       const resizedImages = await Promise.all(images.map(image => resizeImage(image)));
       resizedImages.forEach(image => {
         const matchingPrediction = predictions.find(p => p.filename === image.name);
@@ -178,7 +178,7 @@ console.log(response)
         tip={`Saving... ${processingProgress}%`}
       >
         <MultiDiagnose
-          disease="Age Related Macular degeneration"
+          disease="Glaucoma"
           handleSubmission={handleSubmission}
           isSubmitting={isSubmitting}
           predictions={predictions}

@@ -64,8 +64,6 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
           subItems: [
             { title: "Single Image", url: "/diagnose/dr", allowedRoles: [ROLES.DOCTOR] },
             { title: "Multi Image", url: "/diagnose/multidr", allowedRoles: [ROLES.DOCTOR] },
-            { title: "Single Image", url: "/diagnose/dr", allowedRoles: [ROLES.DOCTOR] },
-            { title: "Multi Image", url: "/diagnose/multidr", allowedRoles: [ROLES.DOCTOR] },
           ],
         },
         {
@@ -74,7 +72,7 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
           allowedRoles: [ROLES.DOCTOR],
           subItems: [
             { title: "Single Image", url: "/diagnose/amd", allowedRoles: [ROLES.DOCTOR] },
-            { title: "Multi Image", url: "/diagnose/amd/multi", allowedRoles: [ROLES.DOCTOR] },
+            { title: "Multi Image", url: "/diagnose/multiamd", allowedRoles: [ROLES.DOCTOR] },
           ],
         },
         {
@@ -83,7 +81,7 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
           allowedRoles: [ROLES.DOCTOR],
           subItems: [
             { title: "Single Image", url: "/diagnose/rvo", allowedRoles: [ROLES.DOCTOR] },
-            { title: "Multi Image", url: "/diagnose/rvo/multi", allowedRoles: [ROLES.DOCTOR] },
+            { title: "Multi Image", url: "/diagnose/multirvo", allowedRoles: [ROLES.DOCTOR] },
           ],
         },
         {
@@ -92,7 +90,7 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
           allowedRoles: [ROLES.DOCTOR],
           subItems: [
             { title: "Single Image", url: "/diagnose/glaucoma", allowedRoles: [ROLES.DOCTOR] },
-            { title: "Multi Image", url: "/diagnose/glaucoma/multi", allowedRoles: [ROLES.DOCTOR] },
+            { title: "Multi Image", url: "/diagnose/multiglaucoma", allowedRoles: [ROLES.DOCTOR] },
           ],
         },
       ],

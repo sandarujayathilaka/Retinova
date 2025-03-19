@@ -41,6 +41,11 @@ import AddPatientWizard from "./pages/Nurse/AddPatient/AddPatientWizard";
 import ReviewPatients from "./pages/Nurse/ReviewPatients/ReviewPatients";
 import UserList from "./pages/admin/UserList";
 import AllNursePatients from "./pages/nurse/AllPatients/AllPatients"
+import MultiAMD from "./pages/diseases/MultiAMD";
+import MultiRVO from "./pages/diseases/MultiRVO";
+import MultiGlaucoma from "./pages/diseases/MultiGlaucoma";
+
+
 const App = () => {
   const SAMPLE_NURSE_ID = "67d1eec052a3868b43b617d3"; // Replace with a real ID
   return (
@@ -122,6 +127,9 @@ const App = () => {
           <Route path="/diagnose/glaucoma" element={<Glaucoma />} />
           <Route path="/diagnose/rvo" element={<RVO />} />
           <Route path="/diagnose/multidr" element={<MultiDiagnosePage />} />
+          <Route path="/diagnose/multiamd" element={<MultiAMD />} />
+          <Route path="/diagnose/multirvo" element={<MultiRVO />} />
+          <Route path="/diagnose/multiglaucoma" element={<MultiGlaucoma />} />
           <Route path="/patients" element={<PatientsPage />} />
           <Route path="/patients/:patientId" element={<PatientProfile />} />
           <Route path="/monitorpatients" element={<MonitoringPatientsPage />} />

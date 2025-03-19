@@ -34,7 +34,7 @@ const MultiDiagnosePage = () => {
       const formData = new FormData();
       images.forEach(image => formData.append("files", image));
       formData.append("patientId", 12345);
-
+      formData.append("diseaseType", "dr");
       const response = await axios.post("http://localhost:4000/api/patients/multisave", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -134,7 +134,7 @@ const MultiDiagnosePage = () => {
       }));
       formData.append("diagnosisData", JSON.stringify(diagnosisData));
       formData.append("category", "DR");
-
+      formData.append("diseaseType", "dr");
       const resizedImages = await Promise.all(images.map(image => resizeImage(image)));
       resizedImages.forEach(image => {
         const matchingPrediction = predictions.find(p => p.filename === image.name);
