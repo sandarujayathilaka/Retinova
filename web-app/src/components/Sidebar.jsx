@@ -19,6 +19,9 @@ import {
 import { ROLES } from "@/constants/roles"; // Ensure path is correct
 import { FaUserNurse } from "react-icons/fa";
 import useUserStore from "@/stores/auth";
+import { ROLES } from "@/constants/roles"; // Ensure path is correct
+import { FaUserNurse } from "react-icons/fa";
+import useUserStore from "@/stores/auth";
 
 const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => {
   const location = useLocation();
@@ -27,7 +30,15 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
 
   console.log(userData);
 
+  const { user: userData, logout } = useUserStore();
+
+  console.log(userData);
+
   const user = {
+    name: userData?.name,
+    email: userData?.email,
+    avatar: userData?.image?.Location,
+    role: userData?.role,
     name: userData?.name,
     email: userData?.email,
     avatar: userData?.image?.Location,
@@ -41,6 +52,7 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
       url: "/dashboard",
       isExpandable: false,
       allowedRoles: [ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE],
+      allowedRoles: [ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE],
     },
     {
       title: "Diagnose",
@@ -48,12 +60,16 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
       isExpandable: true,
       section: "diagnose",
       allowedRoles: [ROLES.DOCTOR],
+      allowedRoles: [ROLES.DOCTOR],
       subItems: [
         {
           title: "DR",
           section: "dr",
           allowedRoles: [ROLES.DOCTOR],
+          allowedRoles: [ROLES.DOCTOR],
           subItems: [
+            { title: "Single Image", url: "/diagnose/dr", allowedRoles: [ROLES.DOCTOR] },
+            { title: "Multi Image", url: "/diagnose/multidr", allowedRoles: [ROLES.DOCTOR] },
             { title: "Single Image", url: "/diagnose/dr", allowedRoles: [ROLES.DOCTOR] },
             { title: "Multi Image", url: "/diagnose/multidr", allowedRoles: [ROLES.DOCTOR] },
           ],
@@ -110,11 +126,19 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
       subItems: [
         { title: "Admin Dashboard", url: "/dashboard", allowedRoles: [ROLES.NURSE] },
         { title: "Add Patient", url: "/add-patient", allowedRoles: [ROLES.NURSE] },
+        { title: "All Patients", url: "/all-patients", allowedRoles: [ROLES.NURSE]  },
         { title: "Monitoring patients", url: "/monitoring-patients", allowedRoles: [ROLES.NURSE] },
         { title: "Published patients", url: "/published-patients", allowedRoles: [ROLES.NURSE] },
         { title: "Review patients", url: "/review-patients", allowedRoles: [ROLES.NURSE] },
         { title: "Doctor Dashboard", url: "/doctordashboard", allowedRoles: [ROLES.NURSE] },
       ],
+    },
+    {
+      title: "Users",
+      icon: Users2,
+      url: "/users",
+      isExpandable: false,
+      allowedRoles: [ROLES.ADMIN],
     },
     {
       title: "Users",

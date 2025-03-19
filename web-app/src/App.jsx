@@ -182,6 +182,42 @@ const App = () => {
           <Route path="/profile" element={<NurseProfile nurseId={SAMPLE_NURSE_ID} />} />
         </Route>
 
+        {/* doctor routes */}
+        <Route element={<ProtectedRoute roles={[ROLES.DOCTOR]} redirectPath="/404" />}>
+          <Route path="/doctordashboard" element={<DoctorDashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/diagnose/dr" element={<DR />} />
+          <Route path="/diagnose/amd" element={<AMD />} />
+          <Route path="/diagnose/glaucoma" element={<Glaucoma />} />
+          <Route path="/diagnose/rvo" element={<RVO />} />
+          <Route path="/diagnose/multidr" element={<MultiDiagnosePage />} />
+          <Route path="/patients" element={<PatientsPage />} />
+          <Route path="/patients/:patientId" element={<PatientProfile />} />
+          <Route path="/monitorpatients" element={<MonitoringPatientsPage />} />
+          <Route path="/pre-monitoring-patients" element={<PreMonitoringPatientsPage />} />
+          <Route path="/completed-patients" element={<CompletedPatientsPage />} />
+          <Route path="/review-patients-profile" element={<ReviewPatientsPage />} />
+        </Route>
+
+        {/* nurese routes */}
+        <Route element={<ProtectedRoute roles={[ROLES.NURSE]} redirectPath="/404" />}>
+          <Route path="/monitoring-patients" element={<MonitoringPatients />} />
+          <Route path="/published-patients" element={<PublishedPatients />} />
+          <Route path="/review-patients" element={<ReviewPatients />} />
+          <Route path="/addPatientt" element={<AddPatient />} />
+          <Route path="/add-patient" element={<AddPatientWizard />} />
+          <Route path="/monitoring-patients/view/:id" element={<View />} />
+          <Route path="/all-patients" element={<AllNursePatients />} />
+          <Route path="/all-patients/view/:id" element={<View />} />
+          
+
+          <Route path="/patients/:patientId" element={<PatientProfile />} />
+          <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
+
+          <Route path="/nursedashboard" element={<NurseDashboard />} />
+          <Route path="/profile" element={<NurseProfile nurseId={SAMPLE_NURSE_ID} />} />
+        </Route>
+
         {/* <Route path="/allp" element={<AllPatientList />} /> */}
         {/* <Route path="/patients/:patientId" element={<PatientProfile />} /> */}
         {/* <Route path="/patient/:patientId/test-records" element={<TestRecords />} /> */}
