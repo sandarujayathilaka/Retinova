@@ -110,7 +110,6 @@ const updateTestStatus = asyncHandler(async (req, res) => {
 });
 
 // Complete diagnosis and update patient status
-// Complete diagnosis and update patient status
 const completeDiagnosis = asyncHandler(async (req, res) => {
   const { patientId } = req.params;
   const { diagnoseId } = req.body;
@@ -154,13 +153,20 @@ const completeDiagnosis = asyncHandler(async (req, res) => {
   // Update the diagnosis status to "Test Completed"
   diagnose.status = "Test Completed";
 
-  // Check if this was the last "Checked" diagnosis, and update patient status if needed
-  const remainingCheckedDiagnoses = patient.diagnoseHistory.filter(
-    (d) => d.status === "Checked" && d._id.toString() !== diagnoseId
+  // Check for remaining "Checked" diagnoses with non-empty tests arrays
+  const remainingCheckedDiagnosesWithTests = patient.diagnoseHistory.filter(
+    (d) =>
+      d.status === "Checked" &&
+      d._id.toString() !== diagnoseId && // Exclude the current diagnosis
+      d.recommend && // Ensure recommend exists
+      Array.isArray(d.recommend.tests) && // Ensure tests is an array
+      d.recommend.tests.length > 0 // Ensure tests array is not empty
   ).length;
 
-  if (remainingCheckedDiagnoses === 0) {
-    // If no other diagnoses are "Checked", update patient status
+  console.log("Remaining Checked Diagnoses with Tests:", remainingCheckedDiagnosesWithTests);
+
+  if (remainingCheckedDiagnosesWithTests === 0) {
+    // If no other "Checked" diagnoses with tests remain, update patient status
     patient.patientStatus = "Published";
   }
 

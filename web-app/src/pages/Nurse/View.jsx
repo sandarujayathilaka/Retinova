@@ -163,7 +163,7 @@ const calculateAge = (birthDate) => {
 
               {/* Tab Navigation */}
               <div className="flex space-x-1 bg-white/10 rounded-full p-1">
-                {["personal", "medical", "treatment"].map((tab) => (
+                {["personal", "medical", "tests"].map((tab) => (
                   <Button
                     key={tab}
                     variant="ghost"
@@ -410,7 +410,7 @@ const calculateAge = (birthDate) => {
             </CardContent>
           )}
 
-          {activeTab === "treatment" && (
+          {activeTab === "tests" && (
             <CardContent className="p-8 bg-white">
               <TestRecords patientId={patient.patientId}/>
             </CardContent>

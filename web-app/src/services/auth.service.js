@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api.service";
 
 // Reset password with token
@@ -20,5 +20,30 @@ export const useRequestPasswordResetLink = () => {
 export const useLogin = () => {
   return useMutation({
     mutationFn: async credentials => api.post("/auth/signin", credentials),
+  });
+};
+
+// Get all users
+export const useGetAllUsers = () => {
+  return useQuery({
+    queryKey: ["users"],
+    queryFn: async () => {
+      const response = await api.get("/auth/users");
+      return response.data;
+    },
+  });
+};
+
+// Toggle user status
+export const useToggleUserStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, isActive }) =>
+      api.patch(`/auth/users/${userId}/status`, {
+        isActive,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["users"]);
+    },
   });
 };
