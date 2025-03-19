@@ -64,6 +64,7 @@ const Diagnose = ({
   const [selectedImage, setSelectedImage] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const [availableTests, setAvailableTests] = useState([]);
   const [form] = Form.useForm();
 
   const onDrop = useCallback(
@@ -85,6 +86,21 @@ const Diagnose = ({
     },
     [handleSubmission],
   );
+
+  // Fetch tests from the API
+  useEffect(() => {
+    const fetchTests = async () => {
+      try {
+        const response = await api.get("tests");
+        console.log("Available tests:", response.data);
+        setAvailableTests(response.data); 
+      } catch (error) {
+        console.error("Error fetching tests:", error);
+        toast.error("Failed to fetch available tests.");
+      }
+    };
+    fetchTests();
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -180,7 +196,7 @@ const Diagnose = ({
           >
             <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-white">
               <Title level={3} className="text-white mb-1">
-                Upload Retinal Scan
+                Retinal Scan
               </Title>
               <Text className="text-white opacity-80">
                 Drop an image to analyze Diabetic Retinopathy
@@ -539,31 +555,6 @@ const Diagnose = ({
                       </List.Item>
                     )}
                   />
-                </Card>
-              )}
-            </TabPane>
-
-            <TabPane tab="Trend Analysis" key="charts">
-              {chartData.length > 0 && (
-                <Card className="shadow-md rounded-xl bg-white">
-                  <Title level={4} className="text-gray-800 mb-4">
-                    Confidence Trend Over Time
-                  </Title>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis unit="%" />
-                      <Tooltip />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="confidence"
-                        stroke="#3B82F6"
-                        activeDot={{ r: 8 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
                 </Card>
               )}
             </TabPane>

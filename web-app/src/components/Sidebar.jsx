@@ -98,7 +98,7 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
         { title: "Monitoring", url: "/monitorpatients", allowedRoles: [ROLES.DOCTOR] },
         { title: "Pre-Monitoring", url: "/pre-monitoring-patients", allowedRoles: [ROLES.DOCTOR] },
         { title: "Completed", url: "/completed-patients", allowedRoles: [ROLES.DOCTOR] },
-        { title: "Review", url: "/review-patients", allowedRoles: [ROLES.DOCTOR] },
+        { title: "Review", url: "/review-patients-profile", allowedRoles: [ROLES.DOCTOR] },
       ],
     },
     {

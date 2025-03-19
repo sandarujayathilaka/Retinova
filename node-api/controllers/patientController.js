@@ -95,7 +95,7 @@ exports.predictAndFetch = async (req, res) => {
 
     if (!patientIdMatch) {
       return res.status(400).json({
-        error: "Invalid filename format. Expected: patientId_randomtext.jpg",
+        error: "Invalid filename format. Expected: patientId_eyeside_randomtext.jpg",
       });
     }
 
@@ -328,7 +328,7 @@ exports.uploadImages = async (req, res) => {
 //   }
 // };
 
-exports.multiImageSave = async (req, res) => {
+exports.multiImagePrediction = async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: "No images uploaded" });
@@ -491,9 +491,9 @@ exports.updatePatientDiagnosis = async (req, res) => {
     ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    console.log(req.body.diagnosis);
+    console.log("Raw req.body.category:", req.body.category);
 
-    // Extract patient ID from filename (e.g., 12345_jndj.jpg → 12345)
+    // Extract patient ID from filename (e.g., P1_left_image.jpg → P1)
     const filename = req.file.originalname;
     const match = filename.match(/^([^_]+)_(left|right)_/i);
 
@@ -538,8 +538,8 @@ exports.updatePatientDiagnosis = async (req, res) => {
     try {
       recommend = JSON.parse(req.body.recommend);
       if (
-        typeof recommend.medicine !== "string" || // Must be a string
-        !Array.isArray(recommend.tests) || // Must be an array
+        typeof recommend.medicine !== "string" ||
+        !Array.isArray(recommend.tests) ||
         !recommend.tests.every(
           (test) =>
             typeof test.testName === "string" &&
@@ -548,7 +548,7 @@ exports.updatePatientDiagnosis = async (req, res) => {
             ) &&
             typeof test.attachmentURL === "string"
         ) ||
-        typeof recommend.note !== "string" // Must be a string
+        typeof recommend.note !== "string"
       ) {
         return res.status(400).json({ error: "Invalid recommend format" });
       }
@@ -556,22 +556,34 @@ exports.updatePatientDiagnosis = async (req, res) => {
       return res.status(400).json({ error: "Invalid recommend JSON format" });
     }
 
-    // Ensure category is an array
+    // Define valid categories
+    const validCategories = ["DR", "AMD", "Glaucoma", "RVO", "Others"];
+
+    // Normalize category to an array (handle single string like "DR")
     const category = Array.isArray(req.body.category)
       ? req.body.category
       : [req.body.category];
+    console.log("Processed category:", category);
 
-    // Update patient record
+    // Validate category
+    if (!category.every((cat) => validCategories.includes(cat))) {
+      return res.status(400).json({ error: "Invalid category value" });
+    }
+
+    // Update root-level patient.category (add new categories if not already present)
+    patient.category = [...new Set([...patient.category, ...category])]; // Avoid duplicates
+
+    // Push new diagnosis into diagnoseHistory
     patient.diagnoseHistory.push({
       imageUrl,
       diagnosis: req.body.diagnosis,
       confidenceScores,
-      category,
       eye: sideIdentifier,
-      recommend, // Use the parsed recommend object directly
-      status: "Checked", // Default from schema
+      recommend,
+      status: "Checked",
     });
 
+    // Save the updated patient document
     await patient.save();
 
     // Response with consistent status
@@ -581,15 +593,16 @@ exports.updatePatientDiagnosis = async (req, res) => {
       imageUrl,
       diagnosis: req.body.diagnosis,
       confidenceScores,
-      category,
+      category: patient.category,
       recommend,
-      status: "Checked", // Match the pushed status
+      status: "Checked",
     });
   } catch (error) {
     console.error("Error in updatePatientDiagnosis:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 exports.getAllPatients = async (req, res) => {
   try {
@@ -679,6 +692,7 @@ exports.getAllPatients = async (req, res) => {
 exports.getPatientById = async (req, res) => {
   try {
     const { patientId } = req.params; // Extract patientId from URL parameters
+    console.log("Patient ID:", patientId);
 
     // Validate patientId
     if (!patientId) {
@@ -1061,18 +1075,6 @@ exports.updateTestStatus = async (req, res) => {
     // Update the test status
     diagnosis.recommend.tests[testIndex].status = status;
 
-    // Check for pending tests in recommend.tests
-    const hasPendingTests = diagnosis.recommend.tests.some(
-      (test) => test.status === "Pending"
-    );
-
-    // Update patient status based on test status
-    if (hasPendingTests) {
-      patient.patientStatus = "Monitoring";
-    } else {
-      patient.patientStatus = "Completed"; // Default to Completed if no pending tests
-    }
-
     // Save the updated patient
     await patient.save();
 
@@ -1081,7 +1083,6 @@ exports.updateTestStatus = async (req, res) => {
       data: {
         test: diagnosis.recommend.tests[testIndex],
         diagnosis: patient.diagnoseHistory[diagnosisIndex],
-        patientStatus: patient.patientStatus,
       },
     });
   } catch (error) {
@@ -1089,3 +1090,62 @@ exports.updateTestStatus = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };
+
+exports.addTestToDiagnose = async (req, res) => {
+  try {
+    const { patientId, diagnoseId } = req.params; // Extract from URL params
+    const { testName } = req.body; // Extract test details from body
+
+    // Validate required fields
+    if (!testName) {
+      return res.status(400).json({
+        error: "Test name is required",
+      });
+    }
+
+
+    // Find the patient by patientId (assuming patientId is a unique field, not _id)
+    const patient = await Patient.findOne({ patientId });
+    if (!patient) {
+      return res.status(404).json({ error: "Patient not found" });
+    }
+
+    // Find the diagnosis in the diagnoseHistory array
+    const diagnosisIndex = patient.diagnoseHistory.findIndex(
+      (diag) => diag._id.toString() === diagnoseId
+    );
+    if (diagnosisIndex === -1) {
+      return res.status(404).json({ error: "Diagnosis not found" });
+    }
+
+    const diagnosis = patient.diagnoseHistory[diagnosisIndex];
+
+    // Construct the new test object
+    const newTest = {
+      testName,
+      status: "Pending", // Default to "Pending" if not provided
+      addedAt: new Date(), // Automatically set current date/time
+    };
+
+    // Push the new test into the tests array
+    diagnosis.recommend.tests.push(newTest);
+
+    // Save the updated patient
+    await patient.save();
+
+    // Return success response with updated diagnosis
+    res.json({
+      message: "Test added successfully",
+      data: patient.diagnoseHistory[diagnosisIndex],
+      patientStatus: patient.patientStatus,
+    });
+  } catch (error) {
+    console.error("Error adding test to diagnose:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+
