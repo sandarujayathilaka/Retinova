@@ -1,6 +1,7 @@
 const Patient = require("../models/patient");
 const Doctor = require("../models/doctor.model");
 const Nurse = require("../models/nurse.model");
+const User = require("../models/user.model");
 const logger = require("../config/logger");
 
 
@@ -126,21 +127,54 @@ const getAllDoctors = async (req, res) => {
     const safeFields = fields ? fields.replace(/[^a-zA-Z0-9\s-_]/g, '') : null;
 
     let doctors;
+
     if (type === "summary") {
+      // Fetch doctors
       doctors = await Doctor.find({})
-        .select("name status type specialty createdAt workingHours daysOff")
+        .select("name type specialty createdAt workingHours daysOff")
         .lean();
+
+      // Fetch corresponding User records using profile field
+      const doctorIds = doctors.map(doc => doc._id);
+      const users = await User.find({
+        role: "doctor",
+        profile: { $in: doctorIds },
+      }).select("profile isActive").lean();
+
+      // Map isActive to status
+      doctors = doctors.map(doctor => {
+        const user = users.find(u => u.profile.toString() === doctor._id.toString());
+        return {
+          ...doctor,
+          status: user ? user.isActive : false, // Default to false if no user found
+        };
+      });
     } else {
       doctors = await Doctor.find({})
         .select(safeFields || "-__v")
         .lean();
+
+      // Fetch corresponding User records
+      const doctorIds = doctors.map(doc => doc._id);
+      const users = await User.find({
+        role: "doctor",
+        profile: { $in: doctorIds },
+      }).select("profile isActive").lean();
+
+      // Map isActive to status
+      doctors = doctors.map(doctor => {
+        const user = users.find(u => u.profile.toString() === doctor._id.toString());
+        return {
+          ...doctor,
+          status: user ? user.isActive : false, // Default to false if no user found
+        };
+      });
     }
 
-    // Total count is just the length of the returned doctors
     const total = doctors.length;
-
     return res.status(200).json({ doctors, total });
   } catch (error) {
+    logger.error("Error fetching doctors:", error);
     res.status(500).json({ message: "Error fetching doctors", error: error.message });
   }
 };
@@ -153,22 +187,55 @@ const getAllNurses = async (req, res) => {
     const safeFields = fields ? fields.replace(/[^a-zA-Z0-9\s-_]/g, '') : null;
 
     let nurses;
+
     if (type === "summary") {
+      // Fetch nurses
       nurses = await Nurse.find({})
-        .select("name status type specialty createdAt workingHours daysOff")
+        .select("name type specialty createdAt workingHours daysOff")
         .lean();
+
+      // Fetch corresponding User records using profile field
+      const nurseIds = nurses.map(nurse => nurse._id);
+      const users = await User.find({
+        role: "nurse",
+        profile: { $in: nurseIds },
+      }).select("profile isActive").lean();
+
+      // Map isActive to status
+      nurses = nurses.map(nurse => {
+        const user = users.find(u => u.profile.toString() === nurse._id.toString());
+        return {
+          ...nurse,
+          status: user ? user.isActive : false, // Default to false if no user found
+        };
+      });
     } else {
       nurses = await Nurse.find({})
         .select(safeFields || "-__v")
         .lean();
+
+      // Fetch corresponding User records
+      const nurseIds = nurses.map(nurse => nurse._id);
+      const users = await User.find({
+        role: "nurse",
+        profile: { $in: nurseIds },
+      }).select("profile isActive").lean();
+
+      // Map isActive to status
+      nurses = nurses.map(nurse => {
+        const user = users.find(u => u.profile.toString() === nurse._id.toString());
+        return {
+          ...nurse,
+          status: user ? user.isActive : false, // Default to false if no user found
+        };
+      });
     }
 
-    // Total count is just the length of the returned doctors
     const total = nurses.length;
-
     return res.status(200).json({ nurses, total });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching doctors", error: error.message });
+    logger.error("Error fetching nurses:", error);
+    res.status(500).json({ message: "Error fetching nurses", error: error.message });
   }
 };
 module.exports = { getAllPatients, getAllDoctors,getAllNurses };

@@ -17,6 +17,9 @@ const NurseSummary = ({ nurses, nurseFilter, setNurseFilter, className }) => {
   
   // Calculate online/offline status
   const onlineNurses = nurses.filter(nurse => nurse.status).length;
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const newNursesCount = nurses.filter(nurse => new Date(nurse.createdAt) >= thirtyDaysAgo).length;
 
   return (
     <Card className={`rounded-xl overflow-hidden bg-white transition-all duration-300 border-none ${className}`}>
@@ -42,8 +45,8 @@ const NurseSummary = ({ nurses, nurseFilter, setNurseFilter, className }) => {
                 <div className="text-sm text-blue-600 font-medium">Total Nurses</div>
               </div>
               <div className="bg-indigo-50 rounded-lg p-4 text-center transition-all duration-300">
-                <div className="text-3xl font-bold text-indigo-800">{onlineNurses}</div>
-                <div className="text-sm text-indigo-600 font-medium">Online</div>
+                <div className="text-3xl font-bold text-indigo-800">{newNursesCount}</div>
+                <div className="text-sm text-indigo-600 font-medium">New (30d)</div>
               </div>
               <div className="bg-green-50 rounded-lg p-4 text-center transition-all duration-300">
                 <div className="text-3xl font-bold text-green-700">{activeNurses}</div>

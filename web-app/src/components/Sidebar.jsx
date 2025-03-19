@@ -15,6 +15,9 @@ import {
   Shield,
   FlaskConical,
   Users2,
+  User2,
+  ClipboardList, 
+  Clock, 
 } from "lucide-react";
 import { ROLES } from "@/constants/roles"; // Ensure path is correct
 import { FaUserNurse } from "react-icons/fa";
@@ -40,7 +43,14 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
       icon: LayoutDashboard,
       url: "/dashboard",
       isExpandable: false,
-      allowedRoles: [ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE],
+      allowedRoles: [ROLES.ADMIN],
+    },
+    {
+      title: "Dashboard",
+      icon: LayoutDashboard,
+      url: "/doctordashboard",
+      isExpandable: false,
+      allowedRoles: [ROLES.DOCTOR],
     },
     {
       title: "Diagnose",
@@ -101,21 +111,41 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
         { title: "Review", url: "/review-patients-profile", allowedRoles: [ROLES.DOCTOR] },
       ],
     },
+
     {
-      title: "Nurse Dashboard",
-      icon: FileText,
-      isExpandable: true,
-      section: "nurse",
-      allowedRoles: [ROLES.NURSE],
-      subItems: [
-        { title: "Admin Dashboard", url: "/dashboard", allowedRoles: [ROLES.NURSE] },
-        { title: "Add Patient", url: "/add-patient", allowedRoles: [ROLES.NURSE] },
-        { title: "All Patients", url: "/all-patients", allowedRoles: [ROLES.NURSE] },
-        { title: "Monitoring patients", url: "/monitoring-patients", allowedRoles: [ROLES.NURSE] },
-        { title: "Published patients", url: "/published-patients", allowedRoles: [ROLES.NURSE] },
-        { title: "Review patients", url: "/review-patients", allowedRoles: [ROLES.NURSE] },
-        { title: "Doctor Dashboard", url: "/doctordashboard", allowedRoles: [ROLES.NURSE] },
-      ],
+      title: "All Patients",
+       url: "/all-patients",
+       icon: Users,
+      isExpandable: false, 
+      allowedRoles: [ROLES.NURSE] 
+    },
+    {
+      title: "Add Patient",
+       url: "/add-patient",
+       icon: User2,
+      isExpandable: false, 
+      allowedRoles: [ROLES.NURSE] 
+    },
+    {
+      title: "Monitoring patients",
+       url: "/monitoring-patients",
+       icon: Activity,
+      isExpandable: false, 
+      allowedRoles: [ROLES.NURSE] 
+    },
+    {
+      title: "Published patients",
+       url: "/published-patients",
+       icon: ClipboardList,
+      isExpandable: false, 
+      allowedRoles: [ROLES.NURSE] 
+    },
+    {
+      title: "Review patients",
+       url: "/review-patients",
+       icon: Clock,
+      isExpandable: false, 
+      allowedRoles: [ROLES.NURSE] 
     },
     {
       title: "Users",

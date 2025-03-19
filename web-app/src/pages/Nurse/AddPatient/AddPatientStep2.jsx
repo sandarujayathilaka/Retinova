@@ -165,7 +165,7 @@ const MedicalDetailsSection = ({ form, allergyFields, setAllergyFields, handleAl
 
 // Sub-component: Emergency Contact Section
 const EmergencyContactSection = ({ form }) => {
-  const relationships = ["None", "Father", "Mother", "Sister", "Brother", "Son", "Daughter", "Friend", "Relative", "Other"];
+  const relationships = ["None", "Father", "Mother", "Husband", "Wife", "Sister", "Brother", "Son", "Daughter", "Friend", "Relative", "Other"];
 
   return (
     <div className="space-y-6">
@@ -368,7 +368,7 @@ export default function AddPatientStep2({ step1Data, initialData, onPrevious, on
           error.response?.data?.error ||
           error.message ||
           "Failed to register patient. Please try again.";
-        // showErrorToast(errorMessage);  
+        showErrorToast(errorMessage);  
         throw error;
       }
     },

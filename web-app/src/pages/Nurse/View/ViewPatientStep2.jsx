@@ -170,7 +170,7 @@ const ViewPatientStep2 = ({ initialData, onPrevious, onSave, onCancel, isSubmitt
     }}
     
   const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-  const relationships = ["None", "Father", "Mother", "Sister", "Brother", "Son", "Daughter", "Friend", "Relative", "Other"];
+  const relationships = ["None", "Father", "Mother", "Husband", "Wife","Sister", "Brother", "Son", "Daughter", "Friend", "Relative", "Other"];
 
   return (
     <Form {...form}>

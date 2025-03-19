@@ -41,6 +41,7 @@ export function useDashboard(type = 'admin', id = null) {
       // Different API calls based on dashboard type
       if (type === 'doctor' && id) {
         // Doctor dashboard
+        console.log(id)
         const [doctorRes, patientsRes] = await Promise.all([
           api.get(`/doctors/${id}`),
           api.get(`/doctors/${id}/patients?type=summary`),
@@ -75,7 +76,7 @@ console.log(patientData)
           api.get("/dashboard/nurses?type=summary"), 
           api.get("/dashboard/patients?type=summary"),
         ]);
-        
+        console.log(doctorsRes.data.doctors)
         setDoctors(doctorsRes.data.doctors);
         setNurses(nursesRes.data.nurses);
         setPatients(patientsRes.data.patients);

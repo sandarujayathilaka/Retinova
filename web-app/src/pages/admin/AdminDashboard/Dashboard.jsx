@@ -73,10 +73,10 @@ const Dashboard = () => {
     return <ErrorState error={error} onRetry={() => fetchData()} />;
   }
 console.log(allDoctorsReviewCounts)
-console.log("Dsds")
+
   return (
 <div className="bg-gray-50 min-h-screen">
-<div className="mx-auto px-4 sm:px-6 py-4 lg:mx-8 xl:mx-12">
+<div className="mx-auto py-4">
   
         <DashboardHeader 
           title="Hospital Dashboard" 
@@ -126,7 +126,7 @@ console.log("Dsds")
         </GridLayout>
 
 
-        <GridLayout>
+        {/* <GridLayout>
        
             <DoctorsStatusPieChart 
               data={doctorsStatusData} 
@@ -142,7 +142,7 @@ console.log("Dsds")
               nurses={nurses} 
             />
  
-        </GridLayout>
+        </GridLayout> */}
 
 
         <GridLayout>

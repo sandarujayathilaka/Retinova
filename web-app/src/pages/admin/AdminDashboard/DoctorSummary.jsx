@@ -15,6 +15,11 @@ const DoctorSummary = ({ doctors, doctorFilter, setDoctorFilter, className }) =>
   const activeDoctors = doctors.filter(doc => doc.status === true).length;
 const inactiveDoctors = doctors.filter(doc => doc.status === false).length;
 
+
+const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const newDoctorsCount = doctors.filter(doc => new Date(doc.createdAt) >= thirtyDaysAgo).length;
+
   // Calculate doctors by specialty categories
   const specialtyCounts = {};
   doctorSpecialties.forEach(specialty => {
@@ -48,8 +53,8 @@ const inactiveDoctors = doctors.filter(doc => doc.status === false).length;
                 <div className="text-sm text-blue-600 font-medium">Total Doctors</div>
               </div>
               <div className="bg-indigo-50 rounded-lg p-4 text-center transition-all duration-300">
-                <div className="text-3xl font-bold text-indigo-800">{onlineDoctors}</div>
-                <div className="text-sm text-indigo-600 font-medium">Online</div>
+                <div className="text-3xl font-bold text-indigo-800">{newDoctorsCount}</div>
+                <div className="text-sm text-indigo-600 font-medium">New (30d)</div>
               </div>
               <div className="bg-green-50 rounded-lg p-4 text-center transition-all duration-300">
                 <div className="text-3xl font-bold text-green-700">{activeDoctors}</div>
