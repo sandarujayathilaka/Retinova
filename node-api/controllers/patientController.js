@@ -175,6 +175,24 @@ exports.uploadImages = async (req, res) => {
       return res.status(400).json({ error: "No images uploaded" });
     }
 
+    const { diseaseType } = req.body;
+    if (
+      !diseaseType ||
+      !["amd", "dr", "rvo", "glaucoma"].includes(diseaseType.toLowerCase())
+    ) {
+      return res.status(400).json({
+        error:
+          "Invalid or missing diseaseType parameter. Use 'amd', 'dr', 'rvo', or 'glaucoma'.",
+      });
+    }
+
+    const flaskApiUrl = {
+      amd: process.env.FLASK_API_AMD_Multi,
+      dr: process.env.FLASK_API_DR_Multi,
+      rvo: process.env.FLASK_API_RVO_Multi,
+      glaucoma: process.env.FLASK_API_GLAUCOMA_Multi,
+    }[diseaseType.toLowerCase()];
+
     // Extract unique patient IDs from filenames
     let patientIds = [
       ...new Set(req.files.map((file) => path.parse(file.originalname).name)),
@@ -228,7 +246,7 @@ exports.uploadImages = async (req, res) => {
     });
 
     const flaskResponse = await axios.post(
-      process.env.FLASK_API_URL_2,
+     flaskApiUrl,
       formData,
       { headers: { ...formData.getHeaders() } }
     );
@@ -262,7 +280,7 @@ exports.uploadImages = async (req, res) => {
         patientDetails: patient,
       });
     }
-
+console.log("images",results);
     res.json({ message: "Upload and Diagnosis Complete", results });
   } catch (error) {
     console.error("Error in uploadImages:", error);
@@ -334,6 +352,24 @@ exports.multiImagePrediction = async (req, res) => {
       return res.status(400).json({ error: "No images uploaded" });
     }
 
+    const { diseaseType } = req.body;
+    if (
+      !diseaseType ||
+      !["amd", "dr", "rvo", "glaucoma"].includes(diseaseType.toLowerCase())
+    ) {
+      return res.status(400).json({
+        error:
+          "Invalid or missing diseaseType parameter. Use 'amd', 'dr', 'rvo', or 'glaucoma'.",
+      });
+    }
+
+    const flaskApiUrl = {
+      amd: process.env.FLASK_API_AMD_Multi,
+      dr: process.env.FLASK_API_DR_Multi,
+      rvo: process.env.FLASK_API_RVO_Multi,
+      glaucoma: process.env.FLASK_API_GLAUCOMA_Multi,
+    }[diseaseType.toLowerCase()];
+
     // Extract patientId and eyeSide from filenames
     let patientData = req.files.map((file) => {
       const match = file.originalname.match(/^(.*?)_(LEFT|RIGHT)_.*?\.(jpg|jpeg|png)$/i);
@@ -360,7 +396,7 @@ exports.multiImagePrediction = async (req, res) => {
       formData.append("files", file.buffer, { filename: file.originalname, contentType: file.mimetype });
     });
 
-    const flaskResponse = await axios.post(process.env.FLASK_API_URL_2, formData, { headers: { ...formData.getHeaders() } });
+    const flaskResponse = await axios.post(flaskApiUrl, formData, { headers: { ...formData.getHeaders() } });
     console.log("Flask Response:", flaskResponse.data);
 
     // Process Flask API Response
@@ -378,7 +414,7 @@ exports.multiImagePrediction = async (req, res) => {
         patientDetails: patient,
       };
     });
-
+console.log("mulyi",results)
     res.status(200).json({ message: "Analysis Complete", results });
   } catch (error) {
     console.error("Error in analyzeImages:", error);

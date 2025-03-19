@@ -3,12 +3,12 @@ const router = express.Router();
 
 const {
     getAllPatients, 
-    getAllDoctors
-
+    getAllDoctors,
+    getAllNurses
 } = require("../controllers/dashboard.controller");
 
 router.get("/doctors", getAllDoctors);
 router.get("/patients", getAllPatients);
-
+router.get("/nurses", getAllNurses);
 
 module.exports = router;

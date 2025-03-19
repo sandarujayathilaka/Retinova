@@ -119,7 +119,6 @@ const patientSchema = new mongoose.Schema(
     height: { type: Number, required: false },
     weight: { type: Number, required: false },
     allergies: { type: [String], required: false },
-    primaryPhysician : { type: mongoose.Schema.Types.ObjectId, ref: "Doctor" , required: false },
     address: { type: String, required: false },
     medicalHistory: [medicalHistorySchema],
     diagnoseHistory: [diagnoseSchema],
@@ -171,6 +170,7 @@ patientSchema.index({ category: 1, gender: 1 }); // For queries filtering by bot
 patientSchema.index({ createdAt: -1 }); // For sorting by age and creation date
 
 patientSchema.index({ patientId: 1 }, { unique: true });
-
+patientSchema.index({ nic: 1 }, { unique: true });
+patientSchema.index({ email: 1 }, { unique: true });
 const Patient = mongoose.model("Patient", patientSchema);
 module.exports = Patient;

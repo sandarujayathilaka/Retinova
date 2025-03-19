@@ -1,6 +1,91 @@
+import { z } from "zod";
+
+export const step1Schema = z.object({
+  fullName: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  birthDate: z.string().min(1, { message: "Date of birth is required." }),
+  nic: z.string().min(10, { message: "NIC must be at least 10 characters." }),
+  gender: z.enum(["Male", "Female", "Other"], { message: "Gender is required." }),
+  contactNumber: z
+    .string()
+    .min(1, { message: "Number is required." })
+    .regex(/^\d{10}$/, { message: "Number is invalid." }),
+  address: z.string().min(5, { message: "Address must be at least 5 characters." }),
+  email: z
+    .string()
+    .min(1, { message: "Email is required." })
+    .email({ message: "Invalid email address." }),
+});
+
+export const step2Schema = z.object({
+  bloodType: z.string().optional(),
+  height: z.number().min(0, { message: "Height cannot be negative" }).optional().or(z.literal("")),
+  weight: z.number().min(0, { message: "Weight cannot be negative" }).optional().or(z.literal("")),
+  allergies: z.array(z.string()).optional(),
+  emergencyContact: z
+    .object({
+      name: z.string().optional(),
+      relationship: z.string().optional(),
+      phone: z
+        .string()
+        .optional()
+        .refine(
+          (val) => !val || /^\d{10}$/.test(val),
+          { message: "Phone number must be a valid 10-digit number if provided." }
+        ),
+    })
+    .optional()
+    .superRefine((data, ctx) => {
+      const { name, relationship, phone } = data || {};
+      const hasAnyField = name || (relationship && relationship !== "None") || phone;
+
+      if (hasAnyField && !(name && relationship && relationship !== "None" && phone)) {
+        if (!name) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["name"],
+            message: "Name is required if any emergency contact field is provided.",
+          });
+        }
+        if (!relationship || relationship === "None") {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["relationship"],
+            message: "Relationship is required if any emergency contact field is provided.",
+          });
+        }
+        if (!phone) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["phone"],
+            message: "Phone is required if any emergency contact field is provided.",
+          });
+        }
+      }
+    }),
+});
+
+export const validateEmergencyContact = (emergencyContact) => {
+  if (!emergencyContact || emergencyContact.relationship === "None") return { valid: true, errors: {} };
+
+  const { name, relationship, phone } = emergencyContact;
+  const hasAnyField = name || (relationship && relationship !== "None") || phone;
+
+  if (!hasAnyField) return { valid: true, errors: {} };
+
+  const errors = {};
+  if (!name) errors.name = "Name is required if any emergency contact field is provided.";
+  if (!relationship || relationship === "None") errors.relationship = "Relationship is required if any emergency contact field is provided.";
+  if (!phone) errors.phone = "Phone is required if any emergency contact field is provided.";
+  else if (!/^\d{10}$/.test(phone)) errors.phone = "Phone must be a valid 10-digit number";
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
+  };
+};
 import { useState, useCallback, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query"; // Import useQueryClient
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../services/api.service";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -18,7 +103,6 @@ import {
   Circle,
   AlertCircle,
   FileText,
-  Activity,
   ClipboardCheck,
 } from "lucide-react";
 import ViewPatientStep1 from "./ViewPatientStep1";
@@ -27,6 +111,7 @@ import MedicalHistory from "../MedicalHistory/MedicalHistory";
 import TestRecords from "../../testrecord/TestRecords";
 import { toast } from "react-hot-toast";
 import PropTypes from "prop-types";
+import { showErrorToast, showSuccessToast, showNoChangesToast } from "../../utils/toastUtils"; 
 
 const calculateAge = (birthDate) => {
   if (!birthDate) return 0;
@@ -41,7 +126,7 @@ const calculateAge = (birthDate) => {
 const ViewPatient = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient(); // Initialize queryClient
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("personal");
   const [step, setStep] = useState(1);
   const [isEditing, setIsEditing] = useState(false);
@@ -53,7 +138,7 @@ const ViewPatient = () => {
   const { data: patient, isLoading, error } = useQuery({
     queryKey: ["patient", id],
     queryFn: async () => {
-      const response = await api.get(`/patients/${id}`);
+      const response = await api.get(`/ophthalmic-patients/${id}`);
       return response.data.data;
     },
     onSuccess: (patientData) => {
@@ -71,8 +156,7 @@ const ViewPatient = () => {
         height: patientData.height || "",
         weight: patientData.weight || "",
         allergies: patientData.allergies || [],
-        primaryPhysician: patientData.primaryPhysician || "",
-        emergencyContact: patientData.emergencyContact || { name: "", relationship: "", phone: "" },
+        emergencyContact: patientData.emergencyContact || { name: "", relationship: "None", phone: "" },
       };
       setStep1Data(step1);
       setStep2Data(step2);
@@ -80,7 +164,7 @@ const ViewPatient = () => {
     },
     onError: (err) => {
       const message = err.response?.data?.message || "Failed to fetch patient details.";
-      toast.error(message);
+      showErrorToast(message);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -101,8 +185,7 @@ const ViewPatient = () => {
         height: patient.height || "",
         weight: patient.weight || "",
         allergies: patient.allergies || [],
-        primaryPhysician: patient.primaryPhysician || "",
-        emergencyContact: patient.emergencyContact || { name: "", relationship: "", phone: "" },
+        emergencyContact: patient.emergencyContact || { name: "", relationship: "None", phone: "" },
       };
       setStep1Data(step1);
       setStep2Data(step2);
@@ -115,7 +198,71 @@ const ViewPatient = () => {
     setStep(2);
   }, []);
 
- 
+  // Improved normalizeData function
+  const normalizeData = (data) => {
+    // Handle emergency contact consistently
+    let normalizedEmergencyContact = null;
+    
+    if (data.emergencyContact) {
+      const { name, relationship, phone } = data.emergencyContact;
+      
+      // If all fields have values and relationship is not "None", create a valid contact
+      if (name && relationship && relationship !== "None" && phone) {
+        normalizedEmergencyContact = {
+          name,
+          relationship,
+          phone,
+        };
+      }
+    }
+  
+    return {
+      fullName: data.fullName || "",
+      nic: data.nic || "",
+      birthDate: data.birthDate ? data.birthDate.split("T")[0] : "",
+      gender: data.gender || "",
+      contactNumber: data.contactNumber || "",
+      email: data.email || "",
+      address: data.address || "",
+      bloodType: data.bloodType || "",
+      height: data.height !== undefined ? Number(data.height) || "" : "",
+      weight: data.weight !== undefined ? Number(data.weight) || "" : "",
+      allergies: data.allergies?.length > 0 ? data.allergies.filter(Boolean) : [],
+      emergencyContact: normalizedEmergencyContact,
+    };
+  };
+
+  // Improved comparison between objects
+  const hasDataChanged = (newData, originalData) => {
+    const normalizedNew = normalizeData(newData);
+    const normalizedOriginal = normalizeData(originalData);
+    
+    // Compare each field
+    for (const key of Object.keys(normalizedNew)) {
+      const newValue = normalizedNew[key];
+      const origValue = normalizedOriginal[key];
+      
+      // Special handling for objects like emergencyContact
+      if (typeof newValue === 'object' && newValue !== null) {
+        if (!origValue) return true;
+        if (JSON.stringify(newValue) !== JSON.stringify(origValue)) return true;
+      } 
+      // Special handling for arrays like allergies
+      else if (Array.isArray(newValue)) {
+        if (!Array.isArray(origValue)) return true;
+        if (newValue.length !== origValue.length) return true;
+        for (let i = 0; i < newValue.length; i++) {
+          if (newValue[i] !== origValue[i]) return true;
+        }
+      }
+      // Simple value comparison
+      else if (newValue !== origValue) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
 
   const handleSave = useCallback(
     async (data) => {
@@ -126,73 +273,72 @@ const ViewPatient = () => {
           ...data,
           height: data.height ? Number(data.height) : undefined,
           weight: data.weight ? Number(data.weight) : undefined,
-          allergies: data.allergies?.length > 0 ? data.allergies : undefined,
-          emergencyContact: data.emergencyContact?.name ? data.emergencyContact : undefined,
+          allergies: data.allergies?.filter(Boolean),
         };
   
-        if (JSON.stringify(formattedData) === JSON.stringify(patient)) {
-          toast("No changes have been made.", { icon: "ℹ️" });
+        if (!hasDataChanged(formattedData, patient)) {
+          showNoChangesToast("No changes have been made");
           setIsEditing(false);
           setStep(1);
+          setIsSubmitting(false);
           return;
         }
   
-        await toast.promise(
-          api.put(`/patients/edit/${id}`, formattedData),
-          {
-            loading: "Saving patient details...",
-            success: () => {
-              queryClient.invalidateQueries(["patient", id]);
-              return (
-                <div className="flex items-center gap-2 text-blue-900">
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <User2 className="h-4 w-4 text-blue-700" />
-                  </div>
-                  <span className="font-medium">Patient details updated successfully!</span>
-                </div>
-              );
-            },
-            error: (err) => {
-              console.log("Error in handleSave:", err.response?.data); // Debug log
-              const { errorCode, message, errors } = err.response?.data || {};
-              if (message) return message; // Use backend message if provided
-              if (errorCode === "VALIDATION_ERROR" && errors) {
-                const emergencyError = errors.find((e) => e.path === "emergencyContact");
-                if (emergencyError) return emergencyError.message;
-                return errors.map((e) => e.message).join(", ") || "Validation failed";
-              }
-              switch (errorCode) {
-                case "PATIENT_NOT_FOUND":
-                  return "Patient not found.";
-                case "DUPLICATE_NIC":
-                  return "A patient with this NIC already exists.";
-                case "DUPLICATE_EMAIL":
-                  return "A patient with this email already exists.";
-                case "INVALID_EMERGENCY_CONTACT":
-                  return "All emergency contact fields (name, relationship, phone) are required if any are provided.";
-                case "INVALID_EMERGENCY_PHONE":
-                  return "Emergency contact phone must be a valid 10-digit number.";
-                default:
-                  return "Failed to update patient details.";
-              }
-            },
+        const normalizedData = normalizeData(formattedData);
+        
+     
+        try {
+          const response = await api.put(`/ophthalmic-patients/edit/${id}`, normalizedData);
+          
+          // Handle success
+          queryClient.invalidateQueries(["patient", id]);
+          setIsEditing(false);
+          setStep(1);
+          showSuccessToast("Patient details updated successfully!");
+          
+          setStep2Data(data);
+        } catch (error) {
+          // Extract the specific error message from the response
+          const errorResponse = error.response?.data;
+          const errorMessage = errorResponse?.message || 
+                               "Failed to update patient details.";
+          
+          // Map error codes to user-friendly messages if needed
+          let displayMessage = errorMessage;
+          if (errorResponse?.errorCode) {
+            switch (errorResponse.errorCode) {
+              case "PATIENT_NOT_FOUND":
+                displayMessage = "Patient not found.";
+                break;
+              case "DUPLICATE_NIC":
+                displayMessage = "A patient with this NIC already exists.";
+                break;
+              case "DUPLICATE_EMAIL":
+                displayMessage = "A patient with this email already exists.";
+                break;
+              case "INVALID_EMERGENCY_CONTACT":
+                displayMessage = "All emergency contact fields (name, relationship, phone) are required if any are provided.";
+                break;
+              case "INVALID_EMERGENCY_PHONE":
+                displayMessage = "Emergency contact phone must be a valid 10-digit number.";
+                break;
+            }
           }
-        );
-  
-        setStep2Data(data);
-        setIsEditing(false);
-        setStep(1);
+          
+          // Show the error toast with the proper message
+          showErrorToast(displayMessage);
+          throw error; // Re-throw to maintain the error flow
+        }
       } catch (error) {
         console.error("Caught error in handleSave:", error);
-        toast.error(error.response?.data?.message || "An error occurred while saving.");
-        throw error;
+        // Error toast is shown in the inner try/catch
       } finally {
         setIsSubmitting(false);
       }
     },
     [id, patient, step1Data, queryClient]
   );
-  
+
   const handleStep1Save = useCallback(
     async (data) => {
       setIsSubmitting(true);
@@ -200,68 +346,64 @@ const ViewPatient = () => {
         const formattedData = {
           ...data,
           ...step2Data,
-          height: step2Data?.height ? Number(step2Data.height) : undefined,
-          weight: step2Data?.weight ? Number(step2Data.weight) : undefined,
-          allergies: step2Data?.allergies?.length > 0 ? step2Data.allergies : undefined,
-          emergencyContact: step2Data?.emergencyContact?.name ? step2Data.emergencyContact : undefined,
         };
   
-        if (JSON.stringify(formattedData) === JSON.stringify(patient)) {
-          toast("No changes have been made.", { icon: "ℹ️" });
+        if (!hasDataChanged(formattedData, patient)) {
+          showNoChangesToast("No changes have been made.");
           setIsEditing(false);
           setStep(1);
+          setIsSubmitting(false);
           return;
         }
   
-        await toast.promise(
-          api.put(`/patients/edit/${id}`, formattedData),
-          {
-            loading: "Saving patient details...",
-            success: () => {
-              queryClient.invalidateQueries(["patient", id]);
-              return (
-                <div className="flex items-center gap-2 text-blue-900">
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <User2 className="h-4 w-4 text-blue-700" />
-                  </div>
-                  <span className="font-medium">Patient details updated successfully!</span>
-                </div>
-              );
-            },
-            error: (err) => {
-              console.log("Error in handleStep1Save:", err.response?.data); // Debug log
-              const { errorCode, message, errors } = err.response?.data || {};
-              if (message) return message;
-              // if (errorCode === "VALIDATION_ERROR" && errors) {
-              //   const emergencyError = errors.find((e) => e.path === "emergencyContact");
-              //   if (emergencyError) return emergencyError.message;
-              //   return errors.map((e) => e.message).join(", ") || "Validation failed";
-              // }
-              switch (errorCode) {
-                case "PATIENT_NOT_FOUND":
-                  return "Patient not found.";
-                case "DUPLICATE_NIC":
-                  return "A patient with this NIC already existsy.";
-                case "DUPLICATE_EMAIL":
-                  return "A patient with this email already exists.";
-                case "INVALID_EMERGENCY_CONTACT":
-                  return "All emergency contact fields (name, relationship, phone) are required if any are provided.";
-                case "INVALID_EMERGENCY_PHONE":
-                  return "Emergency contact phone must be a valid 10-digit number.";
-                default:
-                  return "Failed to update patient details.";
-              }
-            },
+        const normalizedData = normalizeData(formattedData);
+        
+        
+        try {
+          const response = await api.put(`/ophthalmic-patients/edit/${id}`, normalizedData);
+          
+          // Handle success
+          queryClient.invalidateQueries(["patient", id]);
+          setIsEditing(false);
+          setStep(1);
+          showSuccessToast("Patient details updated successfully!");
+          
+          setStep1Data(data);
+        } catch (error) {
+          // Extract the specific error message from the response
+          const errorResponse = error.response?.data;
+          const errorMessage = errorResponse?.message || 
+                               "Failed to update patient details.";
+          
+          // Map error codes to user-friendly messages if needed
+          let displayMessage = errorMessage;
+          if (errorResponse?.errorCode) {
+            switch (errorResponse.errorCode) {
+              case "PATIENT_NOT_FOUND":
+                displayMessage = "Patient not found.";
+                break;
+              case "DUPLICATE_NIC":
+                displayMessage = "A patient with this NIC already exists.";
+                break;
+              case "DUPLICATE_EMAIL":
+                displayMessage = "A patient with this email already exists.";
+                break;
+              case "INVALID_EMERGENCY_CONTACT":
+                displayMessage = "All emergency contact fields (name, relationship, phone) are required if any are provided.";
+                break;
+              case "INVALID_EMERGENCY_PHONE":
+                displayMessage = "Emergency contact phone must be a valid 10-digit number.";
+                break;
+            }
           }
-        );
-  
-        setStep1Data(data);
-        setIsEditing(false);
-        setStep(1);
+          
+          // Show the error toast with the proper message
+          showErrorToast(displayMessage);
+          throw error; // Re-throw to maintain the error flow
+        }
       } catch (error) {
         console.error("Caught error in handleStep1Save:", error);
-        toast.error(error.response?.data?.message || "An error occurred while saving.");
-        throw error;
+      
       } finally {
         setIsSubmitting(false);
       }
@@ -274,37 +416,10 @@ const ViewPatient = () => {
     setStep(1);
   }, []);
 
- 
-
   const handleCancel = useCallback(() => {
     setIsEditing(false);
     setStep(1);
   }, []);
-
-  const setPatient = useCallback(
-    (updater) => {
-      const newPatient = typeof updater === "function" ? updater(patient) : updater;
-      setStep1Data({
-        fullName: newPatient.fullName || "",
-        nic: newPatient.nic || "",
-        birthDate: newPatient.birthDate ? newPatient.birthDate.split("T")[0] : "",
-        gender: newPatient.gender || "",
-        contactNumber: newPatient.contactNumber || "",
-        email: newPatient.email || "",
-        address: newPatient.address || "",
-      });
-      setStep2Data({
-        bloodType: newPatient.bloodType || "",
-        height: newPatient.height || "",
-        weight: newPatient.weight || "",
-        allergies: newPatient.allergies || [],
-        primaryPhysician: newPatient.primaryPhysician || "",
-        emergencyContact: newPatient.emergencyContact || { name: "", relationship: "", phone: "" },
-      });
-      setAge(calculateAge(newPatient.birthDate));
-    },
-    [patient]
-  );
 
   if (isLoading) {
     return (
@@ -389,6 +504,9 @@ const ViewPatient = () => {
                     </h2>
                     <div className="bg-blue-100 px-4 py-2 rounded-lg">
                       <span className="text-blue-900 font-medium">ID: {patient.patientId}</span>
+                    </div>
+                    <div className="bg-blue-100 px-4 py-2 rounded-lg">
+                      <span className="text-blue-900 font-medium">Last Diagnosed: {patient.diagnosisDate || "N/A"}</span>
                     </div>
                   </div>
                   {!isEditing ? (
@@ -497,10 +615,12 @@ const ViewPatient = () => {
                       {step === 2 && (
                         <ViewPatientStep2
                           initialData={step2Data}
+                          patient={patient}
                           onPrevious={handleStep2Previous}
                           onSave={handleSave}
                           onCancel={handleCancel}
                           isSubmitting={isSubmitting}
+                          normalizeData={normalizeData}
                         />
                       )}
                     </>
@@ -558,7 +678,7 @@ const ViewPatient = () => {
 };
 
 ViewPatient.propTypes = {
-  // No props currently, but can be added if needed
+
 };
 
 export default ViewPatient;

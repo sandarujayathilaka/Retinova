@@ -56,7 +56,7 @@ const PublishedPatients = () => {
     const fetchPublishedPatientsAndDoctors = async (page = 1) => {
       setLoading(true);
       try {
-        const patientResponse = await api.get("/patients", {
+        const patientResponse = await api.get("/ophthalmic-patients", {
           params: {
             status: "Published",
             page,
@@ -109,7 +109,7 @@ const PublishedPatients = () => {
       const dateStr = utcDate.toISOString().split("T")[0];
       console.log("Fetching count for:", { patientStatus: "Review", nextVisit: dateStr, doctorId });
 
-      const response = await api.get("/patients/count", {
+      const response = await api.get("/ophthalmic-patients/count", {
         params: {
           patientStatus: "Review",
           nextVisit: dateStr,
@@ -170,7 +170,7 @@ const PublishedPatients = () => {
       const utcRevisitDate = new Date(Date.UTC(revisitDate.getFullYear(), revisitDate.getMonth(), revisitDate.getDate()));
       console.log("Updating revisit for:", selectedPatient.patientId, selectedDoctorId, utcRevisitDate.toISOString());
 
-      const response = await api.put(`/patients/${selectedPatient.patientId}/revisit`, {
+      const response = await api.put(`/ophthalmic-patients/${selectedPatient.patientId}/revisit`, {
         doctorId: selectedDoctorId,
         revisitDate: utcRevisitDate.toISOString(),
       });

@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { UsersIcon, SearchIcon, Loader2 } from "lucide-react";
-import { api } from "../../services/api.service";
+import { api } from "../../../services/api.service";
 import { useNavigate } from "react-router-dom";
 import {
   Select,
@@ -22,7 +22,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { toast } from "react-hot-toast";
-// import "react-toastify/dist/ReactToastify.css";
+
 
 const MonitoringPatients = () => {
   const [patients, setPatients] = useState([]);
@@ -60,7 +60,7 @@ const MonitoringPatients = () => {
         });
         console.log("API Response:", response.data);
         
-        // Check if response.data has the expected structure
+     
         if (!response.data || !Array.isArray(response.data.patients)) {
           throw new Error("Invalid API response format");
         }
@@ -73,7 +73,7 @@ const MonitoringPatients = () => {
           limit: pagination.limit,
         });
       } catch (error) {
-        console.error("Fetch Error:", error);
+        
         toast.error("Failed to fetch monitoring patients. Please try again.", {
           position: "top-right",
           autoClose: 3000,
@@ -132,7 +132,7 @@ const MonitoringPatients = () => {
                 <SelectTrigger className="w-full md:w-40 bg-white/10 border-none text-white rounded-full focus:ring-2 focus:ring-teal-300">
                   <SelectValue placeholder="Gender Filter" />
                 </SelectTrigger>
-                <SelectContent className="bg-white rounded-lg shadow-lg">
+                <SelectContent className="bg-white rounded-lg">
                   <SelectItem value="all" className="hover:bg-teal-50">All Genders</SelectItem>
                   <SelectItem value="male" className="hover:bg-teal-50">Male</SelectItem>
                   <SelectItem value="female" className="hover:bg-teal-50">Female</SelectItem>
@@ -201,7 +201,7 @@ const MonitoringPatients = () => {
                       <TableCell className="py-4 text-right">
                         <Button
                           variant="outline"
-                          className="rounded-full bg-teal-500 text-white hover:bg-teal-600 border-none shadow-md transition-all duration-200"
+                          className="rounded-full bg-teal-500 text-white hover:bg-teal-600 border-none transition-all duration-200"
                           onClick={() => handleViewPatient(patient.patientId)}
                         >
                           View

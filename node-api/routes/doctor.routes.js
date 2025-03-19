@@ -30,7 +30,7 @@ router.get(
 );
 router.put("/:id", requireAuth([ROLES.ADMIN]), updateDoctor);
 router.delete("/:id", requireAuth([ROLES.ADMIN]), deleteDoctor);
-router.post("/bulk", getDoctorsByIds);
-router.get("/:id/patients", getDoctorPatientsSummary);
+router.post("/bulk", requireAuth([ROLES.DOCTOR,ROLES.NURSE]), getDoctorsByIds);
+router.get("/:id/patients",requireAuth([ROLES.DOCTOR,ROLES.NURSE]), getDoctorPatientsSummary);
 
 module.exports = router;
