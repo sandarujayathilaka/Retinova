@@ -2,10 +2,8 @@ import { useFormContext } from "react-hook-form";
 import { z } from "zod";
 
 import { Input } from "@/components/ui/input";
-
 import { Textarea } from "@/components/ui/textarea";
-
-import { Mail, Phone } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 export const contactInfoSchema = z.object({
   phone: z
@@ -22,7 +20,6 @@ export const contactInfoSchema = z.object({
 export default function ContactInfoComponent({ mode }) {
   const {
     register,
-    setValue,
     watch,
     formState: { errors },
   } = useFormContext();
@@ -31,56 +28,86 @@ export default function ContactInfoComponent({ mode }) {
   const addressValue = watch("address", ""); // Watch the address field
 
   return (
-    <div className="space-y-4 text-start">
+    <div className="space-y-5 text-start">
+      {/* Phone Number Field */}
       <div className="space-y-2">
-        <label htmlFor={register("phone").name} className="block text-sm font-medium text-primary">
+        <label
+          htmlFor={register("phone").name}
+          className="block text-sm font-medium text-slate-700"
+        >
           Phone Number
         </label>
         <div className="relative">
-          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
           <Input
             id={register("phone").name}
             {...register("phone")}
-            className="block w-full p-2 pl-10 border rounded-md"
+            placeholder="0XXXXXXXXX"
+            className={`pl-10 ${errors.phone ? "border-red-300 focus-visible:ring-red-400" : ""}`}
           />
         </div>
-        {errors.phone && <span className="text-sm text-destructive">{errors.phone.message}</span>}
+        {errors.phone && (
+          <p className="text-xs text-red-600 font-medium mt-1">{errors.phone.message}</p>
+        )}
       </div>
+
+      {/* Email Address Field */}
       <div className="space-y-2">
-        <label htmlFor={register("email").name} className="block text-sm font-medium text-primary">
+        <label
+          htmlFor={register("email").name}
+          className="block text-sm font-medium text-slate-700"
+        >
           Email Address
         </label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
           <Input
             id={register("email").name}
             {...register("email")}
-            className="block w-full p-2 pl-10 border rounded-md"
+            placeholder="nurse@example.com"
+            className={`pl-10 ${errors.email ? "border-red-300 focus-visible:ring-red-400" : ""} ${
+              mode === "edit" ? "bg-slate-50" : ""
+            }`}
             readOnly={mode === "edit"}
           />
         </div>
-        {errors.email && <span className="text-sm text-destructive">{errors.email.message}</span>}
+        {errors.email && (
+          <p className="text-xs text-red-600 font-medium mt-1">{errors.email.message}</p>
+        )}
+        {mode === "edit" && (
+          <p className="text-xs text-slate-500">
+            Email addresses cannot be changed after creation.
+          </p>
+        )}
       </div>
+
+      {/* Address Field */}
       <div className="space-y-2">
         <div className="flex justify-between items-end">
           <label
             htmlFor={register("address").name}
-            className="block text-sm font-medium text-primary"
+            className="block text-sm font-medium text-slate-700"
           >
             Address
           </label>
-          <span className="text-[10px] leading-3 text-slate-400">
+          <span className="text-xs text-slate-400">
             {addressValue.length} / {maxChars}
           </span>
         </div>
-        <Textarea
-          id={register("address").name}
-          {...register("address")}
-          className="block w-full p-2 border rounded-md max-h-[200px]"
-          maxLength={maxChars}
-        />
+        <div className="relative">
+          <MapPin className="absolute left-3 top-3 text-slate-500" size={16} />
+          <Textarea
+            id={register("address").name}
+            {...register("address")}
+            placeholder="Enter full office address"
+            className={`pl-10 min-h-[80px] max-h-[200px] ${
+              errors.address ? "border-red-300 focus-visible:ring-red-400" : ""
+            }`}
+            maxLength={maxChars}
+          />
+        </div>
         {errors.address && (
-          <span className="text-sm text-destructive">{errors.address.message}</span>
+          <p className="text-xs text-red-600 font-medium mt-1">{errors.address.message}</p>
         )}
       </div>
     </div>

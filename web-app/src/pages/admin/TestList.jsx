@@ -6,7 +6,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown, Loader2, MoreHorizontal, TestTube } from "lucide-react";
+import { ChevronDown, Loader2, MoreHorizontal, Search, TestTube, Beaker } from "lucide-react";
 import { useState } from "react";
 
 import SortableHeader from "@/components/data-table/SortableHeader";
@@ -35,6 +35,8 @@ import { useDeleteTest, useGetTests, useUpdateTest } from "@/services/test.servi
 import toast from "react-hot-toast";
 import TestForm from "./TestForm";
 import { format } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import TablePagination from "@/components/data-table/TablePagination";
 
 const TestList = () => {
   const columns = [
@@ -62,25 +64,30 @@ const TestList = () => {
     },
     {
       accessorKey: "name",
-      header: ({ column }) => <SortableHeader column={column} title="Name" />,
+      header: ({ column }) => <SortableHeader column={column} title="Test Name" />,
       cell: ({ row }) => (
-        <div className="capitalize font-semibold text-black/80">{row.getValue("name")}</div>
+        <div className="flex items-center">
+          <div className="mr-2 h-8 w-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700">
+            <Beaker className="h-4 w-4" />
+          </div>
+          <div className="capitalize font-medium text-slate-800">{row.getValue("name")}</div>
+        </div>
       ),
     },
     {
       accessorKey: "isEnabled",
-      header: ({ column }) => <SortableHeader column={column} title="Active" />,
+      header: ({ column }) => <SortableHeader column={column} title="Status" />,
       cell: ({ row }) => {
         const isEnabled = row.getValue("isEnabled");
 
         return (
-          <div
-            className={`w-fit px-2 py-1 rounded-md text-sm font-medium ${
-              isEnabled ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+          <span
+            className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              isEnabled ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
             }`}
           >
             {isEnabled ? "Active" : "Inactive"}
-          </div>
+          </span>
         );
       },
     },
@@ -90,7 +97,7 @@ const TestList = () => {
       cell: ({ row }) => {
         const date = row.getValue("createdAt");
         return (
-          <div className="uppercase text-xs font-semibold text-gray-600">
+          <div className="text-xs text-gray-600">
             {date ? format(new Date(date), "MMM d, yyyy hh:mm a") : "N/A"}
           </div>
         );
@@ -100,17 +107,15 @@ const TestList = () => {
       id: "actions",
       enableHiding: false,
       cell: ({ row }) => {
-        const payment = row.original;
-
         return (
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                 <span className="sr-only">Open menu</span>
-                <MoreHorizontal />
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-36">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => {
@@ -121,13 +126,15 @@ const TestList = () => {
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem
+                className={row.original?.isEnabled ? "text-amber-600" : "text-emerald-600"}
                 onClick={() => handleStatusChange(row.original._id, row.original.isEnabled)}
               >
                 {row.original?.isEnabled ? "Disable" : "Enable"}
               </DropdownMenuItem>
               <DropdownMenuItem
+                className="text-red-600"
                 onClick={() => {
-                  setTestIdToDelete(row.original.id);
+                  setTestIdToDelete(row.original._id);
                   setIsDeleteDialogOpen(true);
                 }}
               >
@@ -144,6 +151,7 @@ const TestList = () => {
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
   const [rowSelection, setRowSelection] = useState({});
+  const [globalFilter, setGlobalFilter] = useState("");
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [testIdToDelete, setTestIdToDelete] = useState(null);
@@ -154,10 +162,8 @@ const TestList = () => {
   const { mutate: deleteTestMutation } = useDeleteTest();
   const { mutate: updateTestMutation } = useUpdateTest();
 
-  console.log(tests);
-
   const table = useReactTable({
-    data: tests,
+    data: tests || [],
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -175,10 +181,12 @@ const TestList = () => {
       columnFilters,
       columnVisibility,
       rowSelection,
+      globalFilter,
     },
   });
 
   const handleDelete = testId => {
+    console.log("Deleting test with ID:", testId);
     deleteTestMutation(testId, {
       onSuccess: () => {
         setIsDeleteDialogOpen(false);
@@ -198,7 +206,7 @@ const TestList = () => {
       { id: testId, data: { isEnabled: !isEnabled } },
       {
         onSuccess: () => {
-          toast.success("Test status updated successfully.");
+          toast.success(`Test ${isEnabled ? "disabled" : "enabled"} successfully.`);
         },
         onError: error => {
           console.error(error);
@@ -208,60 +216,144 @@ const TestList = () => {
     );
   };
 
+  // Get test statistics
+  const getTestStats = () => {
+    if (!tests?.length) return { total: 0, active: 0, inactive: 0 };
+
+    const total = tests.length;
+    const active = tests.filter(test => test.isEnabled).length;
+    const inactive = total - active;
+
+    return { total, active, inactive };
+  };
+
+  const testStats = getTestStats();
+
   if (isLoading) {
-    return <Loader2 className="animate-spin size-8 mt-4" />;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="animate-spin h-8 w-8 text-cyan-600" />
+        <span className="ml-2 text-gray-600">Loading tests...</span>
+      </div>
+    );
   }
 
   return (
-    <>
-      <div className="w-full">
-        <div className="flex items-center justify-between py-4">
-          <div className="text-2xl font-medium text-black/70">
-            <TestTube className="inline-block size-8 mr-2 text-blue-500" />
-            {tests?.length} Tests
-          </div>
+    <Card className="shadow-sm">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl font-semibold text-cyan-700 flex items-center">
+            <TestTube className="h-6 w-6 mr-2" />
+            Test Management
+          </CardTitle>
           <TestForm mode="add" />
         </div>
-        <div className="flex items-center py-4">
-          <Input
-            placeholder="Search by name"
-            value={table.getState().globalFilter ?? ""}
-            onChange={event => table.setGlobalFilter(event.target.value)}
-            className="max-w-sm"
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
-                Columns <ChevronDown />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table
-                .getAllColumns()
-                .filter(column => column.getCanHide())
-                .map(column => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={value => column.toggleVisibility(!!value)}
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+      </CardHeader>
+      <CardContent>
+        {/* Stats Row */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="bg-slate-50 rounded-lg p-4 flex items-center border border-slate-200 shadow-sm">
+            <div className="h-10 w-10 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center mr-3">
+              <TestTube className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm text-slate-600">Total Tests</div>
+              <div className="text-2xl font-bold text-slate-800">{testStats.total}</div>
+            </div>
+          </div>
+          <div className="bg-emerald-50 rounded-lg p-4 flex items-center border border-emerald-200 shadow-sm">
+            {/* <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mr-3">
+              <span className="text-sm font-bold">A</span>
+            </div> */}
+            <div>
+              <div className="text-sm text-emerald-700">Active Tests</div>
+              <div className="text-2xl font-bold text-emerald-800">{testStats.active}</div>
+            </div>
+          </div>
+          <div className="bg-red-50 rounded-lg p-4 flex items-center border border-red-200 shadow-sm">
+            {/* <div className="h-10 w-10 rounded-full bg-red-100 text-red-700 flex items-center justify-center mr-3">
+              <span className="text-sm font-bold">I</span>
+            </div> */}
+            <div>
+              <div className="text-sm text-red-700">Inactive Tests</div>
+              <div className="text-2xl font-bold text-red-800">{testStats.inactive}</div>
+            </div>
+          </div>
         </div>
-        <div className="rounded-md border">
+
+        {/* Search and Filters */}
+        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4">
+          <div className="relative max-w-sm w-full">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search tests..."
+              value={globalFilter}
+              onChange={e => setGlobalFilter(e.target.value)}
+              className="pl-8 w-full"
+            />
+          </div>
+          <div className="flex gap-2">
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9">
+                  Status <ChevronDown className="ml-1 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  onClick={() => table.getColumn("isEnabled")?.setFilterValue(undefined)}
+                >
+                  All Tests
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => table.getColumn("isEnabled")?.setFilterValue(true)}
+                >
+                  Active Tests
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => table.getColumn("isEnabled")?.setFilterValue(false)}
+                >
+                  Inactive Tests
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9">
+                  Columns <ChevronDown className="ml-1 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {table
+                  .getAllColumns()
+                  .filter(column => column.getCanHide())
+                  .map(column => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={value => column.toggleVisibility(!!value)}
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="rounded-md border border-gray-200 overflow-hidden">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-gray-50">
               {table.getHeaderGroups().map(headerGroup => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map(header => {
                     return (
-                      <TableHead key={header.id}>
+                      <TableHead key={header.id} className="font-semibold">
                         {header.isPlaceholder
                           ? null
                           : flexRender(header.column.columnDef.header, header.getContext())}
@@ -274,7 +366,11 @@ const TestList = () => {
             <TableBody>
               {table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map(row => (
-                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="hover:bg-gray-50"
+                  >
                     {row.getVisibleCells().map(cell => (
                       <TableCell key={cell.id}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -285,38 +381,23 @@ const TestList = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No results.
+                    <div className="flex flex-col items-center justify-center text-gray-500">
+                      <TestTube className="h-8 w-8 mb-2 opacity-50" />
+                      <p>No tests found</p>
+                      <p className="text-xs">Try adjusting your search or filters</p>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </div>
-        <div className="flex items-center justify-end space-x-2 py-4">
-          <div className="flex-1 text-sm text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
-          </div>
-          <div className="space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      </div>
+
+        {/* Pagination */}
+        <TablePagination table={table} />
+      </CardContent>
+
+      {/* Dialogs */}
       <TestForm
         mode="edit"
         testId={testIdToEdit}
@@ -329,7 +410,7 @@ const TestList = () => {
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
       />
-    </>
+    </Card>
   );
 };
 

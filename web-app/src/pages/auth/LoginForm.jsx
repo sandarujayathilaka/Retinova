@@ -108,22 +108,16 @@ export function LoginForm({ className, ...props }) {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="email" className="text-black/80">
+                <FormLabel htmlFor="email" className="text-blue-800">
                   Email
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <AtSignIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      className="pl-10"
-                      // placeholder="m@example.com"
-                      {...field}
-                    />
+                    <AtSignIcon className="absolute left-3 top-3 h-4 w-4 text-blue-500" />
+                    <Input id="email" type="email" className="pl-10 border-blue-200" {...field} />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-500" />
               </FormItem>
             )}
           />
@@ -134,20 +128,16 @@ export function LoginForm({ className, ...props }) {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center">
-                  <FormLabel htmlFor="password" className="text-black/80">
+                  <FormLabel htmlFor="password" className="text-blue-800">
                     Password
                   </FormLabel>
-                  {/* <a href="#" className="ml-auto text-sm underline-offset-4 hover:underline">
-                    Forgot your password?
-                  </a> */}
                 </div>
                 <FormControl>
-                  {/* <Input id="password" type="password" {...field} /> */}
                   <div className="relative">
-                    <LockIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <LockIcon className="absolute left-3 top-3 h-4 w-4 text-blue-500" />
                     <Input
                       id="password"
-                      className="pl-10 pr-10"
+                      className="pl-10 pr-10 border-blue-200"
                       type={showPassword ? "text" : "password"}
                       {...field}
                     />
@@ -155,7 +145,7 @@ export function LoginForm({ className, ...props }) {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 p-0"
+                      className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 p-0 text-blue-500"
                       onClick={togglePasswordVisibility}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -165,20 +155,24 @@ export function LoginForm({ className, ...props }) {
                     </Button>
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-500" />
               </FormItem>
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-            {loginMutation.isPending ? "Login..." : "Login"}
+          <Button
+            type="submit"
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+            disabled={loginMutation.isPending}
+          >
+            {loginMutation.isPending ? "Logging in..." : "Login"}
           </Button>
         </div>
 
-        <div className="text-center text-sm">
+        <div className="text-center text-sm text-gray-700">
           <Link
             to="/forgot-password"
-            className="ml-auto text-sm underline-offset-4 hover:underline"
+            className="font-medium underline underline-offset-4 hover:text-indigo-600"
           >
             Forgotten password?
           </Link>

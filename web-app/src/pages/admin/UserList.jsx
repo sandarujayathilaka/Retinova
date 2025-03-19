@@ -6,7 +6,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ChevronDown, Loader2, MoreHorizontal, Search } from "lucide-react";
+import { ChevronDown, Loader2, MoreHorizontal, Search, Users } from "lucide-react";
 import { useState } from "react";
 
 import SortableHeader from "@/components/data-table/SortableHeader";
@@ -30,17 +30,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import toast from "react-hot-toast";
-import { useDeleteNurse, useGetNurses } from "@/services/nurse.service";
-import { FaUserNurse } from "react-icons/fa";
-import NurseForm from "./NurseForm";
-import ViewNurse from "./ViewNurse";
+import { useGetAllUsers, useToggleUserStatus } from "@/services/auth.service";
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import DoctorForm from "./DoctorForm";
 import TablePagination from "@/components/data-table/TablePagination";
 
-const NurseList = () => {
+const UserList = () => {
   const columns = [
     {
       id: "select",
@@ -71,68 +70,54 @@ const NurseList = () => {
         <div className="flex gap-2 items-center">
           <Avatar className="size-8">
             <AvatarImage src={row.original.image?.Location} alt={row.original.name} />
-            <AvatarFallback className="bg-violet-100 text-violet-800">
+            <AvatarFallback className="bg-primary/10 text-primary">
               {row.original.name?.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-col">
-            <div className="capitalize font-medium text-black/80">{row.getValue("name")}</div>
-            <div className="text-xs text-slate-500">{row.original.specialty}</div>
-          </div>
+          <div className="capitalize font-medium text-black/80">{row.getValue("name")}</div>
         </div>
       ),
     },
     {
       accessorKey: "email",
-      header: ({ column }) => <SortableHeader column={column} title="Contact" />,
+      header: ({ column }) => <SortableHeader column={column} title="Email" />,
+      cell: ({ row }) => <div className="text-sm text-blue-600">{row.getValue("email")}</div>,
+    },
+    {
+      accessorKey: "role", // admin, doctor, patient, nurse
+      header: ({ column }) => <SortableHeader column={column} title="Role" />,
       cell: ({ row }) => (
-        <div className="flex flex-col">
-          <div className="font-medium text-slate-700 text-sm">{row.original.phone}</div>
-          <div className="text-sm text-blue-600">{row.getValue("email")}</div>
-        </div>
+        <span
+          className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${getRoleBadgeVariant(row.getValue("role"))}`}
+        >
+          {row.getValue("role")}
+        </span>
       ),
     },
     {
-      accessorKey: "workingHours",
-      header: ({ column }) => <SortableHeader column={column} title="Working Days" />,
-      cell: ({ row }) => {
-        const workingDays = row.original.workingHours;
-
-        return (
-          <div className="flex gap-1">
-            {Object.keys(workingDays).map((day, index) => {
-              const { enabled } = workingDays[day];
-
-              return (
-                <div
-                  key={index}
-                  className={`rounded-full text-xs leading-3 select-none size-6 flex items-center justify-center ${
-                    enabled ? "bg-violet-500 text-white shadow-sm" : "bg-slate-200 text-slate-500"
-                  }`}
-                  title={`${day}: ${enabled ? "Working" : "Off"}`}
-                >
-                  <span>{day?.charAt(0)?.toUpperCase()}</span>
-                </div>
-              );
-            })}
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: "type",
-      header: ({ column }) => <SortableHeader column={column} title="Type" />,
+      accessorKey: "isActive",
+      header: ({ column }) => <SortableHeader column={column} title="Status" />,
       cell: ({ row }) => (
         <span
           className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            row.getValue("type").toLowerCase() === "full time"
-              ? "bg-emerald-100 text-emerald-800"
-              : "bg-amber-100 text-amber-800"
+            row.getValue("isActive") ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"
           }`}
         >
-          {row.getValue("type")}
+          {row.getValue("isActive") ? "Active" : "Inactive"}
         </span>
       ),
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }) => <SortableHeader column={column} title="Date Added" />,
+      cell: ({ row }) => {
+        const date = row.getValue("createdAt");
+        return (
+          <div className="text-xs text-gray-600">
+            {date ? format(new Date(date), "MMM d, yyyy hh:mm a") : "N/A"}
+          </div>
+        );
+      },
     },
     {
       id: "actions",
@@ -149,29 +134,10 @@ const NurseList = () => {
             <DropdownMenuContent align="end" className="w-36">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
-                onClick={() => {
-                  setNurseIdToView(row.original._id);
-                  setIsViewDialogOpen(true);
-                }}
+                onClick={() => handleStatusChange(row.original.id, row.original.isActive)}
+                className={row.original?.isActive ? "text-red-600" : "text-green-600"}
               >
-                View
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setNurseIdToEdit(row.original._id);
-                  setIsEditDialogOpen(true);
-                }}
-              >
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-red-600"
-                onClick={() => {
-                  setNurseIdToDelete(row.original._id);
-                  setIsDeleteDialogOpen(true);
-                }}
-              >
-                Delete
+                {row.original?.isActive ? "Deactivate" : "Activate"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -180,24 +146,31 @@ const NurseList = () => {
     },
   ];
 
+  // Function to determine role badge variant with custom styling
+  const getRoleBadgeVariant = role => {
+    // Using custom inline styling for badges instead of predefined variants
+    const roleStyles = {
+      admin: "bg-blue-100 text-blue-800 hover:bg-blue-200",
+      doctor: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200",
+      nurse: "bg-violet-100 text-violet-800 hover:bg-violet-200",
+      patient: "bg-amber-100 text-amber-800 hover:bg-amber-200",
+      default: "bg-gray-100 text-gray-800 hover:bg-gray-200",
+    };
+
+    return roleStyles[role?.toLowerCase()] || roleStyles.default;
+  };
+
   const [sorting, setSorting] = useState([]);
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
   const [rowSelection, setRowSelection] = useState({});
   const [globalFilter, setGlobalFilter] = useState("");
 
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [nurseIdToDelete, setNurseIdToDelete] = useState(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [nurseIdToEdit, setNurseIdToEdit] = useState(null);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [nurseIdToView, setNurseIdToView] = useState(null);
-
-  const { data: nurses, isLoading } = useGetNurses();
-  const { mutate: deleteNurseMutation } = useDeleteNurse();
+  const { data: users, isLoading } = useGetAllUsers();
+  const { mutate: toggleStatusMutation } = useToggleUserStatus();
 
   const table = useReactTable({
-    data: nurses || [],
+    data: users || [],
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -206,12 +179,9 @@ const NurseList = () => {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     globalFilterFn: (row, columnId, filterValue) => {
-      const searchableValues = [
-        row.original.name,
-        row.original.email,
-        row.original.specialty,
-        row.original.type,
-      ].filter(Boolean);
+      const searchableValues = [row.original.name, row.original.email, row.original.role].filter(
+        Boolean,
+      );
 
       return searchableValues.some(value =>
         value.toLowerCase().includes(filterValue.toLowerCase()),
@@ -228,81 +198,60 @@ const NurseList = () => {
     },
   });
 
-  const handleDelete = nurseId => {
-    deleteNurseMutation(nurseId, {
-      onSuccess: () => {
-        setIsDeleteDialogOpen(false);
-        setNurseIdToDelete(null);
-        toast.success("Nurse deleted successfully.");
+  const handleStatusChange = (userId, isActive) => {
+    toggleStatusMutation(
+      { userId, isActive: !isActive },
+      {
+        onSuccess: () => {
+          toast.success(`User ${!isActive ? "activated" : "deactivated"} successfully`);
+        },
+        onError: error => {
+          console.error(error);
+          toast.error("An error occurred. Please try again.");
+        },
       },
-      onError: error => {
-        console.error(error);
-        toast.error("An error occurred while deleting the nurse.");
-      },
-    });
+    );
   };
-
-  // Get nurse statistics
-  const getNurseStats = () => {
-    if (!nurses?.length) return {};
-
-    const fullTime = nurses.filter(nurse => nurse.type?.toLowerCase() === "full time").length;
-
-    const partTime = nurses.filter(nurse => nurse.type?.toLowerCase() === "part time").length;
-
-    return { fullTime, partTime };
-  };
-
-  const nurseStats = getNurseStats();
 
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader2 className="animate-spin h-8 w-8 text-violet-600" />
-        <span className="ml-2 text-gray-600">Loading nurses...</span>
+        <Loader2 className="animate-spin h-8 w-8 text-primary" />
+        <span className="ml-2 text-gray-600">Loading users...</span>
       </div>
     );
   }
+
+  // Get role statistics
+  const roleStats = users?.reduce((acc, user) => {
+    const role = user.role?.toLowerCase() || "unknown";
+    acc[role] = (acc[role] || 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-xl font-semibold text-violet-700 flex items-center">
-            <FaUserNurse className="h-6 w-6 mr-2" />
-            Nurse Management
+          <CardTitle className="text-xl font-semibold text-primary flex items-center">
+            <Users className="h-6 w-6 mr-2" />
+            User Management
           </CardTitle>
-          <NurseForm mode="add" />
         </div>
       </CardHeader>
       <CardContent>
         {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-slate-50 rounded-lg p-4 flex items-center border border-slate-200 shadow-sm">
-            <FaUserNurse className="h-10 w-10 text-violet-600 mr-3" />
-            <div>
-              <div className="text-sm text-slate-600">Total Nurses</div>
-              <div className="text-2xl font-bold text-slate-800">{nurses?.length || 0}</div>
-            </div>
-          </div>
-          <div className="bg-emerald-50 rounded-lg p-4 flex items-center border border-emerald-200 shadow-sm">
-            {/* <div className="h-10 w-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mr-3">
-              FT
-            </div> */}
-            <div>
-              <div className="text-sm text-emerald-700">Full Time</div>
-              <div className="text-2xl font-bold text-emerald-800">{nurseStats.fullTime || 0}</div>
-            </div>
-          </div>
-          <div className="bg-amber-50 rounded-lg p-4 flex items-center border border-amber-200 shadow-sm">
-            {/* <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mr-3">
-              PT
-            </div> */}
-            <div>
-              <div className="text-sm text-amber-700">Part Time</div>
-              <div className="text-2xl font-bold text-amber-800">{nurseStats.partTime || 0}</div>
-            </div>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          {roleStats &&
+            Object.entries(roleStats).map(([role, count]) => (
+              <div
+                key={role}
+                className={`rounded-lg p-3 flex flex-col shadow-sm ${getRoleCardColor(role)}`}
+              >
+                <span className="text-xs capitalize">{role}s</span>
+                <span className="text-2xl font-bold">{count}</span>
+              </div>
+            ))}
         </div>
 
         {/* Search and Filters */}
@@ -310,7 +259,7 @@ const NurseList = () => {
           <div className="relative max-w-sm w-full">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
             <Input
-              placeholder="Search nurses..."
+              placeholder="Search users..."
               value={globalFilter}
               onChange={e => setGlobalFilter(e.target.value)}
               className="pl-8 w-full"
@@ -320,22 +269,47 @@ const NurseList = () => {
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9">
-                  Type <ChevronDown className="ml-1 h-4 w-4" />
+                  Role <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("")}>
-                  All Types
+                <DropdownMenuItem onClick={() => table.getColumn("role")?.setFilterValue("")}>
+                  All Roles
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("role")?.setFilterValue("admin")}>
+                  Admin
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("role")?.setFilterValue("doctor")}>
+                  Doctor
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("role")?.setFilterValue("nurse")}>
+                  Nurse
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => table.getColumn("type")?.setFilterValue("Full Time")}
+                  onClick={() => table.getColumn("role")?.setFilterValue("patient")}
                 >
-                  Full Time
+                  Patient
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9">
+                  Status <ChevronDown className="ml-1 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => table.getColumn("isActive")?.setFilterValue("")}>
+                  All Status
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("isActive")?.setFilterValue(true)}>
+                  Active
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => table.getColumn("type")?.setFilterValue("Part Time")}
+                  onClick={() => table.getColumn("isActive")?.setFilterValue(false)}
                 >
-                  Part Time
+                  Inactive
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -351,6 +325,7 @@ const NurseList = () => {
                   .getAllColumns()
                   .filter(column => column.getCanHide())
                   .map(column => {
+                    console.log(column);
                     return (
                       <DropdownMenuCheckboxItem
                         key={column.id}
@@ -404,8 +379,8 @@ const NurseList = () => {
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center">
                     <div className="flex flex-col items-center justify-center text-gray-500">
-                      <FaUserNurse className="h-8 w-8 mb-2 opacity-50" />
-                      <p>No nurses found</p>
+                      <Users className="h-8 w-8 mb-2 opacity-50" />
+                      <p>No users found</p>
                       <p className="text-xs">Try adjusting your search or filters</p>
                     </div>
                   </TableCell>
@@ -418,28 +393,24 @@ const NurseList = () => {
         {/* Pagination */}
         <TablePagination table={table} />
       </CardContent>
-
-      {/* Dialogs */}
-      <NurseForm
-        mode="edit"
-        nurseId={nurseIdToEdit}
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-      />
-      <ConfirmDialog
-        onSuccess={() => handleDelete(nurseIdToDelete)}
-        title="nurse"
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      />
-      <ViewNurse
-        nurseId={nurseIdToView}
-        open={isViewDialogOpen}
-        onOpenChange={setIsViewDialogOpen}
-        trigger={"View"}
-      />
     </Card>
   );
 };
 
-export default NurseList;
+// Helper function for role card colors with a more harmonious color scheme
+const getRoleCardColor = role => {
+  switch (role) {
+    case "admin":
+      return "bg-blue-50 text-blue-800 border border-blue-200";
+    case "doctor":
+      return "bg-emerald-50 text-emerald-800 border border-emerald-200";
+    case "nurse":
+      return "bg-violet-50 text-violet-800 border border-violet-200";
+    case "patient":
+      return "bg-amber-50 text-amber-800 border border-amber-200";
+    default:
+      return "bg-gray-50 text-gray-800 border border-gray-200";
+  }
+};
+
+export default UserList;

@@ -39,6 +39,7 @@ import TestList from "./pages/admin/TestList";
 import DoctorDashboard from "./pages/Nurse/DoctorDashboard/DoctorDashboard";
 import AddPatientWizard from "./pages/Nurse/AddPatient/AddPatientWizard";
 import ReviewPatients from "./pages/Nurse/ReviewPatients/ReviewPatients";
+import UserList from "./pages/admin/UserList";
 
 const App = () => {
   const SAMPLE_NURSE_ID = "67d1eec052a3868b43b617d3"; // Replace with a real ID
@@ -99,6 +100,7 @@ const App = () => {
           <Route path="/nurses" element={<NurseList />} />
           <Route path="/admins" element={<AdminList />} />
           <Route path="/tests" element={<TestList />} />
+          <Route path="/users" element={<UserList />} />
         </Route>
 
         {/* doctor routes */}
