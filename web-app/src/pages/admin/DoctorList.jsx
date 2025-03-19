@@ -154,7 +154,7 @@ const DoctorList = () => {
                   setIsViewDialogOpen(true);
                 }}
               >
-                View Details
+                View
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {

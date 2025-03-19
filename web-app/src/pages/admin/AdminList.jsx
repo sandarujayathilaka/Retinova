@@ -201,7 +201,7 @@ const AdminList = () => {
     <Card className="shadow-sm">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-xl font-semibold text-primary flex items-center">
+          <CardTitle className="text-xl font-semibold text-blue-600 flex items-center">
             <UserCog className="h-6 w-6 mr-2" />
             Admin Management
           </CardTitle>
