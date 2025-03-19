@@ -15,7 +15,7 @@ import MonitoringPatientsPage from "./pages/MonitoringPatientsPage";
 import PreMonitoringPatientsPage from "./pages/PreMonitoringPatientsPage";
 import CompletedPatientsPage from "./pages/CompletedPatientsPage";
 import ReviewPatientsPage from "./pages/ReviewPatientsPage";
-import Dashboard from "./pages/Nurse/AdminDashboard/Dashboard";
+import Dashboard from "./pages/admin/AdminDashboard/Dashboard";
 import MonitoringPatients from "./pages/Nurse/MonitoringPatients/MonitoringPatients";
 import PublishedPatients from "./pages/Nurse/PublishedPatients/PublishedPatients";
 import AddPatient from "./pages/Nurse/AddPatient/AddPatient";
@@ -36,11 +36,11 @@ import NurseList from "@/pages/admin/NurseList";
 import AdminList from "./pages/admin/AdminList";
 import TestList from "./pages/admin/TestList";
 // import AllPatientList from "./pages/testrecord/AllPatientList";
-import DoctorDashboard from "./pages/Nurse/DoctorDashboard/DoctorDashboard";
+import DoctorDashboard from "./pages/DoctorDashboard/DoctorDashboard";
 import AddPatientWizard from "./pages/Nurse/AddPatient/AddPatientWizard";
 import ReviewPatients from "./pages/Nurse/ReviewPatients/ReviewPatients";
 import UserList from "./pages/admin/UserList";
-
+import AllNursePatients from "./pages/nurse/AllPatients/AllPatients"
 const App = () => {
   const SAMPLE_NURSE_ID = "67d1eec052a3868b43b617d3"; // Replace with a real ID
   return (
@@ -93,9 +93,9 @@ const App = () => {
           <Route path="/admins" element={<AdminList />} />
           <Route path="/tests" element={<TestList />} />
         </Route>
-       */}
+       
 
-        {/* admin routes */}
+      
         <Route element={<ProtectedRoute roles={[ROLES.ADMIN]} redirectPath="/404" />}>
           <Route path="/doctors" element={<DoctorsList />} />
           <Route path="/nurses" element={<NurseList />} />
@@ -111,75 +111,6 @@ const App = () => {
           <Route path="/admins" element={<AdminList />} />
           <Route path="/tests" element={<TestList />} />
           <Route path="/users" element={<UserList />} />
-        </Route>
-
-        {/* doctor routes */}
-        <Route element={<ProtectedRoute roles={[ROLES.DOCTOR]} redirectPath="/404" />}>
-          <Route path="/doctordashboard" element={<DoctorDashboard />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/diagnose/dr" element={<DR />} />
-          <Route path="/diagnose/amd" element={<AMD />} />
-          <Route path="/diagnose/glaucoma" element={<Glaucoma />} />
-          <Route path="/diagnose/rvo" element={<RVO />} />
-          <Route path="/diagnose/multidr" element={<MultiDiagnosePage />} />
-          <Route path="/patients" element={<PatientsPage />} />
-          <Route path="/patients/:patientId" element={<PatientProfile />} />
-          <Route path="/monitorpatients" element={<MonitoringPatientsPage />} />
-          <Route path="/pre-monitoring-patients" element={<PreMonitoringPatientsPage />} />
-          <Route path="/completed-patients" element={<CompletedPatientsPage />} />
-          <Route path="/review-patients-profile" element={<ReviewPatientsPage />} />
-        </Route>
-
-        {/* nurese routes */}
-        <Route element={<ProtectedRoute roles={[ROLES.NURSE]} redirectPath="/404" />}>
-          <Route path="/monitoring-patients" element={<MonitoringPatients />} />
-          <Route path="/published-patients" element={<PublishedPatients />} />
-          <Route path="/review-patients" element={<ReviewPatients />} />
-          <Route path="/addPatientt" element={<AddPatient />} />
-          <Route path="/add-patient" element={<AddPatientWizard />} />
-          <Route path="/monitoring-patients/view/:id" element={<View />} />
-
-          <Route path="/patients/:patientId" element={<PatientProfile />} />
-          <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
-
-          <Route path="/nursedashboard" element={<NurseDashboard />} />
-          <Route path="/profile" element={<NurseProfile nurseId={SAMPLE_NURSE_ID} />} />
-        </Route>
-
-        {/* doctor routes */}
-        <Route element={<ProtectedRoute roles={[ROLES.DOCTOR]} redirectPath="/404" />}>
-          <Route path="/doctordashboard" element={<DoctorDashboard />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/diagnose/dr" element={<DR />} />
-          <Route path="/diagnose/amd" element={<AMD />} />
-          <Route path="/diagnose/glaucoma" element={<Glaucoma />} />
-          <Route path="/diagnose/rvo" element={<RVO />} />
-          <Route path="/diagnose/multidr" element={<MultiDiagnosePage />} />
-          <Route path="/patients" element={<PatientsPage />} />
-          <Route path="/patients/:patientId" element={<PatientProfile />} />
-          <Route path="/monitorpatients" element={<MonitoringPatientsPage />} />
-          <Route path="/pre-monitoring-patients" element={<PreMonitoringPatientsPage />} />
-          <Route path="/completed-patients" element={<CompletedPatientsPage />} />
-          <Route path="/review-patients-profile" element={<ReviewPatientsPage />} />
-        </Route>
-
-        {/* nurese routes */}
-        <Route element={<ProtectedRoute roles={[ROLES.NURSE]} redirectPath="/404" />}>
-          <Route path="/monitoring-patients" element={<MonitoringPatients />} />
-          <Route path="/published-patients" element={<PublishedPatients />} />
-          <Route path="/review-patients" element={<ReviewPatients />} />
-          <Route path="/addPatientt" element={<AddPatient />} />
-          <Route path="/add-patient" element={<AddPatientWizard />} />
-          <Route path="/monitoring-patients/view/:id" element={<View />} />
-          <Route path="/all-patients" element={<AllNursePatients />} />
-          <Route path="/all-patients/view/:id" element={<View />} />
-          
-
-          <Route path="/patients/:patientId" element={<PatientProfile />} />
-          <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
-
-          <Route path="/nursedashboard" element={<NurseDashboard />} />
-          <Route path="/profile" element={<NurseProfile nurseId={SAMPLE_NURSE_ID} />} />
         </Route>
 
         {/* doctor routes */}

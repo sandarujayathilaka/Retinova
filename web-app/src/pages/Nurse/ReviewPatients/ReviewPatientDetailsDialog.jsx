@@ -202,7 +202,7 @@ const ReviewPatientDetailsDialog = memo(({
   const lastFetchedRef = useRef(null);
   const dialogRef = useRef(null);
 
-  // Debugging re-renders
+ 
   useEffect(() => {
     console.log("ReviewPatientDetailsDialog rendered, patient:", patient);
   });

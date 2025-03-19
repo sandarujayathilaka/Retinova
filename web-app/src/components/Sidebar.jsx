@@ -19,16 +19,10 @@ import {
 import { ROLES } from "@/constants/roles"; // Ensure path is correct
 import { FaUserNurse } from "react-icons/fa";
 import useUserStore from "@/stores/auth";
-import { ROLES } from "@/constants/roles"; // Ensure path is correct
-import { FaUserNurse } from "react-icons/fa";
-import useUserStore from "@/stores/auth";
+
 
 const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => {
   const location = useLocation();
-
-  const { user: userData, logout } = useUserStore();
-
-  console.log(userData);
 
   const { user: userData, logout } = useUserStore();
 

@@ -21,7 +21,7 @@ export function useDashboard(type = 'admin', id = null) {
   const [doctorChartView, setDoctorChartView] = useState('specialties');
   const [nurseChartView, setNurseChartView] = useState('specialties');
   const [reviewPatientCounts, setReviewPatientCounts] = useState({});
-  
+  const [allDoctorsReviewCounts, setAllDoctorsReviewCounts] = useState({});
   // Loading and error states
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -79,8 +79,23 @@ console.log(patientData)
         setDoctors(doctorsRes.data.doctors);
         setNurses(nursesRes.data.nurses);
         setPatients(patientsRes.data.patients);
-      }
-      
+      console.log(patientsRes.data.patients)
+      const reviewCounts = patientsRes.data.patients.reduce((acc, patient) => {
+        if (patient.patientStatus?.toLowerCase() === "review" && patient.nextVisit) {
+          const visitDate = new Date(patient.nextVisit).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          });
+          if (!acc[visitDate]) acc[visitDate] = {};
+          const doctorName = patient.doctorName || "Unknown";
+          acc[visitDate][doctorName] = (acc[visitDate][doctorName] || 0) + 1;
+        }
+        return acc;
+      }, {});
+      setAllDoctorsReviewCounts(reviewCounts);
+      console.log(reviewCounts)
+    }
       if (showRefreshing) {
         toast.success("Dashboard data refreshed successfully");
       }
@@ -257,7 +272,7 @@ console.log(patientData)
     nurseChartView,
     setNurseChartView,
     reviewPatientCounts,
-    
+    allDoctorsReviewCounts,
     // Loading state
     loading,
     isRefreshing,

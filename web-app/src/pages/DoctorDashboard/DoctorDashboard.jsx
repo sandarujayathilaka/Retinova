@@ -25,7 +25,7 @@ const DOCTOR_ID = "67d7122bd060b20213da7cb1";
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
-  
+
   const {
     doctor,
     patients,

@@ -1,10 +1,9 @@
-
 import React, { useRef, useEffect } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import CustomDatePicker from "../../CommonFiles/CustomDatePicker";
-import { CalendarClock, Clock, User, BadgeCheck, AlertTriangle } from "lucide-react";
+import { CalendarClock, BadgeCheck, AlertTriangle, Stethoscope } from "lucide-react";
 
-const DayWrapper = ({ day, date, isWorking, isWorkingAndOff, schedules }) => {
+const DayWrapper = ({ day, date, isWorking, isWorkingAndOff, schedules, reviewCounts }) => {
   const dayRef = useRef(null);
 
   useEffect(() => {
@@ -16,54 +15,54 @@ const DayWrapper = ({ day, date, isWorking, isWorkingAndOff, schedules }) => {
       const windowHeight = window.innerHeight;
       const windowWidth = window.innerWidth;
 
-     
-      let top = rect.top - tooltipRect.height - 5; // Default: above
-      let left = rect.left + rect.width / 2 - tooltipRect.width / 2; // Center horizontally
+      let top = rect.top - tooltipRect.height - 5;
+      let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
 
-      // Ensure tooltip is above the calendar and within screen bounds
       if (top < calendarRect.top || top < 0) {
-        top = rect.bottom + 5; // Move below if above would be hidden under calendar or off-screen
+        top = rect.bottom + 5;
       }
-
-      // Adjust if below would be cut off by window bottom
       if (top + tooltipRect.height > windowHeight) {
-        top = rect.top - tooltipRect.height - 5; // Try above again
+        top = rect.top - tooltipRect.height - 5;
         if (top < calendarRect.top || top < 0) {
-          top = calendarRect.bottom + 5; // Force below calendar if above fails
+          top = calendarRect.bottom + 5;
         }
       }
-
-      // Adjust if tooltip would be cut off at the left
       if (left < calendarRect.left) {
-        left = rect.left; // Align to the left of the day
+        left = rect.left;
       }
-
-      // Adjust if tooltip would be cut off at the right
       if (left + tooltipRect.width > windowWidth) {
-        left = rect.left + rect.width - tooltipRect.width; // Align to the right of the day
+        left = rect.left + rect.width - tooltipRect.width;
       }
 
-      // Ensure tooltip is positioned above the calendar
-      tooltip.style.zIndex = "1000"; // High z-index to ensure it stays above calendar
+      tooltip.style.zIndex = "1000";
       tooltip.style.top = `${top}px`;
       tooltip.style.left = `${left}px`;
       tooltip.style.position = "fixed";
     }
-  }, [schedules]); // Re-run when schedules change
+  }, [schedules, reviewCounts]);
+
+  const dateString = date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const dailyReviews = reviewCounts[dateString] || {};
 
   return (
     <div
       ref={dayRef}
       className={`relative flex items-center justify-center w-full h-full p-1 group
         ${isWorking && !isWorkingAndOff ? "bg-indigo-50 text-indigo-900" : ""} 
-        ${isWorkingAndOff ? "bg-gray-100 text-gray-500" : ""}`}
+        ${isWorkingAndOff ? "bg-gray-100 text-gray-500" : ""}
+        ${Object.keys(dailyReviews).length > 0 ? "border-b-2 border-red-300" : ""}`}
     >
       <span className="text-sm font-medium">{day}</span>
-      {/* Tooltip with detailed staff schedules */}
-      <div className="tooltip invisible group-hover:visible bg-white text-black text-sm rounded-lg py-2 px-3 border border-gray-200">
+      <div className="tooltip invisible group-hover:visible bg-white text-black text-sm rounded-lg py-2 px-3 border border-gray-200 max-w-sm">
         <div className="font-semibold text-indigo-900 mb-2 border-b border-gray-100 pb-1">
-          Staff for {date.toLocaleDateString("en-US", { month: 'long', day: 'numeric', year: 'numeric' })}
+          Details for {date.toLocaleDateString("en-US", { month: 'long', day: 'numeric', year: 'numeric' })}
         </div>
+        
+        {/* Staff Schedules */}
         {schedules.length > 0 ? (
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
             {schedules.map((schedule) => (
@@ -73,15 +72,10 @@ const DayWrapper = ({ day, date, isWorking, isWorkingAndOff, schedules }) => {
                 ) : (
                   <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
                 )}
-                <span className="font-medium">
-                  {schedule.name} 
-                </span>
-                <span className="text-xs text-gray-500">
-                  ({schedule.role})
-                </span>
+                <span className="font-medium">{schedule.name}</span>
+                <span className="text-xs text-gray-500">({schedule.role})</span>
                 <span className={schedule.status === "Working" ? "text-green-600 text-xs" : "text-amber-600 text-xs"}>
-                  {schedule.status}
-                  {schedule.time ? `: ${schedule.time}` : ""}
+                  {schedule.status}{schedule.time ? `: ${schedule.time}` : ""}
                 </span>
               </div>
             ))}
@@ -89,12 +83,32 @@ const DayWrapper = ({ day, date, isWorking, isWorkingAndOff, schedules }) => {
         ) : (
           <div className="text-gray-500 text-center py-1">No staff scheduled</div>
         )}
+
+        {/* Review Counts */}
+        {Object.keys(dailyReviews).length > 0 && (
+          <div className="mt-3 pt-2 border-t border-gray-100">
+            <div className="font-semibold text-red-700 mb-1">Patient Reviews</div>
+            <div className="space-y-1 max-h-40 overflow-y-auto">
+              {Object.entries(dailyReviews).map(([doctorName, count]) => (
+                <div key={doctorName} className="flex items-center gap-1.5">
+                  <Stethoscope className="h-3.5 w-3.5 text-red-500" />
+                  <span className="font-medium">
+                    {doctorName}
+                  </span>
+                  <span className="text-xs text-red-600">
+                    {count} review{count !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-const StaffSchedule = ({ doctors, nurses, selectedDate, setSelectedDate, className }) => {
+const StaffSchedule = ({ doctors, nurses, selectedDate, setSelectedDate, reviewCounts, className }) => {
   const isDateInRange = (date, startDate, endDate, repeatYearly) => {
     const checkDate = date.getTime();
     let start = new Date(startDate);
@@ -112,8 +126,7 @@ const StaffSchedule = ({ doctors, nurses, selectedDate, setSelectedDate, classNa
     const allStaff = [...doctors, ...nurses];
     return allStaff.some((staff) => {
       const daySchedule = staff.workingHours?.[dayName];
-      const isEnabled = daySchedule?.enabled === true;
-      return isEnabled; // Check only if the day is a working day for the staff
+      return daySchedule?.enabled === true;
     });
   };
 
@@ -122,11 +135,11 @@ const StaffSchedule = ({ doctors, nurses, selectedDate, setSelectedDate, classNa
     const allStaff = [...doctors, ...nurses];
     return allStaff.some((staff) => {
       const daySchedule = staff.workingHours?.[dayName];
-      const isEnabled = daySchedule?.enabled === true; // Check if the staff is scheduled to work
+      const isEnabled = daySchedule?.enabled === true;
       const isDayOff = staff.daysOff?.some((dayOff) =>
         isDateInRange(date, dayOff.startDate, dayOff.endDate, dayOff.repeatYearly)
       );
-      return isEnabled && isDayOff; // Highlight red only if it's a working day and a day off for that staff
+      return isEnabled && isDayOff;
     });
   };
 
@@ -136,8 +149,7 @@ const StaffSchedule = ({ doctors, nurses, selectedDate, setSelectedDate, classNa
     const workingStaff = allStaff
       .filter((staff) => {
         const daySchedule = staff.workingHours?.[dayName];
-        const isEnabled = daySchedule?.enabled === true;
-        return isEnabled; // Include only staff scheduled to work
+        return daySchedule?.enabled === true;
       })
       .map((staff) => {
         const isDayOff = staff.daysOff?.some((dayOff) =>
@@ -152,12 +164,7 @@ const StaffSchedule = ({ doctors, nurses, selectedDate, setSelectedDate, classNa
         };
       });
 
-    // If no staff is scheduled to work, return empty array (no tooltip content)
-    if (workingStaff.length === 0) {
-      return [];
-    }
-
-    return workingStaff;
+    return workingStaff.length === 0 ? [] : workingStaff;
   };
 
   const renderDayContents = (day, date) => {
@@ -172,6 +179,7 @@ const StaffSchedule = ({ doctors, nurses, selectedDate, setSelectedDate, classNa
         isWorking={isWorking}
         isWorkingAndOff={isWorkingAndOff}
         schedules={schedules}
+        reviewCounts={reviewCounts}
       />
     );
   };
@@ -185,7 +193,6 @@ const StaffSchedule = ({ doctors, nurses, selectedDate, setSelectedDate, classNa
       </CardHeader>
       <CardContent className="p-4 flex flex-col items-center">
         <div className="flex flex-col items-center w-full">
-          {/* Centered Calendar with Responsive Width */}
           <div className="flex items-center justify-center mb-4 w-full max-w-[300px] sm:max-w-[320px] lg:max-w-[340px]">
             <CustomDatePicker
               selected={selectedDate}
@@ -196,7 +203,6 @@ const StaffSchedule = ({ doctors, nurses, selectedDate, setSelectedDate, classNa
             />
           </div>
 
-          {/* Centered Legend */}
           <div className="flex flex-col items-center gap-3 w-full max-w-[320px]">
             <div className="grid grid-cols-2 gap-3 w-full text-sm">
               <div className="flex items-center gap-2 bg-indigo-50 p-2 rounded">
@@ -208,9 +214,12 @@ const StaffSchedule = ({ doctors, nurses, selectedDate, setSelectedDate, classNa
                 <span className="text-gray-600">Day Off</span>
               </div>
             </div>
-            
+            <div className="flex items-center gap-2 bg-red-50 p-2 rounded w-full">
+              <span className="w-3 h-3 bg-red-100 border-b-2 border-red-300 rounded-sm"></span>
+              <span className="text-red-900">Day with Reviews</span>
+            </div>
             <div className="mt-2 text-xs text-center text-gray-500">
-              Hover over a day to see staff details
+              Hover over a day to see staff details and review counts
             </div>
           </div>
         </div>

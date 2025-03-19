@@ -36,6 +36,7 @@ const Dashboard = () => {
     patients,
     selectedDate,
     setSelectedDate,
+    allDoctorsReviewCounts,
     patientFilter,
     setPatientFilter,
     doctorFilter,
@@ -71,7 +72,8 @@ const Dashboard = () => {
   if (error) {
     return <ErrorState error={error} onRetry={() => fetchData()} />;
   }
-
+console.log(allDoctorsReviewCounts)
+console.log("Dsds")
   return (
 <div className="bg-gray-50 min-h-screen">
 <div className="mx-auto px-4 sm:px-6 py-4 lg:mx-8 xl:mx-12">
@@ -117,7 +119,7 @@ const Dashboard = () => {
               nurses={nurses} 
               selectedDate={selectedDate} 
               setSelectedDate={setSelectedDate} 
-              
+              reviewCounts={allDoctorsReviewCounts}
               className="h-full" 
             />
         
