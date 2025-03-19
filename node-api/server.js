@@ -12,7 +12,7 @@ const { currentUser } = require("./middleware/current-user");
 const patientRoutes = require("./routes/patientRoutes");
 const userRoutes = require("./routes/user.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
-const patientNurseRoutes = require("./routes/patient.routes");
+const ophthalmicPatientRoutes = require("./routes/ophthalmic.patient.routes");
 const utilRoutes = require("./routes/util.routes");
 const doctorRoutes = require("./routes/doctor.routes");
 const nurseRoutes = require("./routes/nurse.routes");
@@ -37,13 +37,13 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", userRoutes);
-// app.use("/api/patients", patientNurseRoutes);
+app.use("/api/ophthalmic-patients", ophthalmicPatientRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/util", utilRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/treatments", treatmentRoutes);
 app.use("/api/patients", patientRoutes);
-// app.use("/api/patients", testRecordssRoutes);
+app.use("/api/patients", testRecordssRoutes);
 app.use("/api/nurses", nurseRoutes);
 app.use("/api/tests", testRoutes);
 
@@ -53,7 +53,6 @@ const port = process.env.PORT || 4000;
 
 connectDB()
   .then(() => {
-    updatePatientAges(); // Start cron job after DB connection
     app.listen(port, () => {
       console.log(`🚀 Server started on port ${port}`);
     });

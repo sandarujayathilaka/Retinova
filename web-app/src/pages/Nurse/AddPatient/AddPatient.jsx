@@ -141,7 +141,7 @@ export default function AddPatient() {
         allergies: data.allergies.length > 0 ? data.allergies : undefined,
         emergencyContact: data.emergencyContact.name ? data.emergencyContact : undefined,
       };
-      const response = await api.post("/patients/add", formattedData);
+      const response = await api.post("/ophthalmic-patients/add", formattedData);
       if (response) {
         // toast.success("Patient registered successfully", {
         //   position: "top-right",

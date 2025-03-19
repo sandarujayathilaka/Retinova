@@ -62,7 +62,7 @@ const Viewwork = () => {
     setLoading(true);
     const fetchPatientData = async () => {
       try {
-        const response = await api.get(`/patients/${patientId}`);
+        const response = await api.get(`/ophthalmic-patients/${patientId}`);
         if (response.status === 200) {
           const patientData = response.data.data;
           setPatient(patientData);
@@ -116,7 +116,7 @@ const Viewwork = () => {
         allergies: data.allergies.length > 0 ? data.allergies : undefined,
         emergencyContact: data.emergencyContact.name ? data.emergencyContact : undefined,
       };
-      await api.put(`/patients/edit/${patientId}`, formattedData);
+      await api.put(`/ophthalmic-patients/edit/${patientId}`, formattedData);
       toast.success("Patient details updated successfully", {
         position: "top-right",
         autoClose: 3000,

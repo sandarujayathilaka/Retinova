@@ -135,9 +135,12 @@ const RecordItem = ({
       const formData = new FormData();
       formData.append("condition", editingRecord.condition);
       if (editingRecord.diagnosedAt) formData.append("diagnosedAt", editingRecord.diagnosedAt);
-      if (editingRecord.medications && editingRecord.medications.length > 0) {
-        formData.append("medications", JSON.stringify(editingRecord.medications));
-      }
+      // if (editingRecord.medications && editingRecord.medications.length > 0) {
+      //   formData.append("medications", JSON.stringify(editingRecord.medications));
+      // }
+      const filteredMedications = editingRecord.medications.filter(med => med.trim() !== "");
+      formData.append("medications", JSON.stringify(filteredMedications));
+      
       if (editingRecord.files && editingRecord.files.length > 0) {
         editingRecord.files.forEach((file) => {
           if (file) formData.append("files", file);
@@ -149,7 +152,7 @@ const RecordItem = ({
       formData.append("notes", editingRecord.notes || "");
       formData.append("isChronicCondition", editingRecord.isChronicCondition.toString());
 
-      const responsePromise = api.put(`/patients/${patientId}/medical-records/${editingRecord._id}`, formData);
+      const responsePromise = api.put(`/ophthalmic-patients/${patientId}/medical-records/${editingRecord._id}`, formData);
       await toast.promise(responsePromise, {
         loading: "Saving changes...",
         success: (response) => {

@@ -45,7 +45,7 @@ const ReviewPatients = memo(() => {
         setLoading(true);
         setError(null);
 
-        const patientResponse = await api.get("/patients", {
+        const patientResponse = await api.get("/ophthalmic-patients", {
           params: {
             status: "Review",
             page,
@@ -104,7 +104,7 @@ const ReviewPatients = memo(() => {
         const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
         const dateStr = utcDate.toISOString().split("T")[0];
 
-        const response = await api.get("/patients/count", {
+        const response = await api.get("/ophthalmic-patients/count", {
           params: {
             patientStatus: "Review",
             nextVisit: dateStr,

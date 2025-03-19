@@ -208,10 +208,7 @@ const ReviewPatientDetailsDialog = memo(({
   });
 
   // Sync local state with props only when they change
-  useEffect(() => {
-    setLocalSelectedDoctorId(initialSelectedDoctorId || patient?.doctorId || "");
-    setLocalRevisitDate(initialRevisitDate || (patient?.nextVisit ? new Date(patient.nextVisit) : null));
-  }, [initialSelectedDoctorId, initialRevisitDate, patient]);
+  
 
   const debouncedFetchPatientCount = useDebounce(async (date, doctorId) => {
     if (!date || !doctorId) return;
@@ -231,6 +228,18 @@ const ReviewPatientDetailsDialog = memo(({
     }
   }, 500);
 
+  useEffect(() => {
+    setLocalSelectedDoctorId(initialSelectedDoctorId || patient?.doctorId || "");
+    setLocalRevisitDate(initialRevisitDate || (patient?.nextVisit ? new Date(patient.nextVisit) : null));
+  }, [initialSelectedDoctorId, initialRevisitDate, patient]);
+
+
+  useEffect(() => {
+    if (localRevisitDate && localSelectedDoctorId) {
+      debouncedFetchPatientCount(localRevisitDate, localSelectedDoctorId);
+    }
+  }, [localRevisitDate, localSelectedDoctorId, debouncedFetchPatientCount]);
+  
   const getDoctorLabel = useCallback((doctor) => {
     if (!doctor || !patient) return `${doctor.name || "N/A"} (${doctor.specialty || "N/A"})`;
 
@@ -296,7 +305,7 @@ const ReviewPatientDetailsDialog = memo(({
 
     try {
       const normalizedRevisitDate = new Date(Date.UTC(localRevisitDate.getFullYear(), localRevisitDate.getMonth(), localRevisitDate.getDate()));
-      const response = await api.put(`/patients/${patient.patientId}/revisit`, {
+      const response = await api.put(`/ophthalmic-patients/${patient.patientId}/revisit`, {
         doctorId: localSelectedDoctorId,
         revisitDate: normalizedRevisitDate.toISOString(),
       });

@@ -42,19 +42,26 @@ const MedicalHistory = ({ patientId }) => {
   const initAddRecord = useCallback(() => {
     setShowAddForm(true);
     setEditingRecord(null);
-    resetForms();
-  }, [resetForms]);
+    setNewRecords([{ condition: "", diagnosedAt: "", medications: [], files: [], notes: "", isChronicCondition: false }]);
+  }, [setNewRecords]);
 
 
    // Handle saving new medical records
 
   const handleAddMultipleRecords = useCallback(async () => {
-    const result = await addRecords(newRecords);
+    const cleanedRecords = newRecords.map(record => {
+      const filteredMedications = record.medications.filter(med => med.trim() !== "");
+      return {
+        ...record,
+        medications: filteredMedications.length > 0 ? filteredMedications : undefined,
+      };
+    });
+    const result = await addRecords(cleanedRecords);
     if (result.success) {
       setShowAddForm(false);
-      resetForms();
+      setNewRecords([{ condition: "", diagnosedAt: "", medications: [], files: [], notes: "", isChronicCondition: false }]);
     }
-  }, [newRecords, addRecords, resetForms]);
+  }, [newRecords, addRecords, setNewRecords]);
 
   
    // Prepare a record for editing

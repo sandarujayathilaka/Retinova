@@ -5,7 +5,7 @@ export const patientService = {
      // Fetch patients with a specific status
 
     fetchPatients: async (status, params = {}) => {
-      return api.get("/patients", {
+      return api.get("/ophthalmic-patients", {
         params: {
           status,
           ...params
@@ -21,7 +21,7 @@ export const patientService = {
         Date.UTC(revisitDate.getFullYear(), revisitDate.getMonth(), revisitDate.getDate())
       );
       
-      return api.put(`/patients/${patientId}/revisit`, {
+      return api.put(`/ophthalmic-patients/${patientId}/revisit`, {
         doctorId,
         revisitDate: normalizedDate.toISOString(),
       });
@@ -31,7 +31,7 @@ export const patientService = {
      // Get patient count for a specific date and doctor
      
     getPatientCount: async (params) => {
-      return api.get("/patients/count", {
+      return api.get("/ophthalmic-patients/count", {
         params,
         headers: { "Cache-Control": "no-cache" }
       });

@@ -79,7 +79,7 @@ export const DASHBOARD_TYPES = {
     ADMIN_DOCTORS: '/dashboard/doctors',
     ADMIN_NURSES: '/dashboard/nurses',
     ADMIN_PATIENTS: '/dashboard/patients',
-    PATIENT_COUNT: '/patients/count'
+    PATIENT_COUNT: '/ophthalmic-patients/count'
   };
   
   // Error messages

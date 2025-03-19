@@ -38,7 +38,7 @@ const PublishedPatients = () => {
         setLoading(true);
         setError(null);
 
-        const patientResponse = await api.get("/patients", {
+        const patientResponse = await api.get("/ophthalmic-patients", {
           params: {
             status: "Published",
             page,
@@ -99,7 +99,7 @@ const PublishedPatients = () => {
         const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
         const dateStr = utcDate.toISOString().split("T")[0];
 
-        const response = await api.get("/patients/count", {
+        const response = await api.get("/ophthalmic-patients/count", {
           params: {
             patientStatus: "Review",
             nextVisit: dateStr,
