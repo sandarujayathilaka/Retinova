@@ -61,13 +61,13 @@ const MedicalHistory = ({ patientId }) => {
   }, [patientId]);
 
   const handleAddMultipleRecords = async () => {
-    console.log("clicked");
+ 
     const invalidRecords = newRecords.filter((record) => !record.condition);
     if (invalidRecords.length > 0) {
       return toast.error("Condition is required for all records");
     }
 
-    console.log("clicked");
+
     try {
       const formData = new FormData();
       newRecords.forEach((record, index) => {
@@ -112,7 +112,7 @@ const MedicalHistory = ({ patientId }) => {
       toast.error("Cannot edit this record: Invalid data");
       return;
     }
-    // Close the add form if it's open
+
     setShowAddForm(false);
     setEditingRecord({
       ...record,

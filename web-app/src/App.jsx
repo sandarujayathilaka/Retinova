@@ -15,7 +15,7 @@ import MonitoringPatientsPage from "./pages/MonitoringPatientsPage";
 import PreMonitoringPatientsPage from "./pages/PreMonitoringPatientsPage";
 import CompletedPatientsPage from "./pages/CompletedPatientsPage";
 import ReviewPatientsPage from "./pages/ReviewPatientsPage";
-import Dashboard from "./pages/Nurse/AdminDashboard/Dashboard";
+import Dashboard from "./pages/admin/AdminDashboard/Dashboard";
 import MonitoringPatients from "./pages/Nurse/MonitoringPatients/MonitoringPatients";
 import PublishedPatients from "./pages/Nurse/PublishedPatients/PublishedPatients";
 import AddPatient from "./pages/Nurse/AddPatient/AddPatient";
@@ -36,10 +36,15 @@ import NurseList from "@/pages/admin/NurseList";
 import AdminList from "./pages/admin/AdminList";
 import TestList from "./pages/admin/TestList";
 // import AllPatientList from "./pages/testrecord/AllPatientList";
-import DoctorDashboard from "./pages/Nurse/DoctorDashboard/DoctorDashboard";
+import DoctorDashboard from "./pages/DoctorDashboard/DoctorDashboard";
 import AddPatientWizard from "./pages/Nurse/AddPatient/AddPatientWizard";
 import ReviewPatients from "./pages/Nurse/ReviewPatients/ReviewPatients";
 import UserList from "./pages/admin/UserList";
+import AllNursePatients from "./pages/nurse/AllPatients/AllPatients"
+import MultiAMD from "./pages/diseases/MultiAMD";
+import MultiRVO from "./pages/diseases/MultiRVO";
+import MultiGlaucoma from "./pages/diseases/MultiGlaucoma";
+
 
 const App = () => {
   const SAMPLE_NURSE_ID = "67d1eec052a3868b43b617d3"; // Replace with a real ID
@@ -63,7 +68,8 @@ const App = () => {
           <Route path="/monitoring-patients" element={<MonitoringPatients />} />
           <Route path="/published-patients" element={<PublishedPatients />} />
           <Route path="/review-patients" element={<ReviewPatients />} />
-          <Route path="/addPatientt" element={<AddPatient />} />
+          <Route path="/all-patients" element={<AllNursePatients />} />
+          <Route path="/addPatientt" element={<AddPatient />} /> 
           <Route path="/add-patient" element={<AddPatientWizard />} />
           <Route path="/monitoring-patients/view/:id" element={<View />} />
 
@@ -92,6 +98,15 @@ const App = () => {
           <Route path="/admins" element={<AdminList />} />
           <Route path="/tests" element={<TestList />} />
         </Route>
+       
+
+      
+        <Route element={<ProtectedRoute roles={[ROLES.ADMIN]} redirectPath="/404" />}>
+          <Route path="/doctors" element={<DoctorsList />} />
+          <Route path="/nurses" element={<NurseList />} />
+          <Route path="/admins" element={<AdminList />} />
+          <Route path="/tests" element={<TestList />} />
+        </Route>
        */}
 
         {/* admin routes */}
@@ -112,6 +127,9 @@ const App = () => {
           <Route path="/diagnose/glaucoma" element={<Glaucoma />} />
           <Route path="/diagnose/rvo" element={<RVO />} />
           <Route path="/diagnose/multidr" element={<MultiDiagnosePage />} />
+          <Route path="/diagnose/multiamd" element={<MultiAMD />} />
+          <Route path="/diagnose/multirvo" element={<MultiRVO />} />
+          <Route path="/diagnose/multiglaucoma" element={<MultiGlaucoma />} />
           <Route path="/patients" element={<PatientsPage />} />
           <Route path="/patients/:patientId" element={<PatientProfile />} />
           <Route path="/monitorpatients" element={<MonitoringPatientsPage />} />
@@ -128,6 +146,10 @@ const App = () => {
           <Route path="/addPatientt" element={<AddPatient />} />
           <Route path="/add-patient" element={<AddPatientWizard />} />
           <Route path="/monitoring-patients/view/:id" element={<View />} />
+          <Route path="/all-patients" element={<AllNursePatients />} />
+          <Route path="/all-patients/view/:id" element={<View />} />
+          
+
           <Route path="/patients/:patientId" element={<PatientProfile />} />
           <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
           <Route path="/nursedashboard" element={<NurseDashboard />} />

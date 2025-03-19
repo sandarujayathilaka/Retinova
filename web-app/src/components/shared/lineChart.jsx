@@ -1,141 +1,3 @@
-// import React from "react";
-// import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
-// import {
-//   ChartContainer,
-//   ChartTooltip,
-//   ChartTooltipContent,
-// } from "@/components/ui/chart";
-
-// // DoctorTypeAndSpecialtyLineChart Component
-// const DoctorTypeAndSpecialtyLineChart = ({ data, view }) => {
-//   // Aggregate data based on view (specialties or types)
-//   const aggregateData = () => {
-//     const aggregated = {};
-//     data.forEach((doctor) => {
-//       const key = view === "specialties" ? doctor.specialty.toLowerCase() : doctor.type.toLowerCase();
-//       if (key) {
-//         aggregated[key] = (aggregated[key] || 0) + 1;
-//       }
-//     });
-
-//     // Convert to array of objects for recharts
-//     return Object.keys(aggregated)
-//       .sort()
-//       .map((key) => ({
-//         label: key.charAt(0).toUpperCase() + key.slice(1), // Capitalize for display
-//         count: aggregated[key],
-//       }));
-//   };
-
-//   const chartData = aggregateData();
-
-//   // Chart configuration (removed ChartConfig reference)
-//   const chartConfig = {
-//     count: {
-//       label: "Count",
-//       color: "hsl(var(--chart-1))",
-//     },
-//   };
-
-//   return (
-//     <ChartContainer config={chartConfig}>
-//       <LineChart
-//         accessibilityLayer
-//         data={chartData}
-//         margin={{
-//           left: 12,
-//           right: 12,
-//         }}
-//       >
-//         <CartesianGrid vertical={false} />
-//         <XAxis
-//           dataKey="label"
-//           tickLine={false}
-//           axisLine={false}
-//           tickMargin={8}
-//           angle={-45}
-//           textAnchor="end"
-//           tickFormatter={(value) => value.slice(0, 10)} // Shorten long labels
-//         />
-//         <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-//         <Line
-//           dataKey="count"
-//           type="natural"
-//           stroke="var(--color-count)"
-//           strokeWidth={2}
-//           dot={false}
-//         />
-//       </LineChart>
-//     </ChartContainer>
-//   );
-// };
-
-// // NurseTypeAndSpecialtyLineChart Component
-// const NurseTypeAndSpecialtyLineChart = ({ data, view }) => {
-//   // Aggregate data based on view (specialties or types)
-//   const aggregateData = () => {
-//     const aggregated = {};
-//     data.forEach((nurse) => {
-//       const key = view === "specialties" ? nurse.specialty.toLowerCase() : nurse.type.toLowerCase();
-//       if (key) {
-//         aggregated[key] = (aggregated[key] || 0) + 1;
-//       }
-//     });
-
-//     // Convert to array of objects for recharts
-//     return Object.keys(aggregated)
-//       .sort()
-//       .map((key) => ({
-//         label: key.charAt(0).toUpperCase() + key.slice(1), // Capitalize for display
-//         count: aggregated[key],
-//       }));
-//   };
-
-//   const chartData = aggregateData();
-
-//   // Chart configuration (removed ChartConfig reference)
-//   const chartConfig = {
-//     count: {
-//       label: "Count",
-//       color: "hsl(var(--chart-2))",
-//     },
-//   };
-
-//   return (
-//     <ChartContainer config={chartConfig}>
-//       <LineChart
-//         accessibilityLayer
-//         data={chartData}
-//         margin={{
-//           left: 12,
-//           right: 12,
-//         }}
-//       >
-//         <CartesianGrid vertical={false} />
-//         <XAxis
-//           dataKey="label"
-//           tickLine={false}
-//           axisLine={false}
-//           tickMargin={8}
-//           angle={-45}
-//           textAnchor="end"
-//           tickFormatter={(value) => value.slice(0, 10)} // Shorten long labels
-//         />
-//         <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-//         <Line
-//           dataKey="count"
-//           type="natural"
-//           stroke="var(--color-count)"
-//           strokeWidth={2}
-//           dot={false}
-//         />
-//       </LineChart>
-//     </ChartContainer>
-//   );
-// };
-
-// export { DoctorTypeAndSpecialtyLineChart, NurseTypeAndSpecialtyLineChart };
-
 import React from "react";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import {
@@ -172,7 +34,7 @@ const DoctorTypeAndSpecialtyLineChart = ({ data, view }) => {
   const chartConfig = {
     count: {
       label: "Count",
-      color: "#4338CA", // Indigo-600
+      color: "#4338CA",
     },
   };
 
@@ -228,10 +90,10 @@ const DoctorTypeAndSpecialtyLineChart = ({ data, view }) => {
           name="Count"
           dataKey="count"
           type="monotone"
-          stroke="#4338CA" // Indigo-600
+          stroke="#4338CA"
           strokeWidth={2}
-          dot={{ fill: '#4338CA', r: 5 }} // Indigo-600
-          activeDot={{ r: 7, stroke: '#312E81', strokeWidth: 2 }} // Indigo-800
+          dot={{ fill: '#4338CA', r: 5 }}
+          activeDot={{ r: 7, stroke: '#312E81', strokeWidth: 2 }} 
         />
       </LineChart>
     </ResponsiveContainer>
@@ -266,7 +128,7 @@ const NurseTypeAndSpecialtyLineChart = ({ data, view }) => {
   const chartConfig = {
     count: {
       label: "Count",
-      color: "#6366F1", // Indigo-500
+      color: "#6366F1", 
     },
   };
 
@@ -322,10 +184,10 @@ const NurseTypeAndSpecialtyLineChart = ({ data, view }) => {
           name="Count"
           dataKey="count"
           type="monotone"
-          stroke="#6366F1" // Indigo-500
+          stroke="#6366F1" 
           strokeWidth={2}
-          dot={{ fill: '#6366F1', r: 5 }} // Indigo-500
-          activeDot={{ r: 7, stroke: '#4338CA', strokeWidth: 2 }} // Indigo-600
+          dot={{ fill: '#6366F1', r: 5 }} 
+          activeDot={{ r: 7, stroke: '#4338CA', strokeWidth: 2 }} 
         />
       </LineChart>
     </ResponsiveContainer>

@@ -23,26 +23,25 @@ const {
 } = require("../controllers/patient.controller");
 
 // const upload = require("../middleware/upload");
+const { requireAuth } = require("../middleware/require-auth");
+const { ROLES } = require("../constants/roles");
 
 router.post("/add", addPatient);
-// router.get("/", getAllPatients);
-router.get("/", getPatientsByStatus);
-router.get("/count", getPatientCount);
+
+router.get("/", requireAuth([ROLES.ADMIN,ROLES.NURSE,ROLES.DOCTOR]), getPatientsByStatus);
+router.get("/all-patients",requireAuth([ROLES.ADMIN,ROLES.NURSE,ROLES.DOCTOR]),  getAllPatients);
+router.get("/count",requireAuth([ROLES.ADMIN,ROLES.NURSE,ROLES.DOCTOR]), getPatientCount);
 // router.get("/patients", getAllPatients);
-router.get("/:patientId", getPatient); // Assuming patient ID is passed as a parameter
-router.put("/edit/:patientId", editPatient); // Route for updating a patient
-router.delete("/delete/:patientId", deletePatient); // Route for deleting a patient
-router.put("/:patientId/revisit", updatePatientRevisit);
+router.get("/:patientId",requireAuth([ROLES.ADMIN,ROLES.NURSE,ROLES.DOCTOR]), getPatient); 
+router.put("/edit/:patientId",requireAuth([ROLES.NURSE]), editPatient);
+router.delete("/delete/:patientId",requireAuth([ROLES.ADMIN]), deletePatient); 
+router.put("/:patientId/revisit",requireAuth([ROLES.NURSE]), updatePatientRevisit);
 
-router.get("/counts", getPatientCountsForMonth);
-router.post("/:patientId/medical-records/upload", upload.single("image"), uploadMedicalHistoryImage);
-router.get("/:patientId/medical-records", getmedicalHistory);
-router.post("/:patientId/medical-records", upload.any(), addmedicalHistory);
-router.get("/:patientId/medical-records/:recordId/files", getmedicalHistoryFiles);
-router.put("/:patientId/medical-records/:recordId", upload.any(), updateMedicalHistory);
-router.delete("/:patientId/medical-records/:recordId", deletemedicalHistory);
-
-// router.post("/:patientId/medical-records", upload.any(), addmedicalHistory);
-// router.get("/:patientId/medical-records/:recordId", getmedicalHistory);
-// router.put("/:patientId/medical-records/:recordId", upload.any(),updatemedicalHistory);
+router.get("/counts", requireAuth([ROLES.ADMIN,ROLES.NURSE,ROLES.DOCTOR]),getPatientCountsForMonth);
+router.post("/:patientId/medical-records/upload",requireAuth([ROLES.NURSE]), upload.single("image"), uploadMedicalHistoryImage);
+router.get("/:patientId/medical-records",requireAuth([ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE]), getmedicalHistory);
+router.post("/:patientId/medical-records",requireAuth([ROLES.NURSE]), upload.any(), addmedicalHistory);
+router.get("/:patientId/medical-records/:recordId/files",requireAuth([ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE]), getmedicalHistoryFiles);
+router.put("/:patientId/medical-records/:recordId", requireAuth([ROLES.NURSE]),upload.any(), updateMedicalHistory);
+router.delete("/:patientId/medical-records/:recordId", requireAuth([ROLES.NURSE]), deletemedicalHistory);
 module.exports = router;

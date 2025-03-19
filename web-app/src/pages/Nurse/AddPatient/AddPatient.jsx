@@ -143,10 +143,10 @@ export default function AddPatient() {
       };
       const response = await api.post("/patients/add", formattedData);
       if (response) {
-        toast.success("Patient registered successfully", {
-          position: "top-right",
-          autoClose: 3000,
-        });
+        // toast.success("Patient registered successfully", {
+        //   position: "top-right",
+        //   autoClose: 3000,
+        // });
         form.reset();
         setAge(0);
         setSearchTerm("");
@@ -154,22 +154,22 @@ export default function AddPatient() {
         setAllergyFields([{ id: Date.now(), value: "" }]);
       }
     } catch (error) {
-      if (error.response) {
-        const { errorCode, message } = error.response.data;
-        if (errorCode === "MISSING_FIELDS") {
-          toast.error("Please fill in all required fields.");
-        } else if (errorCode === "DUPLICATE_NIC") {
-          toast.error("A patient with this NIC already exists.");
-        } else if (errorCode === "DUPLICATE_EMAIL") {
-          toast.error("A patient with this email already exists.");
-        } else {
-          toast.error(`Error: ${message}`);
-        }
-      } else if (error.request) {
-        toast.error("No response from the server. Please try again later.");
-      } else {
-        toast.error("An unexpected error occurred.");
-      }
+      // if (error.response) {
+      //   const { errorCode, message } = error.response.data;
+      //   if (errorCode === "MISSING_FIELDS") {
+      //     toast.error("Please fill in all required fields.");
+      //   } else if (errorCode === "DUPLICATE_NIC") {
+      //     toast.error("A patient with this NIC already exists.");
+      //   } else if (errorCode === "DUPLICATE_EMAIL") {
+      //     toast.error("A patient with this email already exists.");
+      //   } else {
+      //     toast.error(`Error: ${message}`);
+      //   }
+      // } else if (error.request) {
+      //   toast.error("No response from the server. Please try again later.");
+      // } else {
+      //   toast.error("An unexpected error occurred.");
+      // }
     }
   };
 
@@ -634,3 +634,8 @@ export default function AddPatient() {
     </div>
   );
 }
+
+
+
+
+
