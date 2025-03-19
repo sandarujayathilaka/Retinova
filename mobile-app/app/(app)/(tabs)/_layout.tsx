@@ -24,19 +24,19 @@ export default function TabLayout() {
   const bottomInset = Platform.OS === "ios" ? insets.bottom : 0;
   const tabBarHeight = bottomInset + 60; // Base height + bottom inset
 
-  useEffect(() => {
-    // Ensure the component is fully mounted before showing
-    const timer = setTimeout(() => {
-      setIsReady(true);
-    }, 150);
+  // useEffect(() => {
+  //   // Ensure the component is fully mounted before showing
+  //   const timer = setTimeout(() => {
+  //     setIsReady(true);
+  //   }, 150);
 
-    return () => clearTimeout(timer);
-  }, []);
+  //   return () => clearTimeout(timer);
+  // }, []);
 
-  if (!isReady) {
-    // Return empty view while initializing
-    return <View style={styles.container} />;
-  }
+  // if (!isReady) {
+  //   // Return empty view while initializing
+  //   return <View style={styles.container} />;
+  // }
 
   return (
     <Tabs
