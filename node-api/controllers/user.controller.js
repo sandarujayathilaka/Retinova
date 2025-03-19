@@ -25,7 +25,7 @@ const signUp = async (req, res) => {
 
   res.status(201).send({
     user,
-    token: generateToken(user.id),
+    token: generateToken(user.id, user.role),
     refreshToken: generateRefreshToken(user.id),
   });
 };
@@ -33,33 +33,58 @@ const signUp = async (req, res) => {
 const signIn = async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+  // Find user with populated profile fields
+  const user = await User.findOne({ email }).populate("profile", "name image");
 
-  if (!user) {
+  if (!user || !(await user.matchPassword(password))) {
     throw new Error("Invalid credentials");
   }
 
-  const passwordsMatch = await user.matchPassword(password);
+  // Structure the user data with profile overrides, excluding unnecessary fields
+  const userWithProfileOverride = {
+    id: user.id,
+    name: user.profile?.name, // Optional chaining in case there's no profile
+    image: user.profile?.image,
+    ...user.toObject(),
+    password: undefined,
+    passwordChangedAt: undefined,
+    profile: undefined,
+    __v: undefined,
+    _id: undefined,
+  };
 
-  if (!passwordsMatch) {
-    throw new Error("Invalid credentials");
-  }
-
+  // Send the response
   res.status(200).send({
-    user,
-    token: generateToken(user.id),
+    user: userWithProfileOverride,
+    token: generateToken(user.id, user.role),
     refreshToken: generateRefreshToken(user.id),
   });
 };
 
 const refreshToken = async (req, res) => {
+  // Verify the refresh token and extract user ID
   const { id } = jwt.verify(req.headers.refresh_token, process.env.JWT_SECRET);
 
-  const user = await User.findById(id);
+  // Fetch the user and populate the profile fields
+  const user = await User.findById(id).populate("profile", "name image");
 
+  // Structure the user data with profile overrides, excluding unnecessary fields
+  const userWithProfileOverride = {
+    id: user.id,
+    name: user.profile?.name, // Optional chaining in case there's no profile
+    image: user.profile?.image,
+    ...user.toObject(),
+    password: undefined,
+    passwordChangedAt: undefined,
+    profile: undefined,
+    __v: undefined,
+    _id: undefined,
+  };
+
+  // Send the response with the user and generated tokens
   res.status(200).send({
-    user,
-    token: generateToken(user.id),
+    user: userWithProfileOverride,
+    token: generateToken(user.id, user.role),
     refreshToken: generateRefreshToken(user.id),
   });
 };
@@ -104,7 +129,7 @@ const resetPassword = async (req, res) => {
   user.passwordChangedAt = new Date(); // Update timestamp
   await user.save();
 
-  res.json({ message: "Password reset successful" });
+  res.json({ message: "Password reset successful", role: user.role });
 };
 
 const requestPasswordResetLink = async (req, res) => {
@@ -130,13 +155,33 @@ const requestPasswordResetLink = async (req, res) => {
 };
 
 const getUser = async (req, res) => {
-  const user = await User.findById(req.params.id).populate("profile");
+  // const user = await User.findById(req.params.id).populate("profile");
+  const user = await User.findById(req.params.id).populate(
+    "profile",
+    "name image"
+  );
 
   if (!user) {
     return res.status(404).json({ error: "User not found" });
   }
 
-  res.json(user);
+  if (!user.profile) {
+    return res.json(user);
+  }
+  // Override the profile fields in the user object
+  const userWithProfileOverride = {
+    id: user.id,
+    ...user.toObject(),
+    name: user.profile.name,
+    image: user.profile.image,
+    profile: undefined,
+    password: undefined,
+    passwordChangedAt: undefined,
+    __v: undefined,
+    _id: undefined,
+  };
+
+  res.json(userWithProfileOverride);
 };
 
 const addAdmin = async (req, res) => {
@@ -226,6 +271,55 @@ const deleteAdmin = async (req, res) => {
   res.status(204).send(admin);
 };
 
+const toggleUserStatus = async (req, res) => {
+  const { id } = req.params; // User ID from URL params
+  const { isActive } = req.body; // Boolean value from request body
+
+  // Validate request body
+  if (typeof isActive !== "boolean") {
+    return res
+      .status(400)
+      .json({ error: "Invalid isActive value. Must be true or false." });
+  }
+
+  console.log("id", id);
+
+  // Find and update the user's status
+  const user = await User.findByIdAndUpdate(
+    id,
+    { isActive },
+    { new: true } // Return updated user with selected fields
+  );
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  res.status(200).json({
+    message: `User ${isActive ? "activated" : "deactivated"} successfully`,
+    user,
+  });
+};
+
+const getAllUsers = async (req, res) => {
+  const users = await User.find().populate("profile", "name image");
+
+  // Transform users with profile overrides
+  const usersWithProfileOverride = users.map((user) => ({
+    id: user.id,
+    name: user.profile?.name || user.name, // Fallback to user's name if no profile
+    image: user.profile?.image,
+    ...user.toObject(),
+    password: undefined,
+    passwordChangedAt: undefined,
+    profile: undefined,
+    __v: undefined,
+    _id: undefined,
+  }));
+
+  res.send(usersWithProfileOverride);
+};
+
 module.exports = {
   signUp,
   signIn,
@@ -238,4 +332,6 @@ module.exports = {
   getAdminById,
   updateAdmin,
   deleteAdmin,
+  toggleUserStatus,
+  getAllUsers,
 };

@@ -117,6 +117,7 @@ const Dashboard = () => {
               nurses={nurses} 
               selectedDate={selectedDate} 
               setSelectedDate={setSelectedDate} 
+              
               className="h-full" 
             />
         

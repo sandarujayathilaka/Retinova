@@ -109,12 +109,20 @@ export default function ResetPasswordForm({ className, ...props }) {
       { token, newPassword: data.password },
       {
         onSuccess: response => {
+          console.log("Password reset successful", response);
           setMessage(response.data.message);
           setIsSuccess(true);
+
+          if (response.data.role === "patient") {
+            alert("Please open the app to continue");
+            return;
+          }
+
           setTimeout(() => navigate("/"), 3000);
         },
         onError: error => {
           console.error(error);
+          setIsSuccess(false);
           const errorMessage = error?.response?.data?.error || "An error occurred.";
           // setMessage(errorMessage);
 
@@ -173,10 +181,12 @@ export default function ResetPasswordForm({ className, ...props }) {
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
+      <Card className="rounded-lg border border-indigo-100 bg-white text-card-foreground shadow-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Reset Password</CardTitle>
-          <CardDescription>Create a new password for your account</CardDescription>
+          <CardTitle className="text-xl text-blue-950">Reset Password</CardTitle>
+          <CardDescription className="text-gray-600">
+            Create a new password for your account
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {message && (
@@ -199,15 +209,19 @@ export default function ResetPasswordForm({ className, ...props }) {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New Password</FormLabel>
+                    <FormLabel className="text-blue-800">New Password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input type={showPassword ? "text" : "password"} {...field} />
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          {...field}
+                          className="border-blue-200"
+                        />
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 p-0"
+                          className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 p-0 text-blue-500"
                           onClick={togglePasswordVisibility}
                         >
                           {showPassword ? (
@@ -221,10 +235,9 @@ export default function ResetPasswordForm({ className, ...props }) {
                         </Button>
                       </div>
                     </FormControl>
-                    {/* We're intentionally not showing the default FormMessage here */}
 
                     {/* Password criteria checklist */}
-                    <div className="mt-3 space-y-2 rounded-md bg-gray-50 p-3">
+                    <div className="mt-3 space-y-2 rounded-md bg-blue-50 p-3">
                       <ValidationItem
                         fulfilled={passwordCriteria.hasMinLength}
                         text="At least 8 characters"
@@ -254,15 +267,19 @@ export default function ResetPasswordForm({ className, ...props }) {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel className="text-blue-800">Confirm Password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Input type={showConfirmPassword ? "text" : "password"} {...field} />
+                        <Input
+                          type={showConfirmPassword ? "text" : "password"}
+                          {...field}
+                          className="border-blue-200"
+                        />
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 p-0"
+                          className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 p-0 text-blue-500"
                           onClick={toggleConfirmPasswordVisibility}
                         >
                           {showConfirmPassword ? (
@@ -276,11 +293,10 @@ export default function ResetPasswordForm({ className, ...props }) {
                         </Button>
                       </div>
                     </FormControl>
-                    {/* We're intentionally not showing the default FormMessage here */}
 
                     {/* Password match indicator - always shown when confirm password has value */}
                     {field.value && (
-                      <div className="mt-3 space-y-2 rounded-md bg-gray-50 p-3">
+                      <div className="mt-3 space-y-2 rounded-md bg-blue-50 p-3">
                         <ValidationItem
                           fulfilled={field.value === passwordForm.watch("password")}
                           text="Passwords match"
@@ -292,7 +308,7 @@ export default function ResetPasswordForm({ className, ...props }) {
               />
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                 disabled={
                   !token ||
                   resetPassword.isPending ||
@@ -306,17 +322,27 @@ export default function ResetPasswordForm({ className, ...props }) {
             </form>
           </Form>
 
-          <div className="mt-6 text-center text-sm">
+          <div className="mt-6 text-center text-sm text-blue-800">
             Remember your password?{" "}
-            <Link to="/" className="underline underline-offset-4">
+            <Link
+              to="/"
+              className="font-medium underline underline-offset-4 text-blue-600 hover:text-indigo-600"
+            >
               Log in
             </Link>
           </div>
         </CardContent>
       </Card>
-      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a]:hover:text-primary">
-        By resetting your password, you agree to our <a href="#">Terms of Service</a> and{" "}
-        <a href="#">Privacy Policy</a>.
+      <div className="text-balance text-center text-xs text-blue-300">
+        By resetting your password, you agree to our{" "}
+        <a href="#" className="underline underline-offset-4 hover:text-blue-100">
+          Terms of Service
+        </a>{" "}
+        and{" "}
+        <a href="#" className="underline underline-offset-4 hover:text-blue-100">
+          Privacy Policy
+        </a>
+        .
       </div>
     </div>
   );

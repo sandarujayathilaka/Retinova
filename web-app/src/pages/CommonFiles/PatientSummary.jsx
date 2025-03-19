@@ -199,14 +199,14 @@ const PatientSummary = ({ patients, patientFilter, setPatientFilter, className, 
                     <p className="text-3xl font-bold text-indigo-800 mb-2">{totalPatients}</p>
                     <p className="text-indigo-600">Total Patients</p>
 
-                    <div className="flex justify-center gap-2 flex-wrap mt-6">
+                    {/* <div className="flex justify-center gap-2 flex-wrap mt-6">
                       {patientStatus.map(status => (
                         <div key={status} className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(status)}`}>
                           {getStatusIcon(status)}
                           <span>{status}</span>
                         </div>
                       ))}
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               )}

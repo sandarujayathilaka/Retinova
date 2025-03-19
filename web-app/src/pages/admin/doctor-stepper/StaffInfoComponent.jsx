@@ -15,7 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 import { useDeleteImage, useUploadImage } from "@/services/util.service";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -63,7 +63,6 @@ export default function StaffInfoComponent() {
     }
   }, [watch, setValue]);
 
-  console.log(errors);
   const mutationUpload = useUploadImage();
   const mutationDelete = useDeleteImage();
 
@@ -91,7 +90,6 @@ export default function StaffInfoComponent() {
 
   const handleDelete = () => {
     const imageKey = watch("image.Key");
-    console.log(imageKey);
     if (!imageKey) return;
 
     mutationDelete.mutate(
@@ -113,137 +111,173 @@ export default function StaffInfoComponent() {
   };
 
   return (
-    <div className="space-y-4 text-start">
-      <div>
-        <div className="gap-3 flex items-center">
-          <Avatar className="size-14 ">
-            <AvatarImage
-              src={
-                watch("image.Location") ||
-                "https://static.vecteezy.com/system/resources/previews/003/337/584/large_2x/default-avatar-photo-placeholder-profile-icon-vector.jpg"
-              }
-              alt="Staff Avatar"
-              className={` ${loading ? "opacity-50" : ""}`} // Reduce opacity when loading
-            />
-            {loading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-full">
-                <Loader2 className="animate-spin text-main size-8" />
-              </div>
-            )}
-          </Avatar>
-          <div className="flex flex-col justify-between gap-1">
-            <div className="flex gap-2 items-center">
-              <input
-                type="file"
-                hidden
-                ref={inputRef} // Attach the ref to the input
-                onChange={handleUpload}
+    <div className="space-y-5 text-start">
+      {/* Photo Upload Section */}
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-slate-700">Doctor Photo</label>
+        <div className="flex items-start gap-4">
+          <div className="relative">
+            <Avatar className="h-16 w-16 border-2 border-slate-200">
+              <AvatarImage
+                src={
+                  watch("image.Location") ||
+                  "https://static.vecteezy.com/system/resources/previews/003/337/584/large_2x/default-avatar-photo-placeholder-profile-icon-vector.jpg"
+                }
+                alt="Doctor Avatar"
+                className={loading ? "opacity-50" : ""}
               />
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-full">
+                  <Loader2 className="animate-spin text-emerald-600 h-8 w-8" />
+                </div>
+              )}
+            </Avatar>
+          </div>
+
+          <div className="flex-1 space-y-2">
+            <div className="flex gap-2">
+              <input type="file" hidden ref={inputRef} onChange={handleUpload} accept="image/*" />
               <Button
-                variant="ghost2"
+                type="button"
+                variant="outline"
+                size="sm"
                 onClick={e => {
                   e.preventDefault();
                   inputRef.current.click();
                 }}
-                className="text-main"
+                className="h-8 px-2 text-emerald-700"
               >
-                Upload Photo
+                <Upload className="mr-1 h-3.5 w-3.5" />
+                Upload
               </Button>
-              <Separator orientation="vertical" className="min-h-6 w-[1.5px]" />
+
               <Button
-                variant="ghost2"
-                className="text-destructive"
+                type="button"
+                variant="outline"
+                size="sm"
                 onClick={e => {
                   e.preventDefault();
                   handleDelete();
                 }}
                 disabled={!watch("image.Key")}
+                className="h-8 px-2 text-red-700"
               >
-                Delete
+                <Trash2 className="mr-1 h-3.5 w-3.5" />
+                Remove
               </Button>
             </div>
-            <p className="text-xs text-slate-500 ml-4">
-              An image of the person, it's best if it has the same height and width.
+            <p className="text-xs text-slate-500">
+              Upload a square image for best results (JPG, PNG, max 5MB)
             </p>
+            {errors.image?.Location && (
+              <p className="text-xs text-red-600 font-medium mt-1">
+                {errors.image.Location.message}
+              </p>
+            )}
           </div>
         </div>
-        {errors.image?.Location && (
-          <span className="text-sm text-destructive">{errors.image.Location.message}</span>
-        )}
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor={register("type").name} className="block text-sm font-medium text-primary">
-          Type
+      <Separator className="my-1" />
+
+      {/* Employment Type Section */}
+      <div className="space-y-3">
+        <label htmlFor={register("type").name} className="block text-sm font-medium text-slate-700">
+          Employment Type
         </label>
-        <div className="flex w-full gap-2">
+        <div className="flex w-full gap-3">
           {/* Full Time */}
           <div
-            className={`flex items-center p-2 space-x-2 w-1/2 border rounded-md cursor-pointer ${
-              watch("type") === "Full time" ? "border-main" : ""
+            className={`flex items-center p-2.5 space-x-2 w-1/2 border rounded-md cursor-pointer transition-colors ${
+              watch("type") === "Full time"
+                ? "border-emerald-600 bg-emerald-50"
+                : "border-slate-200 hover:border-slate-300"
             }`}
             onClick={() => setValue("type", "Full time")}
           >
-            <input
-              type="radio"
-              {...register("type")}
-              value="Full Time"
-              checked={watch("type") === "Full Time"}
-              className="hidden"
-            />
-            <span className="w-4 h-4 border rounded-full flex items-center justify-center">
-              {watch("type") === "Full time" && <div className="w-2 h-2 bg-main rounded-full" />}
+            <span
+              className={`w-4 h-4 border rounded-full flex items-center justify-center ${
+                watch("type") === "Full time" ? "border-emerald-600" : "border-slate-400"
+              }`}
+            >
+              {watch("type") === "Full time" && (
+                <div className="w-2 h-2 bg-emerald-600 rounded-full" />
+              )}
             </span>
-            <span>Full Time</span>
+            <span
+              className={
+                watch("type") === "Full time" ? "font-medium text-emerald-900" : "text-slate-700"
+              }
+            >
+              Full Time
+            </span>
           </div>
 
           {/* Part Time */}
           <div
-            className={`flex items-center p-2 space-x-2 w-1/2 border rounded-md cursor-pointer ${
-              watch("type") === "Part time" ? "border-main" : ""
+            className={`flex items-center p-2.5 space-x-2 w-1/2 border rounded-md cursor-pointer transition-colors ${
+              watch("type") === "Part time"
+                ? "border-emerald-600 bg-emerald-50"
+                : "border-slate-200 hover:border-slate-300"
             }`}
             onClick={() => setValue("type", "Part time")}
           >
-            <input
-              type="radio"
-              {...register("type")}
-              value="Part time"
-              checked={watch("type") === "Part time"}
-              className="hidden"
-            />
-            <span className="w-4 h-4 border rounded-full flex items-center justify-center">
-              {watch("type") === "Part time" && <div className="w-2 h-2 bg-main rounded-full" />}
+            <span
+              className={`w-4 h-4 border rounded-full flex items-center justify-center ${
+                watch("type") === "Part time" ? "border-emerald-600" : "border-slate-400"
+              }`}
+            >
+              {watch("type") === "Part time" && (
+                <div className="w-2 h-2 bg-emerald-600 rounded-full" />
+              )}
             </span>
-            <span>Part Time</span>
+            <span
+              className={
+                watch("type") === "Part time" ? "font-medium text-emerald-900" : "text-slate-700"
+              }
+            >
+              Part Time
+            </span>
           </div>
         </div>
-        {errors.type && <span className="text-sm text-destructive">{errors.type.message}</span>}
+        {errors.type && (
+          <p className="text-xs text-red-600 font-medium mt-1">{errors.type.message}</p>
+        )}
       </div>
+
+      {/* Name Field */}
       <div className="space-y-2">
-        <label htmlFor={register("name").name} className="block text-sm font-medium text-primary">
-          Name
+        <label htmlFor={register("name").name} className="block text-sm font-medium text-slate-700">
+          Full Name
         </label>
         <Input
           id={register("name").name}
           {...register("name")}
-          className="block w-full p-2 border rounded-md"
+          placeholder="Enter doctor's full name"
+          className={`${errors.name ? "border-red-300 focus-visible:ring-red-400" : ""}`}
         />
-        {errors.name && <span className="text-sm text-destructive">{errors.name.message}</span>}
+        {errors.name && (
+          <p className="text-xs text-red-600 font-medium mt-1">{errors.name.message}</p>
+        )}
       </div>
+
+      {/* Specialty Field */}
       <div className="space-y-2">
         <label
           htmlFor={register("specialty").name}
-          className="block text-sm font-medium text-primary"
+          className="block text-sm font-medium text-slate-700"
         >
-          Specialist
+          Specialty
         </label>
         <Controller
           control={control}
           name={`specialty`}
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a specialist" />
+              <SelectTrigger
+                className={`w-full ${errors.specialty ? "border-red-300 focus-visible:ring-red-400" : ""}`}
+              >
+                <SelectValue placeholder="Select a specialty" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -265,7 +299,7 @@ export default function StaffInfoComponent() {
           )}
         />
         {errors.specialty && (
-          <span className="text-sm text-destructive">{errors.specialty.message}</span>
+          <p className="text-xs text-red-600 font-medium mt-1">{errors.specialty.message}</p>
         )}
       </div>
     </div>

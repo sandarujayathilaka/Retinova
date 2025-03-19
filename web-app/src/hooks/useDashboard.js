@@ -49,7 +49,8 @@ export function useDashboard(type = 'admin', id = null) {
         setDoctor(doctorRes.data);
         const patientData = patientsRes.data.data?.patients || [];
         setPatients(patientData);
-
+console.log(doctorRes.data)
+console.log(patientData)
         // Calculate review patient counts
         const reviewCounts = patientData.reduce((acc, patient) => {
           if (patient.patientStatus?.toLowerCase() === "review" && patient.nextVisit) {
@@ -63,7 +64,7 @@ export function useDashboard(type = 'admin', id = null) {
           return acc;
         }, {});
         setReviewPatientCounts(reviewCounts);
-
+        console.log(reviewCounts)
         if (patientData.length === 0) {
           toast("No patients found for this doctor.");
         }

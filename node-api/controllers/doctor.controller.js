@@ -206,7 +206,10 @@ const getDoctorsForRevisit = async (req, res) => {
     res.status(200).json({ doctors: transformedDoctors });
   } catch (error) {
     logger.error("Error in getDoctorsForRevisit:", error);
-    res.status(500).json({ error: "Error fetching doctors for revisit", details: error.message });
+    res.status(500).json({
+      error: "Error fetching doctors for revisit",
+      details: error.message,
+    });
   }
 };
 
@@ -303,6 +306,32 @@ const getDoctorPatientsSummary = async (req, res) => {
 };
 
 
+// const getDoctorNames = async (req, res) => {
+//   try {
+//     const doctors = await Doctor.find({}, "name _id"); // Select only name and _id
+
+//     if (!doctors.length) {
+//       return res.status(200).json({
+//         message: "No doctors found",
+//         data: { doctors: [] },
+//       });
+//     }
+//     res.status(200).json({
+//       message: "Doctors fetched successfully",
+//       doctors: doctors.map((doc) => ({
+//         _id: doc._id,
+//         name: doc.name,
+//       })),
+//     });
+//   } catch (error) {
+//     logger.error("Error in getDoctorNames:", error);
+//     res.status(500).json({
+//       errorCode: "SERVER_ERROR",
+//       message: "Error fetching doctor names",
+//       error: error.message,
+//     });
+//   }
+// };
 const getDoctorNames = async (req, res) => {
   try {
     const doctors = await Doctor.find({}, "name _id"); 
@@ -310,7 +339,10 @@ const getDoctorNames = async (req, res) => {
     // Set caching headers
     res.set({
       "Cache-Control": "public, max-age=300", // Cache for 5 minutes
-      ETag: require("crypto").createHash("md5").update(JSON.stringify(doctors)).digest("hex"), // Generate ETag
+      ETag: require("crypto")
+        .createHash("md5")
+        .update(JSON.stringify(doctors))
+        .digest("hex"), // Generate ETag
     });
 
     if (!doctors.length) {
