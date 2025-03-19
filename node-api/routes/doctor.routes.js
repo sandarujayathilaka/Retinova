@@ -11,6 +11,7 @@ const {
   getDoctorPatientsSummary,
   getDoctorNames,
   getDoctorsForRevisit,
+  getDoctorByUserId,
 } = require("../controllers/doctor.controller");
 const { requireAuth } = require("../middleware/require-auth");
 const { ROLES } = require("../constants/roles");
@@ -32,5 +33,6 @@ router.put("/:id", requireAuth([ROLES.ADMIN]), updateDoctor);
 router.delete("/:id", requireAuth([ROLES.ADMIN]), deleteDoctor);
 router.post("/bulk", requireAuth([ROLES.DOCTOR,ROLES.NURSE]), getDoctorsByIds);
 router.get("/:id/patients",requireAuth([ROLES.DOCTOR,ROLES.NURSE]), getDoctorPatientsSummary);
+router.get("/user/:id/patients",requireAuth([ROLES.DOCTOR,ROLES.NURSE]), getDoctorByUserId);
 
 module.exports = router;

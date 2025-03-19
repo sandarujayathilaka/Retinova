@@ -70,7 +70,7 @@ export function LoginForm({ className, ...props }) {
           navigate("/dashboard");
         }
         if (user.role === ROLES.NURSE) {
-          navigate("/monitoring-patients");
+          navigate("/all-patients");
         }
       },
       onError: error => {

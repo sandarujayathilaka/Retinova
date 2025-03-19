@@ -7,7 +7,7 @@ const validator = require("validator");
 const logger = require("../config/logger"); 
 const { isValidDate, getStartEndOfDay, getStartEndOfMonth } = require("../utils/dateUtils"); 
 const { format } = require("date-fns");
-
+const UserService = require("../services/user.service")
 
 // Utility function to upload files to S3
 const uploadFileToS3 = async (file, patientId) => {
@@ -470,7 +470,7 @@ const addPatient = async (req, res) => {
     // Generate patient ID
     const lastPatient = await Patient.findOne().sort({ createdAt: -1 }).select("patientId");
     const patientId = lastPatient ? `P${parseInt(lastPatient.patientId.replace(/\D/g, "")) + 1}` : "P1";
-console.log(allergies)
+
     // Create new patient
     const newPatient = new Patient({
       patientId,
@@ -490,6 +490,7 @@ console.log(allergies)
 
     await newPatient.save();
     res.status(201).json({ message: "Patient added successfully", data: newPatient });
+    await UserService.createUser(email, "patient", newPatient._id, fullName);
   } catch (error) {
     if (error.name === "ValidationError") {
       const errors = Object.values(error.errors).map((err) => ({

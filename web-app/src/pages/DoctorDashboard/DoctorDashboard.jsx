@@ -9,9 +9,9 @@ import {
 import {  ErrorState} from "../DashboardComponents/ErrorState";
 import {  GridLayout} from "../DashboardComponents/GridLayout";
 import {  DashboardCard} from "../DashboardComponents/DashboardCard";
+// import {user} from '@/services/auth.service';
 
-
-
+import useUserStore from "@/stores/auth";
 import PatientSummary from "../CommonFiles/PatientSummary";
 import DoctorSchedule from "./DoctorSchedule";
 import PatientTypeChart from "../CommonFiles/PatientTypeChart";
@@ -25,6 +25,9 @@ const DOCTOR_ID = "67d7122bd060b20213da7cb1";
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
+//   const { user: userData, logout } = useUserStore();
+// console.log(userData.id)
+// const DOCTOR_ID = userData.id.toString();
 
   const {
     doctor,
@@ -58,7 +61,7 @@ const DoctorDashboard = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-<div className="mx-auto px-4 sm:px-6 py-4 lg:mx-8 xl:mx-12">
+<div className="mx-auto py-4">
        
         <DashboardHeader 
           title="Doctor Dashboard" 
