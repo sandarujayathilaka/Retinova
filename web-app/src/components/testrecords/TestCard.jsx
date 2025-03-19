@@ -13,6 +13,7 @@ const TestCard = ({
   selectedFileNames,
   setSelectedFileNames,
   record,
+  savedTests, // Added savedTests prop
 }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -26,11 +27,11 @@ const TestCard = ({
 
   const handleStatusChange = (index, value) => {
     const test = localTests[index];
-    const savedStatusOrder = statusOrder[record.recommend.tests[index].status];
+    const savedStatusOrder = statusOrder[savedTests[index].status];
     const newStatusOrder = statusOrder[value];
     
     if (newStatusOrder < savedStatusOrder) {
-      toast.error(`Cannot select a status before ${record.recommend.tests[index].status}.`, {
+      toast.error(`Cannot select a status before ${savedTests[index].status}.`, {
         duration: 4000,
         icon: '⚠️',
       });
@@ -114,38 +115,39 @@ const TestCard = ({
   const getStatusColor = (status) => {
     const colors = {
       Pending: "bg-gray-100 border-gray-200",
-      "In Progress": "bg-blue-50 border-blue-200",
-      Completed: "bg-green-50 border-green-200",
+      "In Progress": "bg-sky-50 border-sky-200",
+      Completed: "bg-teal-50 border-teal-200",
       Reviewed: "bg-purple-50 border-purple-200"
     };
     return colors[status] || "bg-gray-100 border-gray-200";
   };
 
-  const isDisabled = record.recommend.tests[index].status === "Completed" || 
-                    record.recommend.tests[index].status === "Reviewed";
-  const hasCurrentAttachment = test.attachmentURL;
+  // Use savedTests for UI state
+  const savedTest = savedTests[index];
+  const isDisabled = savedTest.status === "Completed" || savedTest.status === "Reviewed";
+  const hasCurrentAttachment = savedTest.attachmentURL;
   const hasPendingAttachment = pendingUploads[index];
-  const showEyeIcon = (hasCurrentAttachment || hasPendingAttachment) && test.status !== "Reviewed";
+  const showEyeIcon = (hasCurrentAttachment || hasPendingAttachment) && savedTest.status !== "Reviewed";
 
   return (
     <div 
-      className={`rounded-lg p-5 border ${getStatusColor(test.status)} transition-all duration-200 hover:shadow-md`}
+      className={`rounded-lg p-5 border ${getStatusColor(savedTest.status)} transition-all duration-200 hover:shadow-md`}
     >
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center space-x-3">
           <div 
             className={`w-3 h-3 rounded-full ${
-              test.status === "Completed" ? "bg-green-500" : 
-              test.status === "In Progress" ? "bg-blue-500" : 
-              test.status === "Reviewed" ? "bg-purple-500" : "bg-gray-400"
+              savedTest.status === "Completed" ? "bg-teal-500" : 
+              savedTest.status === "In Progress" ? "bg-sky-500" : 
+              savedTest.status === "Reviewed" ? "bg-purple-500" : "bg-gray-400"
             }`}
           />
           <h4 className="font-medium text-gray-800">{test.testName}</h4>
         </div>
-        <StatusBadge status={test.status} />
+        <StatusBadge status={savedTest.status} />
       </div>
 
-      {test.status === "Reviewed" ? (
+      {savedTest.status === "Reviewed" ? (
         <div className="bg-purple-50 rounded-lg p-3 flex items-center space-x-3">
           <div className="bg-purple-100 p-2 rounded-md">
             <CheckCircle className="h-6 w-6 text-purple-600" />
@@ -154,7 +156,7 @@ const TestCard = ({
             <p className="text-sm font-medium text-purple-800">This test has been reviewed</p>
             {hasCurrentAttachment && (
               <a 
-                href={test.attachmentURL} 
+                href={savedTest.attachmentURL} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-sm text-purple-600 hover:underline flex items-center mt-1"
@@ -203,11 +205,10 @@ const TestCard = ({
                   </label>
                 </div>
 
-                {/* Current Saved Attachment */}
                 {hasCurrentAttachment && (
                   <div className="flex items-center space-x-2">
                     <a
-                      href={test.attachmentURL}
+                      href={savedTest.attachmentURL}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:underline text-sm truncate max-w-[200px]"
@@ -217,7 +218,7 @@ const TestCard = ({
                     </a>
                     {showEyeIcon && (
                       <button
-                        onClick={() => window.open(test.attachmentURL, "_blank")}
+                        onClick={() => window.open(savedTest.attachmentURL, "_blank")}
                         className="p-1 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200"
                         title="View current attachment"
                       >
@@ -227,7 +228,6 @@ const TestCard = ({
                   </div>
                 )}
 
-                {/* Pending (Newly Uploaded) Attachment */}
                 {hasPendingAttachment && (
                   <div className="flex items-center space-x-2">
                     <a
@@ -266,7 +266,7 @@ const TestCard = ({
               Test Status
             </label>
             <select
-              value={localTests[index].status}
+              value={localTests[index].status} // Dropdown shows local state
               onChange={(e) => handleStatusChange(index, e.target.value)}
               className={`
                 w-full p-2.5 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500
@@ -278,16 +278,16 @@ const TestCard = ({
               `}
               disabled={!hasCurrentAttachment && !hasPendingAttachment || isDisabled}
             >
-              <option value="Pending" disabled={statusOrder["Pending"] < statusOrder[test.status]}>
+              <option value="Pending" disabled={statusOrder["Pending"] < statusOrder[savedTest.status]}>
                 Pending
               </option>
               <option
                 value="In Progress"
-                disabled={statusOrder["In Progress"] < statusOrder[test.status]}
+                disabled={statusOrder["In Progress"] < statusOrder[savedTest.status]}
               >
                 In Progress
               </option>
-              <option value="Completed" disabled={statusOrder["Completed"] < statusOrder[test.status]}>
+              <option value="Completed" disabled={statusOrder["Completed"] < statusOrder[savedTest.status]}>
                 Completed
               </option>
             </select>

@@ -11,10 +11,12 @@ const TestRecordItem = ({ record, onSave, onComplete, handleFileUpload }) => {
   const [expanded, setExpanded] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const savedTests = record.recommend.tests; // Saved state from the record
+
   const handleSave = async () => {
     const hasUnsavedChanges = localTests.some(
       (test, index) =>
-        test.status !== record.recommend.tests[index].status || pendingUploads[index]
+        test.status !== savedTests[index].status || pendingUploads[index]
     );
     
     if (!hasUnsavedChanges) {
@@ -42,17 +44,14 @@ const TestRecordItem = ({ record, onSave, onComplete, handleFileUpload }) => {
   
   const hasUnsavedChanges = localTests.some(
     (test, index) =>
-      test.status !== record.recommend.tests[index].status || pendingUploads[index]
+      test.status !== savedTests[index].status || pendingUploads[index]
   );
 
   const renderStatusIndicator = () => {
     const statuses = {
-      "Test Completed": { color: "bg-green-100 text-green-800", icon: CheckCircle },
-    //   "Checked": { color: "bg-blue-100 text-blue-800", icon: FileText },
+      "Test Completed": { color: "bg-teal-100 text-teal-800", icon: CheckCircle },
     };
-    
     const statusInfo = statuses[record.status] || { color: "bg-gray-100 text-gray-800", icon: Eye };
-    
     return (
       <div className={`flex items-center space-x-2 px-3 py-1 rounded-md ${statusInfo.color}`}>
         <statusInfo.icon className="h-4 w-4" />
@@ -61,13 +60,11 @@ const TestRecordItem = ({ record, onSave, onComplete, handleFileUpload }) => {
     );
   };
 
-  // Calculate test summary
   const testSummary = localTests.reduce((acc, test) => {
     acc[test.status] = (acc[test.status] || 0) + 1;
     return acc;
   }, {});
 
-  // Calculate progress percentage
   const completedTests = localTests.filter(test => 
     test.status === "Completed" || test.status === "Reviewed"
   ).length;
@@ -75,27 +72,23 @@ const TestRecordItem = ({ record, onSave, onComplete, handleFileUpload }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg mb-4">
-      {/* Header Section */}
+      {/* Header Section (unchanged) */}
       <div 
-        className="bg-indigo-300 px-6 py-4 cursor-pointer"
+        className="bg-gradient-to-r from-indigo-100 to-indigo-100 px-6 py-4 cursor-pointer border-l-4 border-blue-900"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex justify-between items-center">
           <div className="flex-1">
-            <h3 className="text-xl font-bold text-white">
-              {record.diagnosis}
-            </h3>
+            <h3 className="text-xl font-bold text-blue-900">{record.diagnosis}</h3>
             <div className="flex items-center mt-2 mb-3 space-x-2">
-              <span className="text-white text-sm">
-                Affected Eye: <span className="font-semibold">{record.eye}</span>
+              <span className="text-blue-900 font-semibold text-sm">
+                AFFECTED EYE | <span className="font-semibold">{record.eye}</span>
               </span>
             </div>
-            
-            {/* Test Summary - Enhanced */}
             <div className="mt-3">
-              <div className="flex items-center justify-between text-sm text-white mb-1">
+              <div className="flex items-center justify-between text-sm text-blue-900 mb-1">
                 <div className="flex items-center space-x-2">
-                  <span className="font-medium">Progress:</span>
+                  <span className="font-semibold">Progress | </span>
                   <div className="flex items-center">
                     <span className="font-semibold">{completedTests}</span>
                     <span>/</span>
@@ -104,75 +97,63 @@ const TestRecordItem = ({ record, onSave, onComplete, handleFileUpload }) => {
                 </div>
                 <span className="font-semibold">{Math.round(progressPercentage)}%</span>
               </div>
-              
-            {/* Progress Bar with Segments */}
-            <div className="w-full bg-indigo-200 rounded-full h-3 overflow-hidden">
-            <div className="flex h-full">
-                {/* Define the order of statuses to ensure consistent filling from left to right */}
+              <div className="w-full bg-indigo-200 rounded-full h-3 overflow-hidden">
+                <div className="flex h-full">
+                  {["Pending", "In Progress", "Completed", "Reviewed"].map(statusType => {
+                    if (testSummary[statusType]) {
+                      const width = (testSummary[statusType] / localTests.length) * 100;
+                      return (
+                        <div 
+                          key={statusType}
+                          className={`h-full transition-all duration-300 ${
+                            statusType === "Reviewed" ? "bg-purple-300" : 
+                            statusType === "Completed" ? "bg-teal-400" : 
+                            statusType === "In Progress" ? "bg-sky-300" : 
+                            "bg-gray-100"
+                          }`}
+                          style={{ width: `${width}%` }}
+                          title={`${testSummary[statusType]} ${statusType}`}
+                        />
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+              </div>
+              <div className="flex items-center space-x-3 mt-2">
                 {["Pending", "In Progress", "Completed", "Reviewed"].map(statusType => {
-                if (testSummary[statusType]) {
-                    const width = (testSummary[statusType] / localTests.length) * 100;
+                  if (testSummary[statusType]) {
                     return (
-                    <div 
-                        key={statusType}
-                        className={`h-full transition-all duration-300 ${
-                        statusType === "Reviewed" ? "bg-purple-800" : 
-                        statusType === "Completed" ? "bg-indigo-600" : 
-                        statusType === "In Progress" ? "bg-indigo-400" : 
-                        statusType === "Pending" ? "bg-indigo-100" : 
-                        "bg-indigo-300"
-                        }`}
-                        style={{ width: `${width}%` }}
-                        title={`${testSummary[statusType]} ${statusType}`}
-                    />
+                      <div key={statusType} className="flex items-center space-x-1">
+                        <div className={`w-3 h-3 rounded-full ${
+                          statusType === "Reviewed" ? "bg-purple-300" : 
+                          statusType === "Completed" ? "bg-teal-400" : 
+                          statusType === "In Progress" ? "bg-sky-300" : 
+                          "bg-gray-100"
+                        }`}></div>
+                        <span className="text-xs text-blue-500">{statusType}</span>
+                      </div>
                     );
-                }
-                return null;
+                  }
+                  return null;
                 })}
+              </div>
             </div>
-            </div>
-
-            {/* Legend with same order as progress bar */}
-            <div className="flex items-center space-x-3 mt-2">
-            {["Pending", "In Progress", "Completed", "Reviewed"].map(statusType => {
-                if (testSummary[statusType]) {
-                return (
-                    <div key={statusType} className="flex items-center space-x-1">
-                    <div className={`w-3 h-3 rounded-full ${
-                        statusType === "Reviewed" ? "bg-purple-800" : 
-                        statusType === "Completed" ? "bg-indigo-600" : 
-                        statusType === "In Progress" ? "bg-indigo-400" : 
-                        statusType === "Pending" ? "bg-indigo-100" : 
-                        "bg-indigo-300"
-                    }`}></div>
-                    <span className="text-xs text-white">{statusType}</span>
-                    </div>
-                );
-                }
-                return null;
-            })}
-            </div>
-            </div>
-            
           </div>
           <div className="absolute top-4 right-6">
-            <div className="flex items-center space-x-3">
             <button 
-                className="bg-white bg-opacity-10 rounded-full p-2 text-white hover:bg-opacity-20 transition"
-                aria-label={expanded ? "Collapse panel" : "Expand panel"}
-                onClick={() => setExpanded(!expanded)}
+              className="bg-white bg-opacity-10 rounded-full p-2 text-white hover:bg-opacity-20 transition"
+              aria-label={expanded ? "Collapse panel" : "Expand panel"}
             >
-                {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              {expanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
             </button>
-            </div>
-        </div>
+          </div>
         </div>
       </div>
 
       {/* Content Section */}
       {expanded && (
         <div className="p-6">
-          {/* Doctor's Note Section */}
           <div className="bg-indigo-50 rounded-lg p-4 mb-6 border-l-4 border-indigo-400">
             <h4 className="text-indigo-900 font-medium text-sm mb-2">DOCTOR'S NOTE</h4>
             <p className="text-gray-700">
@@ -180,7 +161,6 @@ const TestRecordItem = ({ record, onSave, onComplete, handleFileUpload }) => {
             </p>
           </div>
 
-          {/* Warning if changes are made */}
           {hasUnsavedChanges && (
             <div className="flex items-center px-4 py-3 mb-6 bg-amber-50 border border-amber-200 rounded-lg">
               <AlertTriangle className="h-5 w-5 text-amber-500 mr-3" />
@@ -190,16 +170,15 @@ const TestRecordItem = ({ record, onSave, onComplete, handleFileUpload }) => {
             </div>
           )}
 
-          {/* Tests Section */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-medium text-gray-800">Test Records</h4>
               <div className="flex space-x-2">
                 {Object.entries(testSummary).map(([status, count]) => (
                   <div key={status} className={`px-2 py-1 rounded-md text-xs font-medium ${
-                    status === "Completed" ? "bg-green-100 text-green-700" : 
-                    status === "Reviewed" ? "bg-blue-100 text-blue-700" : 
-                    status === "Pending" ? "bg-amber-100 text-amber-700" : 
+                    status === "Reviewed" ? "bg-purple-100 text-purple-700" : 
+                    status === "Completed" ? "bg-teal-100 text-teal-700" : 
+                    status === "In Progress" ? "bg-sky-100 text-sky-700" : 
                     "bg-gray-100 text-gray-700"
                   }`}>
                     {count} {status}
@@ -208,7 +187,6 @@ const TestRecordItem = ({ record, onSave, onComplete, handleFileUpload }) => {
               </div>
             </div>
             
-            {/* Test upload instruction */}
             <div className="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-200">
               <p className="text-sm text-gray-600 flex items-center">
                 <svg className="h-4 w-4 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -218,7 +196,6 @@ const TestRecordItem = ({ record, onSave, onComplete, handleFileUpload }) => {
               </p>
             </div>
             
-            {/* Test Cards */}
             <div className="space-y-4">
               {localTests.map((test, index) => (
                 <TestCard
@@ -232,12 +209,12 @@ const TestRecordItem = ({ record, onSave, onComplete, handleFileUpload }) => {
                   selectedFileNames={selectedFileNames}
                   setSelectedFileNames={setSelectedFileNames}
                   record={{ ...record, handleFileUpload }}
+                  savedTests={savedTests} // Pass savedTests
                 />
               ))}
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
             <div className="text-sm text-gray-500">
               {allTestsCompletedOrReviewed ? (
