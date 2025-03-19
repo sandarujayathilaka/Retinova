@@ -12,6 +12,7 @@ export default function TabLayout() {
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+      <StatusBar style="auto" />
     </Stack>
   );
 }

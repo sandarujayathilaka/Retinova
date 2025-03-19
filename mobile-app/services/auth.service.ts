@@ -23,3 +23,11 @@ export const useLogin = () => {
     },
   });
 };
+
+export const useGetUserProfile = () => {
+  return useMutation({
+    mutationFn: async () => {
+      return api.get("/auth/me");
+    },
+  });
+};
