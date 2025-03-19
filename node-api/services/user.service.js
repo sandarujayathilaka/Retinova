@@ -25,7 +25,7 @@ class UserService {
       password: generatedPassword,
       name,
       role,
-      profileId,
+      profile: profileId,
     });
 
     await user.save();

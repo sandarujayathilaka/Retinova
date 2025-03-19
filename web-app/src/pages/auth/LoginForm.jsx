@@ -18,6 +18,7 @@ import { useState } from "react";
 import { useLogin } from "@/services/auth.service";
 import useUserStore from "@/stores/auth";
 import { Link, useNavigate } from "react-router-dom";
+import { ROLES } from "@/constants/roles";
 
 const loginFormSchema = z.object({
   email: z.string().email({
@@ -36,7 +37,7 @@ export function LoginForm({ className, ...props }) {
 
   const loginMutation = useLogin();
 
-  const { setToken, setUser } = useUserStore();
+  const { setToken, setRefreshToken, setUser } = useUserStore();
 
   const form = useForm({
     resolver: zodResolver(loginFormSchema),
@@ -51,17 +52,26 @@ export function LoginForm({ className, ...props }) {
     loginMutation.mutate(data, {
       onSuccess: response => {
         console.log("Login successful", response);
-        const { token, user } = response.data;
+        const { token, refreshToken, user } = response.data;
 
-        if (user.role === "customer") {
-          setMessage("Invalid credentials");
-          return;
-        }
+        // if (user.role === ROLES.PATIENT) {
+        //   setMessage("Invalid credentials");
+        //   return;
+        // }
 
         setToken(token);
+        setRefreshToken(refreshToken);
         setUser(user);
 
-        navigate("/dashboard");
+        if (user.role === ROLES.ADMIN) {
+          navigate("/doctors");
+        }
+        if (user.role === ROLES.DOCTOR) {
+          navigate("/dashboard");
+        }
+        if (user.role === ROLES.NURSE) {
+          navigate("/monitoring-patients");
+        }
       },
       onError: error => {
         console.error("Login failed", error);
@@ -83,36 +93,31 @@ export function LoginForm({ className, ...props }) {
         className={cn("flex flex-col gap-6", className)}
         {...props}
       >
-        {loginMutation.isError && (
-          <Alert variant="destructive">
-            <AlertDescription className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              {message}
-            </AlertDescription>
-          </Alert>
-        )}
+        {loginMutation.isError ||
+          (message && (
+            <Alert variant="destructive">
+              <AlertDescription className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                {message}
+              </AlertDescription>
+            </Alert>
+          ))}
         <div className="grid gap-6">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel htmlFor="email" className="text-black/80">
+                <FormLabel htmlFor="email" className="text-blue-800">
                   Email
                 </FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <AtSignIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      className="pl-10"
-                      // placeholder="m@example.com"
-                      {...field}
-                    />
+                    <AtSignIcon className="absolute left-3 top-3 h-4 w-4 text-blue-500" />
+                    <Input id="email" type="email" className="pl-10 border-blue-200" {...field} />
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-500" />
               </FormItem>
             )}
           />
@@ -123,20 +128,16 @@ export function LoginForm({ className, ...props }) {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center">
-                  <FormLabel htmlFor="password" className="text-black/80">
+                  <FormLabel htmlFor="password" className="text-blue-800">
                     Password
                   </FormLabel>
-                  {/* <a href="#" className="ml-auto text-sm underline-offset-4 hover:underline">
-                    Forgot your password?
-                  </a> */}
                 </div>
                 <FormControl>
-                  {/* <Input id="password" type="password" {...field} /> */}
                   <div className="relative">
-                    <LockIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <LockIcon className="absolute left-3 top-3 h-4 w-4 text-blue-500" />
                     <Input
                       id="password"
-                      className="pl-10 pr-10"
+                      className="pl-10 pr-10 border-blue-200"
                       type={showPassword ? "text" : "password"}
                       {...field}
                     />
@@ -144,7 +145,7 @@ export function LoginForm({ className, ...props }) {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 p-0"
+                      className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 p-0 text-blue-500"
                       onClick={togglePasswordVisibility}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -154,20 +155,24 @@ export function LoginForm({ className, ...props }) {
                     </Button>
                   </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-500" />
               </FormItem>
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-            {loginMutation.isPending ? "Login..." : "Login"}
+          <Button
+            type="submit"
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+            disabled={loginMutation.isPending}
+          >
+            {loginMutation.isPending ? "Logging in..." : "Login"}
           </Button>
         </div>
 
-        <div className="text-center text-sm">
+        <div className="text-center text-sm text-gray-700">
           <Link
             to="/forgot-password"
-            className="ml-auto text-sm underline-offset-4 hover:underline"
+            className="font-medium underline underline-offset-4 hover:text-indigo-600"
           >
             Forgotten password?
           </Link>

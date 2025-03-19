@@ -1,13 +1,30 @@
 import React, { useEffect, useState, Component } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api.service";
 import { toast } from "react-hot-toast";
-import { PatientsStatusBarChart, DiseaseStageChart, PatientCategoryChart } from "@/components/shared/barChart";
+import {
+  PatientsStatusBarChart,
+  DiseaseStageChart,
+  PatientCategoryChart,
+} from "@/components/shared/barChart";
 import { Stethoscope, User2, Activity } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -24,9 +41,7 @@ class ErrorBoundary extends Component {
       return (
         <div className="text-red-600 p-4">
           <p>Something went wrong: {this.state.error?.message || "Unknown error"}</p>
-          <Button onClick={() => this.setState({ hasError: false, error: null })}>
-            Retry
-          </Button>
+          <Button onClick={() => this.setState({ hasError: false, error: null })}>Retry</Button>
         </div>
       );
     }
@@ -85,57 +100,61 @@ const DoctorDashboard = () => {
   }
 
   const totalPatients = patients.length;
-  const diseaseCategories = [...new Set(patients.flatMap((p) => p.category))];
-  const diseaseStages = [...new Set(patients.flatMap((p) => p.diagnoseHistory.map((d) => d.diagnosis)))];
+  const diseaseCategories = [...new Set(patients.flatMap(p => p.category))];
+  const diseaseStages = [
+    ...new Set(patients.flatMap(p => p.diagnoseHistory.map(d => d.diagnosis))),
+  ];
   const patientStatus = [
-    ...new Set(patients.map((p) => (p.patientStatus ? p.patientStatus.toLowerCase() : "Unknown"))),
+    ...new Set(patients.map(p => (p.patientStatus ? p.patientStatus.toLowerCase() : "Unknown"))),
   ];
 
   const getPatientCount = () => {
     if (patientFilter === "total") return totalPatients;
     if (diseaseCategories.includes(patientFilter))
-      return patients.filter((p) => p.category.includes(patientFilter)).length;
+      return patients.filter(p => p.category.includes(patientFilter)).length;
     if (diseaseStages.includes(patientFilter))
-      return patients.filter((p) => p.diagnoseHistory.some((d) => d.diagnosis === patientFilter)).length;
+      return patients.filter(p => p.diagnoseHistory.some(d => d.diagnosis === patientFilter))
+        .length;
     if (patientStatus.includes(patientFilter))
-      return patients.filter((p) => p.patientStatus?.toLowerCase() === patientFilter).length;
+      return patients.filter(p => p.patientStatus?.toLowerCase() === patientFilter).length;
     return totalPatients;
   };
 
- 
   const patientsStatus = patients.reduce(
     (acc, p) => {
       // Get the length of diagnoseHistory
       const diagnoseCount = p.diagnoseHistory ? p.diagnoseHistory.length : 0;
-     
+
       const isNew = p.isNew;
       const key = isNew ? "New Patients" : "Existing Patients";
 
       // Get the latest date for the patient
       const latestDate = diagnoseCount
-        ? Math.max(...p.diagnoseHistory.map((d) => new Date(d.uploadedAt).getTime()))
+        ? Math.max(...p.diagnoseHistory.map(d => new Date(d.uploadedAt).getTime()))
         : new Date(p.createdAt).getTime();
-  
+
       // Update the accumulator
       acc[key].count += 1;
       acc[key].dates.push(latestDate);
-  
+
       return acc;
     },
     {
       "New Patients": { count: 0, dates: [], fill: "#3B82F6" },
       "Existing Patients": { count: 0, dates: [], fill: "#FBBF24" },
-    }
+    },
   );
-  const patientsStatusData = Object.entries(patientsStatus).map(([name, { count, fill, dates }]) => ({
-    name,
-    value: count,
-    fill,
-    dates,
-  }));
+  const patientsStatusData = Object.entries(patientsStatus).map(
+    ([name, { count, fill, dates }]) => ({
+      name,
+      value: count,
+      fill,
+      dates,
+    }),
+  );
 
   const conditionsByDate = patients.reduce((acc, p) => {
-    p.diagnoseHistory.forEach((record) => {
+    p.diagnoseHistory.forEach(record => {
       const date = new Date(record.uploadedAt).toLocaleDateString();
       if (!acc[date]) acc[date] = {};
       acc[date][record.diagnosis] = (acc[date][record.diagnosis] || 0) + 1;
@@ -148,11 +167,11 @@ const DoctorDashboard = () => {
       stage: diagnose,
       value,
       fill: ["#10B981", "#F59E0B", "#EF4444", "#8B5CF6"][index % 4],
-    }))
+    })),
   );
 
   const diagnosesByDate = patients.reduce((acc, p) => {
-    p.diagnoseHistory.forEach((diag) => {
+    p.diagnoseHistory.forEach(diag => {
       const date = new Date(diag.uploadedAt).toLocaleDateString();
       if (!acc[date]) acc[date] = {};
       acc[date][diag.diagnosis] = (acc[date][diag.diagnosis] || 0) + 1;
@@ -165,16 +184,16 @@ const DoctorDashboard = () => {
       disease: diagnosis,
       value,
       fill: ["#6366F1", "#EC4899", "#14B8A6", "#F97316"][index % 4],
-    }))
+    })),
   );
 
   const latestPatients = [...patients]
     .sort((a, b) => {
       const aLatest = a.diagnoseHistory.length
-        ? new Date(Math.max(...a.diagnoseHistory.map((d) => new Date(d.uploadedAt))))
+        ? new Date(Math.max(...a.diagnoseHistory.map(d => new Date(d.uploadedAt))))
         : new Date(a.createdAt);
       const bLatest = b.diagnoseHistory.length
-        ? new Date(Math.max(...b.diagnoseHistory.map((d) => new Date(d.uploadedAt))))
+        ? new Date(Math.max(...b.diagnoseHistory.map(d => new Date(d.uploadedAt))))
         : new Date(b.createdAt);
       return bLatest - aLatest;
     })
@@ -192,19 +211,19 @@ const DoctorDashboard = () => {
     return checkDate >= start.getTime() && checkDate <= end.getTime();
   };
 
-  const isWorkingDay = (date) => {
+  const isWorkingDay = date => {
     const dayName = date.toLocaleString("en-US", { weekday: "long" });
     const daySchedule = doctor.workingHours?.[dayName];
     const isEnabled = daySchedule?.enabled === true;
-    const isDayOff = doctor.daysOff?.some((dayOff) =>
-      isDateInRange(date, dayOff.startDate, dayOff.endDate, dayOff.repeatYearly)
+    const isDayOff = doctor.daysOff?.some(dayOff =>
+      isDateInRange(date, dayOff.startDate, dayOff.endDate, dayOff.repeatYearly),
     );
     return isEnabled && !isDayOff;
   };
 
-  const isDayOff = (date) =>
-    doctor.daysOff?.some((dayOff) =>
-      isDateInRange(date, dayOff.startDate, dayOff.endDate, dayOff.repeatYearly)
+  const isDayOff = date =>
+    doctor.daysOff?.some(dayOff =>
+      isDateInRange(date, dayOff.startDate, dayOff.endDate, dayOff.repeatYearly),
     );
 
   const renderDayContents = (day, date) => {
@@ -231,9 +250,7 @@ const DoctorDashboard = () => {
               {isOff && ""}
             </span>
           )}
-          {reviewCount > 0 && (
-            <span className="text-teal-600 font-semibold">{reviewCount}</span>
-          )}
+          {reviewCount > 0 && <span className="text-teal-600 font-semibold">{reviewCount}</span>}
         </div>
       </div>
     );
@@ -280,7 +297,9 @@ const DoctorDashboard = () => {
                 <div className="w-full text-teal-600 mt-4 flex flex-col justify-center items-center flex-grow">
                   {patientFilter === "total" && (
                     <div className="flex justify-center items-center min-h-[100px]">
-                      <p className="text-2xl font-bold text-teal-600">Total Patients: {totalPatients}</p>
+                      <p className="text-2xl font-bold text-teal-600">
+                        Total Patients: {totalPatients}
+                      </p>
                     </div>
                   )}
 
@@ -288,9 +307,9 @@ const DoctorDashboard = () => {
                     <div className="text-left w-full">
                       <p className="text-lg font-semibold mb-2">Patient Stages:</p>
                       <ul className="list-disc pl-5">
-                        {diseaseStages.map((stage) => {
-                          const count = patients.filter((p) =>
-                            p.diagnoseHistory.some((d) => d.diagnosis === stage)
+                        {diseaseStages.map(stage => {
+                          const count = patients.filter(p =>
+                            p.diagnoseHistory.some(d => d.diagnosis === stage),
                           ).length;
                           return (
                             <li key={stage} className="text-lg">
@@ -306,8 +325,8 @@ const DoctorDashboard = () => {
                     <div className="text-left w-full">
                       <p className="text-lg font-semibold mb-2">Disease Categories:</p>
                       <ul className="list-disc pl-5">
-                        {diseaseCategories.map((category) => {
-                          const count = patients.filter((p) => p.category.includes(category)).length;
+                        {diseaseCategories.map(category => {
+                          const count = patients.filter(p => p.category.includes(category)).length;
                           return (
                             <li key={category} className="text-lg">
                               {category}: {count}
@@ -322,10 +341,10 @@ const DoctorDashboard = () => {
                     <div className="text-left w-full">
                       <p className="text-lg font-semibold mb-2">Patient Status:</p>
                       <ul className="list-disc pl-5">
-                        {patientStatus.map((status) => {
+                        {patientStatus.map(status => {
                           if (!status) return null;
                           const count = patients.filter(
-                            (p) => p.patientStatus?.toLowerCase() === status
+                            p => p.patientStatus?.toLowerCase() === status,
                           ).length;
                           return (
                             <li key={status} className="text-lg">
@@ -350,7 +369,7 @@ const DoctorDashboard = () => {
             <CardContent className="p-6">
               <DatePicker
                 selected={selectedDate}
-                onChange={(date) => setSelectedDate(date)}
+                onChange={date => setSelectedDate(date)}
                 inline
                 renderDayContents={renderDayContents}
                 className="w-full"
@@ -377,22 +396,44 @@ const DoctorDashboard = () => {
                 {isWorkingDay(selectedDate) ? (
                   <p className="text-green-600">
                     Working:{" "}
-                    {doctor.workingHours[selectedDate.toLocaleString("en-US", { weekday: "long" })]?.startTime} to{" "}
-                    {doctor.workingHours[selectedDate.toLocaleString("en-US", { weekday: "long" })]?.endTime}
+                    {
+                      doctor.workingHours[selectedDate.toLocaleString("en-US", { weekday: "long" })]
+                        ?.startTime
+                    }{" "}
+                    to{" "}
+                    {
+                      doctor.workingHours[selectedDate.toLocaleString("en-US", { weekday: "long" })]
+                        ?.endTime
+                    }
                   </p>
                 ) : isDayOff(selectedDate) ? (
                   <p className="text-red-600">
                     Day Off:{" "}
-                    {doctor.daysOff.find((d) =>
-                      isDateInRange(selectedDate, d.startDate, d.endDate, d.repeatYearly)
+                    {doctor.daysOff.find(d =>
+                      isDateInRange(selectedDate, d.startDate, d.endDate, d.repeatYearly),
                     )?.dayOffName || "Unnamed"}
                   </p>
                 ) : (
                   <p className="text-gray-600">No Schedule</p>
                 )}
-                {reviewPatientCounts[selectedDate.toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" })] > 0 && (
+                {reviewPatientCounts[
+                  selectedDate.toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  })
+                ] > 0 && (
                   <p className="text-teal-600">
-                    Review Patients: {reviewPatientCounts[selectedDate.toLocaleDateString("en-US", { year: "numeric", month: "2-digit", day: "2-digit" })]}
+                    Review Patients:{" "}
+                    {
+                      reviewPatientCounts[
+                        selectedDate.toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                        })
+                      ]
+                    }
                   </p>
                 )}
               </div>
@@ -420,7 +461,9 @@ const DoctorDashboard = () => {
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
                 <Activity className="h-5 w-5" /> Disease Categories
               </CardTitle>
-              <CardDescription className="text-teal-100">Patients Count by Category</CardDescription>
+              <CardDescription className="text-teal-100">
+                Patients Count by Category
+              </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
               <ErrorBoundary>
@@ -474,7 +517,9 @@ const DoctorDashboard = () => {
                   {latestPatients.map((patient, index) => {
                     const latestDiagnosis = patient.diagnoseHistory.length
                       ? patient.diagnoseHistory.reduce((latest, current) =>
-                          new Date(current.uploadedAt) > new Date(latest.uploadedAt) ? current : latest
+                          new Date(current.uploadedAt) > new Date(latest.uploadedAt)
+                            ? current
+                            : latest,
                         )
                       : { diagnosis: "None", status: "N/A" };
                     return (
@@ -482,7 +527,7 @@ const DoctorDashboard = () => {
                         <TableCell>{patient.fullName}</TableCell>
                         <TableCell>{latestDiagnosis.eye}</TableCell>
                         <TableCell>{patient.patientStatus}</TableCell>
-                        
+
                         <TableCell>{latestDiagnosis.diagnosis}</TableCell>
                         <TableCell>{latestDiagnosis.status}</TableCell>
                       </TableRow>

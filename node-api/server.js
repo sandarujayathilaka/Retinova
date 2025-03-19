@@ -36,21 +36,16 @@ app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
-app.use("/api/patients", patientRoutes);
-
 app.use("/api/auth", userRoutes);
 // app.use("/api/patients", patientNurseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/util", utilRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/treatments", treatmentRoutes);
-// app.use("/api/patients", patientRoutes);
-// app.use("/api/patients", testRecordssRoutes);
+app.use("/api/patients", patientRoutes);
+app.use("/api/patients", testRecordssRoutes);
 app.use("/api/nurses", nurseRoutes);
 app.use("/api/tests", testRoutes);
-
-// app.use("/api/patients", testsRoutes);
-
 
 app.use(errorHandler);
 
