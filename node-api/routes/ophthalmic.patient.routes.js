@@ -20,7 +20,7 @@ const {
     updatePatientRevisit,
     deletemedicalHistory,
     uploadMedicalHistoryImage,
-} = require("../controllers/patient.controller");
+} = require("../controllers/ophthalmic.patient.controller");
 
 // const upload = require("../middleware/upload");
 const { requireAuth } = require("../middleware/require-auth");

@@ -46,7 +46,7 @@ export const dashboardService = {
       date.toISOString().split('T')[0] : 
       date;
     
-    return api.get('/patients/count', {
+    return api.get('/ophthalmic-patients/count', {
       params: {
         doctorId,
         nextVisit: dateString,

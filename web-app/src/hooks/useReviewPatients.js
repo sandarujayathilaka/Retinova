@@ -19,7 +19,7 @@ const useReviewPatients = () => {
     try {
       setLoading(true);
       setError(null);
-      const patientResponse = await api.get("/patients", {
+      const patientResponse = await api.get("/ophthalmic-patients", {
         params: {
           status: "Review",
           page,

@@ -56,7 +56,7 @@ const usePatientRevisit = ({
       const normalizedRevisitDate = new Date(
         Date.UTC(revisitDate.getFullYear(), revisitDate.getMonth(), revisitDate.getDate())
       );
-      const response = await api.put(`/patients/${patient.patientId}/revisit`, {
+      const response = await api.put(`/ophthalmic-patients/${patient.patientId}/revisit`, {
         doctorId: selectedDoctorId,
         revisitDate: normalizedRevisitDate.toISOString(),
       });

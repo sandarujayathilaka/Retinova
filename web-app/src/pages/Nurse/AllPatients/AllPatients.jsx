@@ -35,7 +35,7 @@ const AllPatients = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await api.get("/patients/all-patients", {
+        const response = await api.get("/ophthalmic-patients/all-patients", {
           params: {
             page,
             limit: pagination.limit,

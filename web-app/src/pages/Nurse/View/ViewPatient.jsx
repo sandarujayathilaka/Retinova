@@ -138,7 +138,7 @@ const ViewPatient = () => {
   const { data: patient, isLoading, error } = useQuery({
     queryKey: ["patient", id],
     queryFn: async () => {
-      const response = await api.get(`/patients/${id}`);
+      const response = await api.get(`/ophthalmic-patients/${id}`);
       return response.data.data;
     },
     onSuccess: (patientData) => {
@@ -288,7 +288,7 @@ const ViewPatient = () => {
         
      
         try {
-          const response = await api.put(`/patients/edit/${id}`, normalizedData);
+          const response = await api.put(`/ophthalmic-patients/edit/${id}`, normalizedData);
           
           // Handle success
           queryClient.invalidateQueries(["patient", id]);
@@ -360,7 +360,7 @@ const ViewPatient = () => {
         
         
         try {
-          const response = await api.put(`/patients/edit/${id}`, normalizedData);
+          const response = await api.put(`/ophthalmic-patients/edit/${id}`, normalizedData);
           
           // Handle success
           queryClient.invalidateQueries(["patient", id]);

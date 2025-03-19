@@ -35,7 +35,7 @@ const MonitoringPatients = () => {
       setLoading(true);
       setError(null);
       
-      const response = await api.get("/patients", {
+      const response = await api.get("/ophthalmic-patients", {
         params: {
           status: "Monitoring",
           page,

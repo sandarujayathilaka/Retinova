@@ -28,7 +28,7 @@ export function usePatientData(status, options = {}) {
       setHasShownToast(false);
       
       try {
-        const response = await api.get("/patients", {
+        const response = await api.get("/ophthalmic-patients", {
           params: {
             status,
             page: currentPage,

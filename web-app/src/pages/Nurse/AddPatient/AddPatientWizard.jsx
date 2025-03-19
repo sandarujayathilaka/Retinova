@@ -91,7 +91,7 @@ export default function AddPatientWizard() {
         emergencyContact: step2Data?.emergencyContact?.name ? step2Data.emergencyContact : undefined,
       };
   
-      await toast.promise(api.post("/patients/add", formattedData), {
+      await toast.promise(api.post("/ophthalmic-patients/add", formattedData), {
         loading: "Saving patient...",
         success: (response) => {
           showSuccessToast("Patient registered successfully!");
@@ -146,7 +146,7 @@ export default function AddPatientWizard() {
         emergencyContact: data.emergencyContact?.name ? data.emergencyContact : undefined,
       };
   
-      await toast.promise(api.post("/patients/add", formattedData), {
+      await toast.promise(api.post("/ophthalmic-patients/add", formattedData), {
         loading: "Saving patient...",
         success: (response) => {
           showSuccessToast("Patient registered successfully!");

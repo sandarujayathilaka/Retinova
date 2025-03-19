@@ -18,7 +18,7 @@ export function useMedicalRecords(patientId) {
     
     setLoading(true);
     try {
-      const response = await api.get(`/patients/${patientId}/medical-records`);
+      const response = await api.get(`/ophthalmic-patients/${patientId}/medical-records`);
       const medicalHistory = Array.isArray(response.data.data.medicalHistory)
         ? response.data.data.medicalHistory.filter((record) => record && typeof record === "object")
         : [];
@@ -71,7 +71,7 @@ export function useMedicalRecords(patientId) {
         formData.append(`records[${index}][isChronicCondition]`, (record.isChronicCondition ?? false).toString());
       });
 
-      const responsePromise = api.post(`/patients/${patientId}/medical-records`, formData, {
+      const responsePromise = api.post(`/ophthalmic-patients/${patientId}/medical-records`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -134,7 +134,7 @@ export function useMedicalRecords(patientId) {
       formData.append("notes", recordData.notes || "");
       formData.append("isChronicCondition", recordData.isChronicCondition.toString());
 
-      const responsePromise = api.put(`/patients/${patientId}/medical-records/${recordId}`, formData);
+      const responsePromise = api.put(`/ophthalmic-patients/${patientId}/medical-records/${recordId}`, formData);
       
       await toast.promise(responsePromise, {
         loading: "Saving changes...",
@@ -174,7 +174,7 @@ export function useMedicalRecords(patientId) {
     
     setSaveLoading(true);
     try {
-      const responsePromise = api.delete(`/patients/${patientId}/medical-records/${recordId}`);
+      const responsePromise = api.delete(`/ophthalmic-patients/${patientId}/medical-records/${recordId}`);
       
       await toast.promise(responsePromise, {
         loading: "Deleting medical record...",

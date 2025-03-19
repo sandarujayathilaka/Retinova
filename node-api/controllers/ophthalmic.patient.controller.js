@@ -470,7 +470,7 @@ const addPatient = async (req, res) => {
     // Generate patient ID
     const lastPatient = await Patient.findOne().sort({ createdAt: -1 }).select("patientId");
     const patientId = lastPatient ? `P${parseInt(lastPatient.patientId.replace(/\D/g, "")) + 1}` : "P1";
-
+console.log(allergies)
     // Create new patient
     const newPatient = new Patient({
       patientId,
@@ -882,9 +882,11 @@ const getmedicalHistory = async (req, res) => {
 // Add medical history records
 const addmedicalHistory = async (req, res) => {
   try {
+
     const { patientId } = req.params;
     let records = req.body.records;
     const files = req.files || [];
+
     if (typeof records === "string") {
       try {
         records = JSON.parse(records);
@@ -902,6 +904,7 @@ const addmedicalHistory = async (req, res) => {
       });
     }
     const patient = await Patient.findOne({ patientId });
+
     if (!patient) {
       return res.status(404).json({
         errorCode: "PATIENT_NOT_FOUND",
@@ -931,6 +934,7 @@ const addmedicalHistory = async (req, res) => {
       })
     );
     patient.medicalHistory.push(...newRecords);
+ 
     await patient.save();
     res.status(201).json({
       message: "Medical records added successfully",

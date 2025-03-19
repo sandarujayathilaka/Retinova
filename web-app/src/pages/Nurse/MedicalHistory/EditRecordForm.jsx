@@ -14,15 +14,28 @@ const EditRecordForm = ({ record, setRecord, onSave, onCancel, setEnlargedImage,
     }
   };
 
+  // const handleRemoveMedication = (medIndex) => {
+  //   if (!localLoading) {
+  //     setRecord((prev) => ({
+  //       ...prev,
+  //       medications: prev.medications.filter((_, i) => i !== medIndex),
+  //     }));
+  //   }
+  // };
+
   const handleRemoveMedication = (medIndex) => {
     if (!localLoading) {
-      setRecord((prev) => ({
-        ...prev,
-        medications: prev.medications.filter((_, i) => i !== medIndex),
-      }));
+      setRecord((prev) => {
+        const updatedMedications = prev.medications.filter((_, i) => i !== medIndex);
+        console.log("Medication removed, new array:", updatedMedications); // Debug log
+        return {
+          ...prev,
+          medications: updatedMedications,
+        };
+      });
     }
   };
-
+  
   const handleMedicationChange = (medIndex, value) => {
     if (!localLoading) {
       setRecord((prev) => ({

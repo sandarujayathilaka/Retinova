@@ -285,7 +285,7 @@ const PatientDetailsDialog = ({
     setLoading(true);
     try {
       const normalizedRevisitDate = new Date(Date.UTC(localRevisitDate.getFullYear(), localRevisitDate.getMonth(), localRevisitDate.getDate()));
-      const response = await api.put(`/patients/${patient.patientId}/revisit`, {
+      const response = await api.put(`/ophthalmic-patients/${patient.patientId}/revisit`, {
         doctorId: localSelectedDoctorId,
         revisitDate: normalizedRevisitDate.toISOString(),
       });
