@@ -15,6 +15,7 @@ const {
   deleteAdmin,
   toggleUserStatus,
   getAllUsers,
+  getUserProfile,
 } = require("../controllers/user.controller");
 const { requireAuth } = require("../middleware/require-auth");
 const { ROLES } = require("../constants/roles");
@@ -36,5 +37,7 @@ router.delete("/admins/:id", requireAuth([ROLES.ADMIN]), deleteAdmin);
 
 router.get("/users", requireAuth([ROLES.ADMIN]), getAllUsers);
 router.patch("/users/:id/status", requireAuth([ROLES.ADMIN]), toggleUserStatus);
+
+router.get("/me", requireAuth([ROLES.PATIENT, ROLES.DOCTOR]), getUserProfile);
 
 module.exports = router;

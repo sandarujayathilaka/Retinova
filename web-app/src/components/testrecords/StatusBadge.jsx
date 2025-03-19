@@ -15,18 +15,17 @@ const StatusBadge = ({ status, size = "default" }) => {
         };
       case 'In Progress':
         return {
-          bgColor: 'bg-blue-100',
-          textColor: 'text-blue-700',
-          borderColor: 'border-blue-200',
+          bgColor: 'bg-sky-100',
+          textColor: 'text-sky-700',
+          borderColor: 'border-sky-200',
           icon: Loader2,
           ariaLabel: 'In Progress status',
-          className: 'animate-spin'
         };
       case 'Completed':
         return {
-          bgColor: 'bg-green-100',
-          textColor: 'text-green-700',
-          borderColor: 'border-green-200',
+          bgColor: 'bg-teal-100',
+          textColor: 'text-teal-700',
+          borderColor: 'border-teal-200',
           icon: CheckCircle,
           ariaLabel: 'Completed status'
         };
