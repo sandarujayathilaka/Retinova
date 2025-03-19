@@ -14,8 +14,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
 
 import { Loader2, PlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -23,7 +25,8 @@ import toast from "react-hot-toast";
 import { FaUserPen } from "react-icons/fa6";
 import { PiClockClockwiseBold } from "react-icons/pi";
 import { TbClockX } from "react-icons/tb";
-import { PushSpinner } from "react-spinners-kit";
+import { RiContactsLine } from "react-icons/ri";
+
 import ContactInfoComponent, {
   contactInfoSchema,
 } from "@/pages/admin/nurse-stepper/ContactInfoComponent";
@@ -38,7 +41,7 @@ import { useAddNurse, useGetNurseById, useUpdateNurse } from "@/services/nurse.s
 
 const { useStepper, steps, utils } = defineStepper(
   { id: "staffInfo", label: "Staff Info", icon: <FaUserPen />, schema: staffInfoSchema },
-  { id: "contactInfo", label: "Contact Info", icon: <FaUserPen />, schema: contactInfoSchema },
+  { id: "contactInfo", label: "Contact Info", icon: <RiContactsLine />, schema: contactInfoSchema },
   {
     id: "workingHours",
     label: "Working Hours",
@@ -49,7 +52,7 @@ const { useStepper, steps, utils } = defineStepper(
 );
 
 function NurseForm({ mode = "add", nurseId = null, trigger, open, onOpenChange }) {
-  const [isOpen, setIsOpen] = useState(false); // Track the dialog state
+  const [isOpen, setIsOpen] = useState(false);
 
   const stepper = useStepper();
   const currentIndex = utils.getIndex(stepper.current.id);
@@ -58,7 +61,6 @@ function NurseForm({ mode = "add", nurseId = null, trigger, open, onOpenChange }
   const { data: nurse, isLoading } = useGetNurseById(nurseId, {
     enabled: mode === "edit" && Boolean(nurseId) && (mode === "edit" ? open : isOpen),
   });
-  console.log("nurse", nurse);
 
   // Initialize a ref to keep track of form data across steps
   const formDataRef = React.useRef({});
@@ -118,7 +120,6 @@ function NurseForm({ mode = "add", nurseId = null, trigger, open, onOpenChange }
           { id: nurseId, data: formData },
           {
             onSuccess: data => {
-              console.log("Nurse updated successfully:", data);
               handleReset();
               stepper.reset();
               formDataRef.current = {};
@@ -135,7 +136,6 @@ function NurseForm({ mode = "add", nurseId = null, trigger, open, onOpenChange }
         // Add new nurse
         mutationAdd.mutate(formData, {
           onSuccess: data => {
-            console.log("Nurse added successfully:", data);
             handleReset();
             stepper.reset();
             formDataRef.current = {}; // Reset the formDataRef when stepper is reset
@@ -280,143 +280,175 @@ function NurseForm({ mode = "add", nurseId = null, trigger, open, onOpenChange }
       <DialogTrigger asChild>
         {trigger ||
           (mode === "add" && (
-            <Button variant="primary">
-              <PlusIcon />
+            <Button variant="default" className="bg-violet-600 hover:bg-violet-700">
+              <PlusIcon className="mr-1 h-4 w-4" />
               Add Nurse
             </Button>
           ))}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>{mode === "edit" ? "Edit nurse" : "Add new nurse"}</DialogTitle>
+          <DialogTitle className="flex items-center text-xl font-semibold text-violet-700">
+            <FaUserPen className="mr-2 h-5 w-5" />
+            {mode === "edit" ? "Edit Nurse" : "Add New Nurse"}
+          </DialogTitle>
+          <DialogDescription>
+            {mode === "edit"
+              ? "Update the nurse's information using the form below."
+              : "Complete all steps to add a new nurse to the system."}
+          </DialogDescription>
         </DialogHeader>
 
         {isLoading && mode === "edit" ? (
-          <div className="flex items-center justify-center h-32">
-            <PushSpinner size={30} color="#3B82F6" />
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
+            <span className="ml-3 text-slate-600">Loading nurse data...</span>
           </div>
         ) : (
           <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-6 p-6 border rounded-lg w-[450px]"
-            >
-              <nav aria-label="Checkout Steps" className="group my-4">
-                <ol
-                  className="flex px-2 items-center justify-between gap-2"
-                  aria-orientation="horizontal"
-                >
-                  {stepper.all.map((step, index, array) => (
-                    <React.Fragment key={step.id}>
-                      <li
-                        className={`${index <= currentIndex && "border border-dashed border-main p-1 rounded-full"}`}
-                      >
-                        <Button
-                          type="button"
-                          role="tab"
-                          variant={index <= currentIndex ? "primary" : "secondary"}
-                          aria-current={stepper.current.id === step.id ? "step" : undefined}
-                          aria-posinset={index + 1}
-                          aria-setsize={steps.length}
-                          aria-selected={stepper.current.id === step.id}
-                          className="flex size-10 p-0 items-center justify-center rounded-full"
-                          onClick={async () => {
-                            // Store current form values
-                            const currentValues = form.getValues();
-                            formDataRef.current[stepper.current.id] = currentValues;
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <Card className="border-slate-200">
+                <CardContent className="p-6">
+                  {/* Stepper Navigation */}
+                  <nav aria-label="Checkout Steps" className="group my-4">
+                    <ol
+                      className="flex px-2 items-center justify-between gap-2"
+                      aria-orientation="horizontal"
+                    >
+                      {stepper.all.map((step, index, array) => (
+                        <React.Fragment key={step.id}>
+                          <li
+                            className={`${index <= currentIndex && "border border-dashed border-violet-600 p-1 rounded-full"}`}
+                          >
+                            <Button
+                              type="button"
+                              role="tab"
+                              variant={index <= currentIndex ? "default" : "secondary"}
+                              aria-current={stepper.current.id === step.id ? "step" : undefined}
+                              aria-posinset={index + 1}
+                              aria-setsize={steps.length}
+                              aria-selected={stepper.current.id === step.id}
+                              className={`flex size-10 p-0 items-center justify-center rounded-full ${
+                                index <= currentIndex
+                                  ? "bg-violet-600 text-white hover:bg-violet-700"
+                                  : ""
+                              }`}
+                              onClick={async () => {
+                                // Store current form values
+                                const currentValues = form.getValues();
+                                formDataRef.current[stepper.current.id] = currentValues;
 
-                            // Only validate when moving forward
-                            if (index > currentIndex) {
-                              const valid = await form.trigger();
-                              if (!valid) return;
-                              if (index - currentIndex > 1) return; // Prevent skipping steps forward
-                            }
+                                // Only validate when moving forward
+                                if (index > currentIndex) {
+                                  const valid = await form.trigger();
+                                  if (!valid) return;
+                                  if (index - currentIndex > 1) return; // Prevent skipping steps forward
+                                }
 
-                            // Always allow going backward
-                            stepper.goTo(step.id);
-                          }}
+                                // Always allow going backward
+                                stepper.goTo(step.id);
+                              }}
+                            >
+                              {step.icon}
+                            </Button>
+                          </li>
+                          {index < array.length - 1 && (
+                            <Separator
+                              className={`flex-1 self-center justify-self-center ${index < currentIndex ? "bg-violet-600" : "bg-gray-200"}`}
+                            />
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </ol>
+                    <ol
+                      className="flex items-center mt-2 justify-between"
+                      aria-orientation="horizontal"
+                    >
+                      {stepper.all.map((step, index) => (
+                        <li
+                          key={step.id}
+                          className={`flex gap-4 flex-shrink-0 flex-col ${index === 1 && "ml-3"}`}
                         >
-                          {step.icon}
-                        </Button>
-                      </li>
-                      {index < array.length - 1 && (
-                        <Separator
-                          className={`flex-1 self-center justify-self-center ${index < currentIndex ? "bg-main" : "bg-gray-200"}`}
-                        />
-                      )}
-                    </React.Fragment>
-                  ))}
-                </ol>
-                <ol
-                  className="flex items-center mt-2 justify-between"
-                  aria-orientation="horizontal"
-                >
-                  {stepper.all.map((step, index) => (
-                    <li
-                      key={step.id}
-                      className={`flex gap-4 flex-shrink-0 flex-col ${index === 1 && "ml-3"}`}
-                    >
-                      <span className="text-sm font-medium">{step.label}</span>
-                    </li>
-                  ))}
-                </ol>
-              </nav>
-              <div className="space-y-4">
-                {stepper.switch({
-                  staffInfo: () => <StaffInfoComponent />,
-                  contactInfo: () => <ContactInfoComponent mode={mode} />,
-                  workingHours: () => <WorkingHoursComponent />,
-                  daysOff: () => <DaysOffComponent />,
-                })}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    {mode === "add" && (
-                      <Button type="button" variant="outline" onClick={handleDemo}>
-                        Demo
-                      </Button>
-                    )}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        stepper.reset();
-                        handleReset();
-                      }}
-                    >
-                      Reset
-                    </Button>
-                  </div>
+                          <span className="text-sm font-medium">{step.label}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </nav>
 
-                  <div className="flex justify-end gap-4">
-                    {stepper.isFirst ? (
-                      <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
-                      </DialogClose>
-                    ) : (
-                      <Button type="button" variant="outline" onClick={handleBack}>
-                        Back
-                      </Button>
-                    )}
-
-                    <Button
-                      type="submit"
-                      variant={stepper.isLast ? "primary" : "default"}
-                      disabled={mutationAdd.isPending || mutationUpdate.isPending}
-                      className="min-w-[120px]"
-                    >
-                      {mutationAdd.isPending || mutationUpdate.isPending ? (
-                        <Loader2 className="animate-spin size-8" />
-                      ) : stepper.isLast ? (
-                        mode === "edit" ? (
-                          "Update Nurse"
-                        ) : (
-                          "Add Nurse"
-                        )
-                      ) : (
-                        "Next"
-                      )}
-                    </Button>
+                  {/* Step Content with Scrolling */}
+                  <div
+                    className="py-4 px-2 flex-1 overflow-y-auto"
+                    style={{
+                      maxHeight: `calc(85vh - 240px)`,
+                      // minHeight: "200px",
+                    }}
+                  >
+                    {stepper.switch({
+                      staffInfo: () => <StaffInfoComponent />,
+                      contactInfo: () => <ContactInfoComponent mode={mode} />,
+                      workingHours: () => <WorkingHoursComponent />,
+                      daysOff: () => <DaysOffComponent />,
+                    })}
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between mt-6">
+                <div className="flex items-center gap-3">
+                  {mode === "add" && (
+                    <Button type="button" variant="outline" size="sm" onClick={handleDemo}>
+                      Demo Data
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      stepper.reset();
+                      handleReset();
+                    }}
+                  >
+                    Reset
+                  </Button>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  {stepper.isFirst ? (
+                    <DialogClose asChild>
+                      <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                  ) : (
+                    <Button type="button" variant="outline" onClick={handleBack}>
+                      Back
+                    </Button>
+                  )}
+
+                  <Button
+                    type="submit"
+                    className={`min-w-[120px] ${
+                      stepper.isLast
+                        ? "bg-violet-600 hover:bg-violet-700"
+                        : "bg-slate-700 hover:bg-slate-800"
+                    }`}
+                    disabled={mutationAdd.isPending || mutationUpdate.isPending}
+                  >
+                    {mutationAdd.isPending || mutationUpdate.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    {mutationAdd.isPending || mutationUpdate.isPending
+                      ? stepper.isLast
+                        ? mode === "edit"
+                          ? "Updating..."
+                          : "Adding..."
+                        : "Processing..."
+                      : stepper.isLast
+                        ? mode === "edit"
+                          ? "Update Nurse"
+                          : "Add Nurse"
+                        : "Continue"}
+                  </Button>
                 </div>
               </div>
             </form>

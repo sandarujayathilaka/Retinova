@@ -1,9 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, Typography, Progress, Button, Form, Input, Tabs, Space, Tooltip } from "antd";
 import { motion } from "framer-motion";
 import PatientTabs from "./PatientTabs";
-import PatientReport from "../reports/PatientReport"; 
-import DiagnosisHistory from "../PatientProfile/TabContent/DiagnosisHistory"; // Import DiagnosisHistory
+import PatientReport from "../reports/PatientReport";
+import DiagnosisHistory from "../PatientProfile/TabContent/DiagnosisHistory";
+import ConfirmDialog from "../custom-dialog/ConfirmDialog";
+import { FaFilePdf, FaCamera } from "react-icons/fa";
+import { api } from "@/services/api.service"; // Adjust this import based on your project structure
+import toast from "react-hot-toast"; // Ensure toast is imported if used
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -21,21 +25,45 @@ const ResultsSection = ({
   const [form] = Form.useForm();
   const [activeTab, setActiveTab] = useState("currentResults");
   const [isReportVisible, setIsReportVisible] = useState(false);
+  const [showNewScanDialog, setShowNewScanDialog] = useState(false);
+  const [showQuickSaveDialog, setShowQuickSaveDialog] = useState(false);
+  const [showSavePrescriptionDialog, setShowSavePrescriptionDialog] = useState(false);
+  const [availableTests, setAvailableTests] = useState([]);
+  const [loadingTests, setLoadingTests] = useState(false); // Added loading state
 
-  // Helper function for getMaxConfidence (required by DiagnosisHistory)
   const getMaxConfidence = (confidenceScores) => {
     if (!confidenceScores || confidenceScores.length === 0) return "N/A";
     return `${(Math.max(...confidenceScores) * 100).toFixed(1)}%`;
   };
 
-  // Helper function for openImage (required by DiagnosisHistory)
+  useEffect(() => {
+    const fetchTests = async () => {
+      setLoadingTests(true);
+      try {
+        const response = await api.get("tests");
+        console.log("Available tests:", response.data); 
+        setAvailableTests(response.data); 
+      } catch (error) {
+        console.error("Error fetching tests:", error);
+        toast.error("Failed to fetch available tests.");
+      } finally {
+        setLoadingTests(false);
+      }
+    };
+    fetchTests();
+  }, []);
+
   const openImage = (url) => {
-    setSelectedImage(url); // Use the setSelectedImage prop to open the image
+    setSelectedImage(url);
   };
 
   const getPredictionDetails = (type) => {
+    // ... (unchanged, keeping your existing logic)
     switch (type) {
       case "advanced":
+      case "PDR":
+      case "CRVO":
+      case "wet":
         return {
           color: "red",
           bgColor: "bg-red-50",
@@ -58,9 +86,12 @@ const ResultsSection = ({
             </svg>
           ),
           progressColor: "#ef4444",
-          message: "Advanced diabetic retinopathy detected. Immediate specialist consultation recommended.",
+          message: "Advanced signs detected. Immediate specialist consultation recommended.",
         };
       case "early":
+      case "dry":
+      case "NPDR":
+      case "BRVO":
         return {
           color: "orange",
           bgColor: "bg-amber-50",
@@ -83,9 +114,11 @@ const ResultsSection = ({
             </svg>
           ),
           progressColor: "#f59e0b",
-          message: "Early signs of diabetic retinopathy. Regular monitoring and lifestyle changes advised.",
+          message: "Early signs detected. Regular monitoring and lifestyle changes advised.",
         };
       case "normal":
+      case "No_DR":
+      case "Healthy":
         return {
           color: "green",
           bgColor: "bg-green-50",
@@ -107,7 +140,7 @@ const ResultsSection = ({
             </svg>
           ),
           progressColor: "#22c55e",
-          message: "No signs of diabetic retinopathy detected. Continue with regular check-ups.",
+          message: "No signs detected. Continue with regular check-ups.",
         };
       default:
         return {
@@ -132,7 +165,7 @@ const ResultsSection = ({
             </svg>
           ),
           progressColor: "#6b7280",
-          message: "Assessment completed. Please consult with your healthcare provider for interpretation.",
+          message: "Assessment completed.",
         };
     }
   };
@@ -142,16 +175,52 @@ const ResultsSection = ({
   const predictionDetails = getPredictionDetails(prediction.type);
   const confidencePercent = Math.round(prediction.confidence * 100);
 
-  const handleQuickSave = () => {
+  const handleNewScanClick = () => {
+    setShowNewScanDialog(true);
+  };
+
+  const handleConfirmNewScan = () => {
+    resetForNewUpload();
+    setShowNewScanDialog(false);
+  };
+
+  const handleCancelNewScan = () => {
+    setShowNewScanDialog(false);
+  };
+
+  const handleQuickSaveClick = () => {
+    setShowQuickSaveDialog(true);
+  };
+
+  const handleConfirmQuickSave = () => {
     const emptyPrescription = {
       medicine: "",
       tests: [],
       note: "",
     };
     handleSavePrescription(emptyPrescription);
+    setShowQuickSaveDialog(false);
   };
 
-  const handleExportPDF = ({ patientData, prediction, setSelectedImage }) => {
+  const handleCancelQuickSave = () => {
+    setShowQuickSaveDialog(false);
+  };
+
+  const handleSavePrescriptionClick = () => {
+    setShowSavePrescriptionDialog(true);
+  };
+
+  const handleConfirmSavePrescription = () => {
+    const prescriptionData = form.getFieldsValue();
+    handleSavePrescription(prescriptionData);
+    setShowSavePrescriptionDialog(false);
+  };
+
+  const handleCancelSavePrescription = () => {
+    setShowSavePrescriptionDialog(false);
+  };
+
+  const handleExportPDF = () => {
     setIsReportVisible(true);
   };
 
@@ -161,6 +230,24 @@ const ResultsSection = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      {/* Compact Action Buttons */}
+      <div className="mb-4 flex justify-end gap-3">
+        <Button
+          onClick={handleNewScanClick}
+          className="px-4 py-1 h-auto bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-md shadow-sm hover:shadow transition-all flex items-center justify-center"
+        >
+          <FaCamera className="mr-2 text-gray-500" size={14} />
+          <span>New Scan</span>
+        </Button>
+        <Button
+          onClick={handleExportPDF}
+          className="px-4 py-1 h-auto bg-blue-600 hover:bg-blue-700 text-white border-0 rounded-md shadow-sm hover:shadow transition-all flex items-center justify-center"
+        >
+          <FaFilePdf className="mr-2" size={14} />
+          <span>Export PDF</span>
+        </Button>
+      </div>
+
       <Card className="rounded-xl shadow-md border border-indigo-100 overflow-hidden">
         <Tabs
           activeKey={activeTab}
@@ -292,7 +379,7 @@ const ResultsSection = ({
 
                     <Tooltip title="Save without prescription">
                       <Button
-                        onClick={handleQuickSave}
+                        onClick={handleQuickSaveClick}
                         type="default"
                         className="bg-gray-100 hover:bg-gray-200 text-gray-600 border-gray-200 rounded text-xs py-1 px-2 flex items-center h-auto"
                         disabled={isSaving}
@@ -317,7 +404,7 @@ const ResultsSection = ({
                   <Form
                     form={form}
                     layout="vertical"
-                    onFinish={handleSavePrescription}
+                    onFinish={handleSavePrescriptionClick}
                     initialValues={{ tests: [{ testName: "" }] }}
                     className="space-y-5"
                   >
@@ -373,13 +460,28 @@ const ResultsSection = ({
                                   <Form.Item
                                     {...restField}
                                     name={[name, "testName"]}
-                                    rules={[{ required: true, message: "" }]}
+                                    rules={[{ required: true, message: "Please select a test" }]}
                                     className="mb-0"
                                   >
-                                    <Input
-                                      placeholder={`Test ${index + 1} (e.g., Blood Sugar Test, HbA1c)`}
-                                      className="pl-9 rounded-lg border-gray-200 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                    />
+                                    <select
+                                      className="w-full h-10 pl-9 rounded-lg border-gray-200 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                      disabled={loadingTests}
+                                    >
+                                      {loadingTests ? (
+                                        <option value="">Loading tests...</option>
+                                      ) : (
+                                        <>
+                                          <option value="">Select Test {index + 1}</option>
+                                          {availableTests
+                                            .filter((test) => test.isEnabled)
+                                            .map((test) => (
+                                              <option key={test._id} value={test.name}>
+                                                {test.name}
+                                              </option>
+                                            ))}
+                                        </>
+                                      )}
+                                    </select>
                                   </Form.Item>
                                   <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
                                     <svg
@@ -549,93 +651,14 @@ const ResultsSection = ({
             key="diagnosisHistory"
           >
             <DiagnosisHistory
-              patient={patientData} 
+              patient={patientData}
               getMaxConfidence={getMaxConfidence}
               openImage={openImage}
-              isFromPreMonitoring={false} 
-            />
-          </TabPane>
-
-          <TabPane
-            tab={
-              <span className="flex items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-4 h-4 mr-2"
-                >
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                </svg>
-                Trend Analysis
-              </span>
-            }
-            key="charts"
-          >
-            <PatientTabs patientData={patientData} setSelectedImage={setSelectedImage} activeTab="charts" />
-          </TabPane>
-
-          <TabPane
-            tab={
-              <span className="flex items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-4 h-4 mr-2"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Export
-              </span>
-            }
-            key="export"
-          >
-            <PatientTabs
-              patientData={patientData}
-              setSelectedImage={setSelectedImage}
-              prediction={prediction}
-              activeTab="export"
-              onExportPDF={handleExportPDF}
+              isFromPreMonitoring={false}
             />
           </TabPane>
         </Tabs>
       </Card>
-
-      <div className="mt-6 text-center">
-        <Button
-          onClick={resetForNewUpload}
-          className="px-6 py-2 h-auto bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-lg shadow-sm transition-colors"
-        >
-          <span className="flex items-center">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-4 h-4 mr-2"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            Upload Another Image
-          </span>
-        </Button>
-      </div>
 
       <PatientReport
         patientData={patientData}
@@ -643,6 +666,32 @@ const ResultsSection = ({
         imageUrl={imageUrl}
         visible={isReportVisible}
         onClose={() => setIsReportVisible(false)}
+      />
+
+      {/* Confirmation Dialogs */}
+      <ConfirmDialog
+        isOpen={showNewScanDialog}
+        onConfirm={handleConfirmNewScan}
+        onCancel={handleCancelNewScan}
+        message="Are you sure you want to start a new scan? Current results will be discarded."
+        confirmText="Yes, Start New Scan"
+        cancelText="Cancel"
+      />
+      <ConfirmDialog
+        isOpen={showQuickSaveDialog}
+        onConfirm={handleConfirmQuickSave}
+        onCancel={handleCancelQuickSave}
+        message="Are you sure you want to save without adding a prescription?"
+        confirmText="Yes, Save"
+        cancelText="Cancel"
+      />
+      <ConfirmDialog
+        isOpen={showSavePrescriptionDialog}
+        onConfirm={handleConfirmSavePrescription}
+        onCancel={handleCancelSavePrescription}
+        message="Are you sure you want to save this prescription? Once saved, it cannot be changed."
+        confirmText="Yes, Save"
+        cancelText="Cancel"
       />
     </motion.div>
   );

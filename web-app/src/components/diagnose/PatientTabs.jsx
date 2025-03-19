@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, Typography, Button } from "antd";
-import { FaFilePdf, FaFileCsv } from "react-icons/fa";
+import { FaFilePdf } from "react-icons/fa";
 import {
   LineChart,
   Line,
@@ -25,8 +25,6 @@ const PatientTabs = ({ patientData, setSelectedImage, activeTab, onExportPDF, pr
         date: new Date(item.uploadedAt).toLocaleDateString(),
         confidence: Math.max(...item.confidenceScores) * 100,
       })) || [];
-
-  const handleExportCSV = () => alert("Exporting as CSV...");
 
   const handleExportPDFClick = () => {
     onExportPDF({ patientData, prediction, setSelectedImage });
@@ -83,47 +81,38 @@ const PatientTabs = ({ patientData, setSelectedImage, activeTab, onExportPDF, pr
       case "export":
         return (
           <Card className="shadow-md rounded-lg bg-white border border-gray-200" bodyStyle={{ padding: "24px" }}>
-            <Title level={4} className="text-lg text-gray-800 mb-6">
+            <Title level={4} className="text-lg font-bold text-gray-800 mb-6 text-center">
               Export Patient Data
             </Title>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100 hover:shadow-md transition-shadow">
-                <div className="flex items-start gap-4">
-                  <div className="bg-blue-100 p-3 rounded-full">
-                    <FaFilePdf className="text-blue-600 text-xl" />
+            
+            {/* Export Option Container */}
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-xl border border-blue-100 hover:shadow-lg transition-shadow">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                  {/* Icon Container */}
+                  <div className="bg-blue-100 p-4 rounded-full flex items-center justify-center">
+                    <FaFilePdf className="text-blue-600 text-2xl" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Comprehensive PDF Report</h3>
-                    <p className="text-gray-600 mb-4">
+                  
+                  {/* Content Container */}
+                  <div className="flex-1 text-center sm:text-left">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-3">Comprehensive PDF Report</h3>
+                    <p className="text-gray-600 mb-6">
                       Generate a detailed report with patient information, diagnosis history, and visualizations.
+                      This report includes all relevant clinical data and can be saved or printed for your records.
                     </p>
-                    <Button
-                      type="primary"
-                      icon={<FaFilePdf className="mr-2" />}
-                      onClick={handleExportPDFClick}
-                      className="bg-blue-600 hover:bg-blue-700 border-0 rounded-lg shadow-sm hover:shadow-md transition-all px-5 py-2 h-auto"
-                    >
-                      Generate PDF Report
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gradient-to-br from-green-50 to-teal-50 p-6 rounded-xl border border-green-100 hover:shadow-md transition-shadow">
-                <div className="flex items-start gap-4">
-                  <div className="bg-green-100 p-3 rounded-full">
-                    <FaFileCsv className="text-green-600 text-xl" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Data Export as CSV</h3>
-                    <p className="text-gray-600 mb-4">Export raw patient data for further analysis or record-keeping.</p>
-                    <Button
-                      type="primary"
-                      icon={<FaFileCsv className="mr-2" />}
-                      onClick={handleExportCSV}
-                      className="bg-green-600 hover:bg-green-700 border-0 rounded-lg shadow-sm hover:shadow-md transition-all px-5 py-2 h-auto"
-                    >
-                      Export as CSV
-                    </Button>
+                    
+                    {/* Button Container */}
+                    <div className="flex justify-center sm:justify-start">
+                      <Button
+                        type="primary"
+                        icon={<FaFilePdf className="mr-2" />}
+                        onClick={handleExportPDFClick}
+                        className="bg-blue-600 hover:bg-blue-700 border-0 rounded-lg shadow-sm hover:shadow-md transition-all px-6 py-3 h-auto text-base font-medium"
+                      >
+                        Generate PDF Report
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

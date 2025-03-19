@@ -351,7 +351,7 @@ const ViewPatient = () => {
                 {[
                   { id: "personal", label: "Personal Details", icon: <User2 className="h-4 w-4 mr-2" /> },
                   { id: "medical", label: "Medical Records", icon: <FileText className="h-4 w-4 mr-2" /> },
-                  { id: "treatment", label: "Treatment Plans", icon: <ClipboardCheck className="h-4 w-4 mr-2" /> },
+                  { id: "tests", label: "Test Records", icon: <ClipboardCheck className="h-4 w-4 mr-2" /> },
                 ].map((tab) => (
                   <Button
                     key={tab.id}
@@ -528,19 +528,19 @@ const ViewPatient = () => {
             </CardContent>
           )}
 
-          {activeTab === "treatment" && (
+          {activeTab === "tests" && (
             <CardContent className="p-8 bg-white">
               {patient ? (
                 <>
-                  <div className="bg-blue-50 p-4 rounded-xl mb-6 flex items-center space-x-3">
+                  {/* <div className="bg-blue-50 p-4 rounded-xl mb-6 flex items-center space-x-3">
                     <div className="bg-blue-100 p-3 rounded-full">
                       <ClipboardCheck className="h-6 w-6 text-indigo-700" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-blue-900">Treatment Plans</h2>
-                      <p className="text-sm text-blue-700">Manage test records and treatment for {patient.fullName}</p>
+                      <h2 className="text-xl font-bold text-blue-900">Test Records</h2>
+                      <p className="text-sm text-blue-700">Manage test records for {patient.fullName}</p>
                     </div>
-                  </div>
+                  </div> */}
                   <TestRecords patientId={patient.patientId} />
                 </>
               ) : (

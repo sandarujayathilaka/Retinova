@@ -1,10 +1,16 @@
 import React, { useState } from "react";
-import { FileText, Calendar, PlusCircle, Search, Pill, Info, AlertCircle } from "lucide-react";
+import { FileText, Calendar, PlusCircle, Search, Pill, Info, AlertCircle, File } from "lucide-react";
+import ImageModal from "../../diagnose/ImageModal";
+import PdfModal from "../TabContent/PdfModel";   
 
 const MedicalHistory = ({ patient }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
-  
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedPdf, setSelectedPdf] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [rotation, setRotation] = useState(0);
+
   // Sort medical history by diagnosed date (newest first)
   const sortedHistory = patient.medicalHistory 
     ? [...patient.medicalHistory].sort((a, b) => new Date(b.diagnosedAt) - new Date(a.diagnosedAt))
@@ -33,6 +39,20 @@ const MedicalHistory = ({ patient }) => {
   
   // Sort years in descending order
   const sortedYears = Object.keys(groupedByYear).sort((a, b) => b - a);
+
+  // Function to determine if a file is an image or PDF
+  const isImageFile = (filePath) => {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp'];
+    return imageExtensions.some(ext => filePath.toLowerCase().endsWith(ext));
+  };
+
+  const handleFileClick = (filePath) => {
+    if (isImageFile(filePath)) {
+      setSelectedImage(filePath);
+    } else {
+      setSelectedPdf(filePath);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -135,6 +155,9 @@ const MedicalHistory = ({ patient }) => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Notes
                   </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Attachments
+                  </th>
                 </tr>
               </thead>
               
@@ -142,7 +165,7 @@ const MedicalHistory = ({ patient }) => {
                 {sortedYears.map(year => (
                   <React.Fragment key={year}>
                     <tr className="bg-gradient-to-r from-blue-50 to-white">
-                      <td colSpan="5" className="px-6 py-3">
+                      <td colSpan="6" className="px-6 py-3">
                         <div className="flex items-center">
                           <Calendar className="w-4 h-4 mr-2 text-blue-900" />
                           <span className="text-sm font-medium text-blue-900">{year}</span>
@@ -187,6 +210,24 @@ const MedicalHistory = ({ patient }) => {
                         <td className="px-6 py-4 text-sm text-gray-600">
                           {condition.notes || "No additional notes"}
                         </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            {condition.filePaths && condition.filePaths.length > 0 ? (
+                              condition.filePaths.map((filePath, fileIdx) => (
+                                <button
+                                  key={fileIdx}
+                                  onClick={() => handleFileClick(filePath)}
+                                  className="flex items-center px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-md text-sm text-gray-700"
+                                >
+                                  <File className="w-4 h-4 mr-1" />
+                                  {isImageFile(filePath) ? "Image" : "PDF"}
+                                </button>
+                              ))
+                            ) : (
+                              <span className="text-gray-500 text-sm">No attachments</span>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </React.Fragment>
@@ -195,6 +236,24 @@ const MedicalHistory = ({ patient }) => {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Image Modal */}
+      <ImageModal
+        selectedImage={selectedImage}
+        setSelectedImage={setSelectedImage}
+        zoomLevel={zoomLevel}
+        setZoomLevel={setZoomLevel}
+        rotation={rotation}
+        setRotation={setRotation}
+      />
+
+      {/* PDF Modal */}
+      {selectedPdf && (
+        <PdfModal
+          pdfUrl={selectedPdf}
+          onClose={() => setSelectedPdf(null)}
+        />
       )}
     </div>
   );

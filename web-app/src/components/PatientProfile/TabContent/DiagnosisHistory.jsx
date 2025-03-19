@@ -15,8 +15,10 @@ import {
   AlertCircle,
   Calendar,
   RefreshCw,
+  PlusCircle, 
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { api } from "@/services/api.service";
 
 const getFileType = (url) => {
   if (!url) return null;
@@ -44,12 +46,32 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
   });
   const [reviewDiagnosisId, setReviewDiagnosisId] = useState(null);
   const [diagnoseHistory, setDiagnoseHistory] = useState(patient.diagnoseHistory || []);
+  const [isAddTestModalOpen, setIsAddTestModalOpen] = useState(false);
+  const [addTestDiagnosisId, setAddTestDiagnosisId] = useState(null);
+  const [newTestName, setNewTestName] = useState("");
+  const [availableTests, setAvailableTests] = useState([]);
 
   const initializeFormData = (diagnosisId) => ({
     medicine: "",
     tests: [{ testName: "", status: "Pending" }],
     note: "",
   });
+
+  
+// Fetch tests from the API
+useEffect(() => {
+  const fetchTests = async () => {
+    try {
+      const response = await api.get("tests");
+      console.log("Available tests:", response.data);
+      setAvailableTests(response.data); 
+    } catch (error) {
+      console.error("Error fetching tests:", error);
+      toast.error("Failed to fetch available tests.");
+    }
+  };
+  fetchTests();
+}, []);
 
   const handleInputChange = (diagnosisId, field, value, testIndex = null) => {
     setFormData((prev) => {
@@ -147,6 +169,66 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
     });
   };
 
+  // New functions for "Add More Tests" popup
+  const openAddTestModal = (diagnosisId) => {
+    setAddTestDiagnosisId(diagnosisId);
+    setNewTestName(""); // Reset test name input
+    setIsAddTestModalOpen(true);
+  };
+
+  const closeAddTestModal = () => {
+    setIsAddTestModalOpen(false);
+    setAddTestDiagnosisId(null);
+    setNewTestName("");
+  };
+
+  const handleAddTestSubmit = async () => {
+    if (!newTestName.trim()) {
+      toast.error("Please enter a test name.");
+      return;
+    }
+
+    setSubmitting((prev) => ({ ...prev, [addTestDiagnosisId]: true }));
+    try {
+      const response = await api.put(
+        `patients/${patient.patientId}/diagnoses/${addTestDiagnosisId}/tests`,
+        { testName: newTestName }
+      );
+
+      toast.success("Test added successfully!");
+
+      // Update local state with the new test
+      setDiagnoseHistory((prevHistory) =>
+        prevHistory.map((diag) => {
+          if (diag._id === addTestDiagnosisId) {
+            return {
+              ...diag,
+              recommend: {
+                ...diag.recommend,
+                tests: [
+                  ...(diag.recommend?.tests || []),
+                  {
+                    testName: newTestName,
+                    status: "Pending", // Default from backend
+                    addedAt: new Date(),
+                    _id: response.data.data.recommend.tests[response.data.data.recommend.tests.length - 1]._id, // Get new test ID from response
+                  },
+                ],
+              },
+            };
+          }
+          return diag;
+        })
+      );
+
+      closeAddTestModal();
+    } catch (error) {
+      console.error("Error adding test:", error.response?.data || error.message);
+      toast.error(`Failed to add test: ${error.response?.data?.error || error.message}`);
+    }
+    setSubmitting((prev) => ({ ...prev, [addTestDiagnosisId]: false }));
+  };
+
   const openPdfViewer = (url) => {
     setCurrentPdfUrl(url);
     setPdfViewerOpen(true);
@@ -173,8 +255,8 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
 
     setSubmitting((prev) => ({ ...prev, [diagnosisId]: true }));
     try {
-      await axios.put(
-        `http://localhost:4000/api/patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
+      await api.put(
+        `patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
         {
           medicine: data.medicine,
           tests: data.tests,
@@ -183,7 +265,7 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
       );
       toast.success("Recommendations updated successfully!");
       closeModal();
-      refreshDiagnosisHistory();
+      await refreshDiagnosisHistory();
     } catch (error) {
       console.error("Error updating recommendations:", error.response?.data || error.message);
       toast.error(
@@ -202,8 +284,8 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
     setSubmitting((prev) => ({ ...prev, [reviewDiagnosisId]: true }));
     try {
       const filteredTests = reviewFormData.additionalTests.filter((test) => test.testName.trim());
-      const response = await axios.put(
-        `http://localhost:4000/api/patients/${patient._id}/diagnoses/${reviewDiagnosisId}/review`,
+      const response = await api.put(
+        `patients/${patient._id}/diagnoses/${reviewDiagnosisId}/review`,
         {
           reviewInfo: {
             recommendedMedicine: reviewFormData.recommendedMedicine,
@@ -266,8 +348,8 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
   const handleMarkAsChecked = async (diagnosisId) => {
     setSubmitting((prev) => ({ ...prev, [diagnosisId]: true }));
     try {
-      await axios.put(
-        `http://localhost:4000/api/patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
+      await api.put(
+        `patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
         {
           medicine: "",
           tests: [],
@@ -275,7 +357,7 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
         }
       );
       toast.success("Diagnosis marked as checked successfully!");
-      refreshDiagnosisHistory();
+      await refreshDiagnosisHistory();
     } catch (error) {
       console.error("Error marking diagnosis as checked:", error.response?.data || error.message);
       toast.error(`Failed to mark as checked: ${error.response?.data?.error || error.message}`);
@@ -286,13 +368,12 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
   const handleMarkAsReviewed = async (diagnosisId, testId) => {
     setSubmitting((prev) => ({ ...prev, [testId]: true }));
     try {
-      const response = await axios.put(
-        `http://localhost:4000/api/patients/${patient._id}/diagnoses/${diagnosisId}/tests/${testId}/status`,
+      const response = await api.put(
+        `patients/${patient._id}/diagnoses/${diagnosisId}/tests/${testId}/status`,
         { status: "Reviewed" }
       );
       toast.success("Test marked as reviewed successfully!");
 
-      // Update local state immediately
       setDiagnoseHistory((prevHistory) =>
         prevHistory.map((diag) => {
           if (diag._id === diagnosisId) {
@@ -321,11 +402,13 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
 
   const refreshDiagnosisHistory = async () => {
     try {
-      const response = await axios.get(`http://localhost:4000/api/patients/${patient._id}`);
-      setDiagnoseHistory(response.data.diagnoseHistory || []);
+      console.log(patient._id);
+      const response = await api.get(`patients/${patient.patientId}`);
+      console.log(response);
+      setDiagnoseHistory(response.data.data.diagnoseHistory || []);
     } catch (error) {
       console.error("Error refreshing diagnosis history:", error);
-      toast.error("Failed to refresh diagnosis data");
+      toast.error(error.response?.data?.error || "Failed to refresh diagnosis history");
     }
   };
 
@@ -462,7 +545,7 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
                             </button>
                           </>
                         )}
-                        {areAllTestsReviewed(diag.recommend?.tests || []) && (
+                        {areAllTestsReviewed(diag.recommend?.tests || []) && diag.status === "Test Completed" && (
                           <button
                             onClick={() => openReviewModal(diag._id)}
                             className="flex items-center px-2 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-all duration-300 text-xs shadow-sm"
@@ -502,9 +585,21 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
                         <div className="bg-gradient-to-br from-indigo-50 to-white animate-fadeIn p-6 border-t border-b border-indigo-100">
                           {diag.recommend && (
                             <>
-                              <div className="text-lg font-semibold text-indigo-800 mb-4 flex items-center">
-                                <FileText className="w-5 h-5 mr-2" />
-                                Medical Recommendations
+                              <div className="text-lg font-semibold text-indigo-800 mb-4 flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <FileText className="w-5 h-5 mr-2" />
+                                  Medical Recommendations
+                                </div>
+                                {(patient.patientStatus === "Monitoring" || patient.patientStatus === "Pre-Monitoring") &&
+                                  diag.status === "Checked" && (
+                                    <button
+                                      onClick={() => openAddTestModal(diag._id)}
+                                      className="flex items-center px-2 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-300 text-xs shadow-sm"
+                                    >
+                                      <PlusCircle className="w-3 h-3 mr-1" />
+                                      Add More Tests
+                                    </button>
+                                  )}
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="bg-white p-5 rounded-xl shadow-sm border border-indigo-100 transition-all duration-300 hover:shadow-md">
@@ -560,9 +655,11 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
                                           <th className="py-3 px-6 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                             Added At
                                           </th>
-                                          <th className="py-3 px-6 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            Actions
-                                          </th>
+                                          {patient.patientStatus === "Review" && (
+                                            <th className="py-3 px-6 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                              Actions
+                                            </th>
+                                          )}
                                         </tr>
                                       </thead>
                                       <tbody className="bg-white divide-y divide-gray-200">
@@ -666,22 +763,24 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
                                                 ? new Date(test.addedAt).toLocaleString()
                                                 : "N/A"}
                                             </td>
-                                            <td className="px-6 py-4">
-                                              {test.status === "Completed" || test.status === "Reviewed" ? (
-                                                <button
-                                                  onClick={() => handleMarkAsReviewed(diag._id, test._id)}
-                                                  disabled={test.status === "Reviewed" || submitting[test._id]}
-                                                  className={`flex items-center px-3 py-1.5 text-xs font-medium rounded-md shadow-sm transition-all duration-300 ${
-                                                    test.status === "Reviewed"
-                                                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                                                      : "bg-green-600 text-white hover:bg-green-700"
-                                                  } ${submitting[test._id] ? "opacity-50 cursor-not-allowed" : ""}`}
-                                                >
-                                                  <Check className="w-4 h-4 mr-1" />
-                                                  Mark as Reviewed
-                                                </button>
-                                              ) : null}
-                                            </td>
+                                            {patient.patientStatus === "Review" && (
+                                              <td className="px-6 py-4">
+                                                {test.status === "Completed" || test.status === "Reviewed" ? (
+                                                  <button
+                                                    onClick={() => handleMarkAsReviewed(diag._id, test._id)}
+                                                    disabled={test.status === "Reviewed" || submitting[test._id]}
+                                                    className={`flex items-center px-3 py-1.5 text-xs font-medium rounded-md shadow-sm transition-all duration-300 ${
+                                                      test.status === "Reviewed"
+                                                        ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                                        : "bg-green-600 text-white hover:bg-green-700"
+                                                    } ${submitting[test._id] ? "opacity-50 cursor-not-allowed" : ""}`}
+                                                  >
+                                                    <Check className="w-4 h-4 mr-1" />
+                                                    Mark as Reviewed
+                                                  </button>
+                                                ) : null}
+                                              </td>
+                                            )}
                                           </tr>
                                         ))}
                                       </tbody>
@@ -957,6 +1056,63 @@ const DiagnosisHistory = ({ patient, getMaxConfidence, openImage, isFromPreMonit
                   }`}
                 >
                   {submitting[reviewDiagnosisId] ? "Submitting..." : "Submit"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isAddTestModalOpen && addTestDiagnosisId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-sm p-6 relative animate-fadeIn">
+            <button
+              onClick={closeAddTestModal}
+              className="absolute top-3 right-3 text-gray-600 hover:text-gray-800 transition-all duration-300"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Add New Test</h3>
+            <div className="space-y-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Test Name</label>
+                <select
+                  value={newTestName}
+                  onChange={(e) => setNewTestName(e.target.value)}
+                  className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                >
+                  <option value="">Select a test</option>
+                  {availableTests
+                    .filter((test) => test.isEnabled)
+                    .map((test) => (
+                      <option key={test._id} value={test.name}>
+                        {test.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={closeAddTestModal}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-all duration-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddTestSubmit}
+                  disabled={submitting[addTestDiagnosisId]}
+                  className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-300 ${
+                    submitting[addTestDiagnosisId] ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {submitting[addTestDiagnosisId] ? "Submitting..." : "Add Test"}
                 </button>
               </div>
             </div>

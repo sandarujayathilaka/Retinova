@@ -14,27 +14,33 @@ const {
   updateDiagnosisRecommendations,
   updateDiagnosisReviewRecommendations,
   updateTestStatus,
+  addTestToDiagnose,
+  multiImagePrediction,
 } = require("../controllers/patientController");
 const upload = require("../middleware/upload");
+const { requireAuth } = require("../middleware/require-auth");
+const { ROLES } = require("../constants/roles");
 
 const router = express.Router();
 
 // **Upload Image & Get Diagnosis**
-router.post("/upload", upload.single("image"), uploadImage);
-router.post("/multiupload", upload.array("files", 10), uploadImages);
-router.post("/multisave", upload.array("files", 10), multiImageSave);
-router.post("/predict", upload.single("file"), predictAndFetch);
-router.post("/multiDataSave", upload.array("files", 10), saveMultipleDiagnoses);
-router.post("/onedatasave", upload.single("file"), updatePatientDiagnosis);
-router.get("/status",getPatientsByOneStatus);
-router.get("/:patientId", getPatientById);
-router.get("/unchecked", getPatientsWithUncheckedDiagnoses);
-router.put("/:patientId/diagnoses/:diagnosisId/recommendations", updateDiagnosisRecommendations);
-router.put("/:patientId/diagnoses/:diagnosisId/review", updateDiagnosisReviewRecommendations);
-router.put("/:patientId/diagnoses/:diagnosisId/tests/:testId/status", updateTestStatus);
+router.get("/getAllPatients", requireAuth([ROLES.DOCTOR]), getAllPatients);
+router.get("/status",requireAuth([ROLES.DOCTOR]),getPatientsByOneStatus);
+router.get("/unchecked",requireAuth([ROLES.DOCTOR]), getPatientsWithUncheckedDiagnoses);
+router.post("/upload",requireAuth([ROLES.DOCTOR]), upload.single("image"), uploadImage);
+router.post("/multiupload",requireAuth([ROLES.DOCTOR]), upload.array("files", 10), uploadImages);
+router.post("/multiImagePrediction",requireAuth([ROLES.DOCTOR]), upload.array("files", 10), multiImagePrediction);
+router.post("/predict",requireAuth([ROLES.DOCTOR]), upload.single("file"), predictAndFetch);
+router.post("/multiDataSave",requireAuth([ROLES.DOCTOR]), upload.array("files", 10), saveMultipleDiagnoses);
+router.post("/onedatasave",requireAuth([ROLES.DOCTOR]), upload.single("file"), updatePatientDiagnosis);
+router.put("/:patientId/diagnoses/:diagnosisId/recommendations",requireAuth([ROLES.DOCTOR]), updateDiagnosisRecommendations);
+router.put("/:patientId/diagnoses/:diagnosisId/review",requireAuth([ROLES.DOCTOR]), updateDiagnosisReviewRecommendations);
+router.put("/:patientId/diagnoses/:diagnosisId/tests/:testId/status",requireAuth([ROLES.DOCTOR]), updateTestStatus);
+router.put("/:patientId/diagnoses/:diagnoseId/tests",requireAuth([ROLES.DOCTOR]),addTestToDiagnose);
 
 // **Get Patient Diagnosis History**
-router.get("/:patientId/history", getPatientHistory);
-router.get("/getAllPatients", getAllPatients);
+router.get("/:patientId/history",requireAuth([ROLES.DOCTOR]), getPatientHistory);
+router.get("/:patientId",requireAuth([ROLES.DOCTOR]), getPatientById);
+
 
 module.exports = router;

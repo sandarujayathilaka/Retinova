@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Diagnose from "./Diagnose";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { api } from "@/services/api.service";
 
 const DR = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,7 +30,7 @@ const DR = () => {
       const formData = new FormData();
       formData.append("file", image); // Matches backend's expected field
       formData.append("diseaseType", "rvo");
-      const response = await axios.post("http://localhost:4000/api/patients/predict", formData, {
+      const response = await api.post("patients/predict", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -77,7 +78,7 @@ const DR = () => {
       formData.append("file", imageFile);
       formData.append("diagnosis", prediction.type);
       formData.append("confidenceScores", JSON.stringify([prediction.confidence]));
-      formData.append("category", JSON.stringify(["RVO"]));
+      formData.append("category", "RVO");
 
       // Format recommend according to the backend schema
       const recommend = {
@@ -91,8 +92,8 @@ const DR = () => {
       };
       formData.append("recommend", JSON.stringify(recommend));
 
-      const response = await axios.post(
-        "http://localhost:4000/api/patients/onedatasave",
+      const response = await api.post(
+        "patients/onedatasave",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },

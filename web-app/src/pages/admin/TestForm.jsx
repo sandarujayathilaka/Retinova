@@ -13,26 +13,25 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
-
+import { Card, CardContent } from "@/components/ui/card";
 import { useAddTest, useGetTestById, useUpdateTest } from "@/services/test.service";
-import { Loader2, PlusIcon } from "lucide-react";
+import { Loader2, PlusIcon, TestTube, Beaker } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { PushSpinner } from "react-spinners-kit";
 
 export const testSchema = z.object({
   name: z.string().min(1, "Name is required"),
 });
 
 function TestForm({ mode = "add", testId = null, trigger, open, onOpenChange }) {
-  const [isOpen, setIsOpen] = useState(false); // Track the dialog state
+  const [isOpen, setIsOpen] = useState(false);
 
   // Fetch test data if in edit mode
   const { data: test, isLoading } = useGetTestById(testId, {
     enabled: mode === "edit" && Boolean(testId) && (mode === "edit" ? open : isOpen),
   });
-  console.log("test", test);
 
   // Create a form instance
   const form = useForm({
@@ -45,7 +44,7 @@ function TestForm({ mode = "add", testId = null, trigger, open, onOpenChange }) 
 
   const {
     register,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = form;
 
   const mutationAdd = useAddTest();
@@ -56,24 +55,18 @@ function TestForm({ mode = "add", testId = null, trigger, open, onOpenChange }) 
       ? form.reset(test)
       : form.reset({
           name: "",
-          email: "",
-          image: { Location: "", Key: "" },
         });
   };
 
   // Handle form submission
   const onSubmit = values => {
-    // Get complete form data
     const formData = form.getValues();
 
-    // Choose operation based on mode
     if (mode === "edit" && testId) {
-      // Update existing test
       mutationUpdate.mutate(
         { id: testId, data: formData },
         {
           onSuccess: data => {
-            console.log("Test updated successfully:", data);
             handleReset();
             toast.success("Test updated successfully!");
             onOpenChange(false);
@@ -85,10 +78,8 @@ function TestForm({ mode = "add", testId = null, trigger, open, onOpenChange }) 
         },
       );
     } else {
-      // Add new test
       mutationAdd.mutate(formData, {
         onSuccess: data => {
-          console.log("Test added successfully:", data);
           handleReset();
           toast.success("Test added successfully!");
           setIsOpen(false);
@@ -120,79 +111,105 @@ function TestForm({ mode = "add", testId = null, trigger, open, onOpenChange }) 
       <DialogTrigger asChild>
         {trigger ||
           (mode === "add" && (
-            <Button variant="primary">
-              <PlusIcon />
+            <Button variant="default" className="bg-cyan-600 hover:bg-cyan-700">
+              <PlusIcon className="mr-1 h-4 w-4" />
               Add Test
             </Button>
           ))}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{mode === "edit" ? "Edit test" : "Add new test"}</DialogTitle>
+          <DialogTitle className="flex items-center text-xl font-semibold text-cyan-700">
+            <TestTube className="mr-2 h-5 w-5" />
+            {mode === "edit" ? "Edit Medical Test" : "Add New Medical Test"}
+          </DialogTitle>
+          <DialogDescription>
+            {mode === "edit"
+              ? "Update the test details below."
+              : "Add a new medical test to the system."}
+          </DialogDescription>
         </DialogHeader>
 
         {isLoading && mode === "edit" ? (
-          <div className="flex items-center justify-center h-32">
-            <PushSpinner size={30} color="#3B82F6" />
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
+            <span className="ml-3 text-slate-600">Loading test data...</span>
           </div>
         ) : (
           <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-6 p-6 border rounded-lg w-[450px]"
-            >
-              <div className="space-y-4">
-                <div className="space-y-4 text-start">
-                  <div className="space-y-2">
-                    <label
-                      htmlFor={`name-field`}
-                      className="block text-sm font-medium text-primary"
-                    >
-                      Name
-                    </label>
-                    <Input
-                      id="name-field"
-                      {...register("name")}
-                      className="block w-full p-2 border rounded-md"
-                    />
-                    {errors.name && (
-                      <span className="text-sm text-destructive">{errors.name.message}</span>
-                    )}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <Card className="border-slate-200">
+                <CardContent className="pt-6">
+                  <div className="space-y-6">
+                    {/* Test Icon */}
+                    <div className="flex justify-center">
+                      <div className="h-16 w-16 rounded-full bg-cyan-100 flex items-center justify-center">
+                        <Beaker className="h-8 w-8 text-cyan-600" />
+                      </div>
+                    </div>
+
+                    {/* Name Field */}
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="name-field"
+                        className="block text-sm font-medium text-slate-700"
+                      >
+                        Test Name
+                      </label>
+                      <Input
+                        id="name-field"
+                        {...register("name")}
+                        placeholder="Enter test name"
+                        className={`${errors.name ? "border-red-300 focus-visible:ring-red-400" : ""}`}
+                      />
+                      {errors.name && (
+                        <p className="text-xs text-red-600 font-medium mt-1">
+                          {errors.name.message}
+                        </p>
+                      )}
+                      <p className="text-xs text-slate-500">
+                        Enter a clear, descriptive name for the medical test.
+                      </p>
+                    </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReset}
+                    disabled={!isDirty}
+                    className="text-slate-700"
+                  >
+                    Reset
+                  </Button>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        handleReset();
-                      }}
-                    >
-                      Reset
+                <div className="flex justify-end gap-3">
+                  <DialogClose asChild>
+                    <Button variant="outline" className="border-slate-300">
+                      Cancel
                     </Button>
-                  </div>
-
-                  <div className="flex justify-end gap-4">
-                    <DialogClose asChild>
-                      <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      disabled={mutationAdd.isPending || mutationUpdate.isPending}
-                      className="min-w-[120px]"
-                    >
-                      {mutationAdd.isPending || mutationUpdate.isPending ? (
-                        <Loader2 className="animate-spin size-4" />
-                      ) : mode === "edit" ? (
-                        "Update Test"
-                      ) : (
-                        "Add Test"
-                      )}
-                    </Button>
-                  </div>
+                  </DialogClose>
+                  <Button
+                    type="submit"
+                    disabled={mutationAdd.isPending || mutationUpdate.isPending || !isDirty}
+                    className="bg-cyan-600 hover:bg-cyan-700 min-w-[100px]"
+                  >
+                    {mutationAdd.isPending || mutationUpdate.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {mode === "edit" ? "Updating..." : "Adding..."}
+                      </>
+                    ) : (
+                      <>{mode === "edit" ? "Update" : "Add Test"}</>
+                    )}
+                  </Button>
                 </div>
               </div>
             </form>

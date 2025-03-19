@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import Filters from "../components/PatientsPage/Filters";
 import PatientsTable from "../components/PatientsPage/PatientsTable";
 import Pagination from "../components/PatientsPage/Pagination";
+import { ErrorAlert } from "@/components/error/ErrorAlert";
+import { api } from "@/services/api.service";
 
 const ReviewPatientsPage = () => {
   const [patients, setPatients] = useState([]);
@@ -27,19 +29,20 @@ const ReviewPatientsPage = () => {
   });
   const [loading, setLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const fetchReviewPatients = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:4000/api/patients/status", {
+      const response = await api.get("patients/status", {
         params: filters,
       });
       setPatients(response.data.data);
       setPagination(response.data.pagination);
     } catch (error) {
       console.error("Error fetching Review patients:", error);
-      alert("Failed to fetch Review patients");
+      setError(setError(error.response?.data?.error || "Error fetching Completed patients"));
     }
     setLoading(false);
   };
@@ -72,6 +75,7 @@ const ReviewPatientsPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Review Patients</h1>
+      {error && <ErrorAlert message={error} />}
       <Filters
         filters={filters}
         handleFilterChange={handleFilterChange}
