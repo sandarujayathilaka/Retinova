@@ -79,7 +79,7 @@ const diagnosisSeverity: { [key: string]: "Low" | "Medium" | "High" } = {
 
 export default function DiagnosisHistoryScreen() {
   const { user } = useAuthStore(); 
-  const patientId = user?.id?.toString() || "P1"; 
+  const patientId = user?.id?.toString() || "P2"; 
 
   const { data: diagnoses = [], isLoading, isError, error, refetch } = useGetDiagnoses(patientId) as {
     data: Diagnosis[] | undefined;
@@ -88,7 +88,7 @@ export default function DiagnosisHistoryScreen() {
     error: Error | null;
     refetch: () => void;
   };
-  console.log(diagnoses);
+  
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<"All" | "LEFT" | "RIGHT">("All");
 
@@ -113,7 +113,7 @@ export default function DiagnosisHistoryScreen() {
       case "Low":
         return "bg-green-100 text-green-800";
       case "Medium":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-amber-100 text-amber-800";
       case "High":
         return "bg-red-100 text-red-800";
       default:
@@ -123,15 +123,15 @@ export default function DiagnosisHistoryScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#3b82f6" />
+      <View className="flex-1 justify-center items-center bg-sky-50">
+        <ActivityIndicator size="large" color="#0284c7" />
       </View>
     );
   }
 
   if (isError) {
     return (
-      <View className="flex-1 justify-center items-center p-4">
+      <View className="flex-1 justify-center items-center p-4 bg-sky-50">
         <MaterialCommunityIcons name="alert-circle-outline" size={64} color="#EF4444" />
         <Text className="text-lg font-medium text-gray-700 mt-4 mb-2">Failed to Load Diagnoses</Text>
         <Text className="text-gray-500 text-center mb-4">
@@ -140,7 +140,7 @@ export default function DiagnosisHistoryScreen() {
             : "An error occurred while fetching diagnoses. Please try again later."}
         </Text>
         <TouchableOpacity
-          className="bg-blue-500 px-4 py-2 rounded-lg"
+          className="bg-sky-500 px-6 py-3 rounded-lg shadow-sm"
           onPress={() => refetch()}
         >
           <Text className="text-white font-semibold">Retry</Text>
@@ -150,37 +150,50 @@ export default function DiagnosisHistoryScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
+    <SafeAreaView className="flex-1 bg-sky-50">
+      <StatusBar barStyle="dark-content" backgroundColor="#f0f9ff" />
 
-      {/* Header */}
-      <View className="bg-white border-b border-gray-200 px-4 py-4">
-        <Text className="text-xl font-bold text-gray-800">Diagnosis History</Text>
+      {/* Header with subtle gradient */}
+      <View className="bg-gradient-to-r from-sky-400 to-blue-500 px-4 py-5">
+        <Text className="text-xl font-bold text-white">Your Eye Health History</Text>
+        <Text className="text-sky-100 text-sm mt-1">Track your eye condition progress over time</Text>
       </View>
 
       {/* Filter tabs */}
-      <View className="flex-row px-4 py-3 bg-white border-b border-gray-100">
+      <View className="flex-row px-4 py-4 bg-white shadow-sm">
         <TouchableOpacity
-          className={`mr-4 py-1 px-3 rounded-full ${activeFilter === "All" ? "bg-blue-100" : "bg-transparent"}`}
+          className={`mr-3 py-2 px-4 rounded-full ${
+            activeFilter === "All" ? "bg-sky-500" : "bg-sky-100"
+          }`}
           onPress={() => setActiveFilter("All")}
         >
-          <Text className={`${activeFilter === "All" ? "text-blue-700 font-medium" : "text-gray-600"}`}>
+          <Text className={`${
+            activeFilter === "All" ? "text-white font-medium" : "text-sky-600"
+          }`}>
             All Eyes
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          className={`mr-4 py-1 px-3 rounded-full ${activeFilter === "LEFT" ? "bg-blue-100" : "bg-transparent"}`}
+          className={`mr-3 py-2 px-4 rounded-full ${
+            activeFilter === "LEFT" ? "bg-sky-500" : "bg-sky-100"
+          }`}
           onPress={() => setActiveFilter("LEFT")}
         >
-          <Text className={`${activeFilter === "LEFT" ? "text-blue-700 font-medium" : "text-gray-600"}`}>
+          <Text className={`${
+            activeFilter === "LEFT" ? "text-white font-medium" : "text-sky-600"
+          }`}>
             Left Eye
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          className={`py-1 px-3 rounded-full ${activeFilter === "RIGHT" ? "bg-blue-100" : "bg-transparent"}`}
+          className={`py-2 px-4 rounded-full ${
+            activeFilter === "RIGHT" ? "bg-sky-500" : "bg-sky-100"
+          }`}
           onPress={() => setActiveFilter("RIGHT")}
         >
-          <Text className={`${activeFilter === "RIGHT" ? "text-blue-700 font-medium" : "text-gray-600"}`}>
+          <Text className={`${
+            activeFilter === "RIGHT" ? "text-white font-medium" : "text-sky-600"
+          }`}>
             Right Eye
           </Text>
         </TouchableOpacity>
@@ -191,14 +204,20 @@ export default function DiagnosisHistoryScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         {filteredDiagnoses().length === 0 ? (
-          <View className="flex-1 justify-center items-center p-8">
-            <MaterialCommunityIcons name="eye-off-outline" size={64} color="#CBD5E1" />
-            <Text className="text-lg font-medium text-gray-700 mt-4 mb-2">No Diagnoses Found</Text>
+          <View className="flex-1 justify-center items-center p-8 mt-12">
+            <MaterialCommunityIcons name="eye-off-outline" size={70} color="#93c5fd" />
+            <Text className="text-lg font-medium text-gray-700 mt-6 mb-2">No Diagnoses Found</Text>
             <Text className="text-gray-500 text-center">
               {activeFilter === "All"
                 ? "You don't have any diagnoses yet."
                 : `You don't have any diagnoses for your ${activeFilter.toLowerCase()} eye.`}
             </Text>
+            <TouchableOpacity
+              className="mt-6 bg-sky-500 px-6 py-3 rounded-lg shadow-sm"
+              onPress={() => refetch()}
+            >
+              <Text className="text-white font-semibold">Refresh</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <View className="p-4">
@@ -208,52 +227,76 @@ export default function DiagnosisHistoryScreen() {
 
               return (
                 <Link key={diagnosis._id} href={`/diagnosis/${diagnosis._id}`} asChild>
-                  <TouchableOpacity className="bg-white rounded-xl mb-3 shadow-sm overflow-hidden">
-                    {/* Preview image */}
-                    <Image
-                      source={{ uri: diagnosis.imageUrl }}
-                      className="w-full h-32"
-                      resizeMode="cover"
-                    />
+                  <TouchableOpacity className="bg-white rounded-xl mb-4 shadow-md overflow-hidden border border-sky-100">
+                    {/* Eye icon badge to indicate left/right */}
+                    <View className="absolute top-3 right-3 z-10 bg-black bg-opacity-50 rounded-full p-2">
+                      <Ionicons 
+                        name={diagnosis.eye === "LEFT" ? "eye-outline" : "eye-outline"} 
+                        size={16} 
+                        color="#FFFFFF" 
+                      />
+                    </View>
+
+                    {/* Preview image with gradient overlay */}
+                    <View>
+                      <Image
+                        source={{ uri: diagnosis.imageUrl }}
+                        className="w-full h-40"
+                        resizeMode="cover"
+                      />
+                      <View className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black to-transparent" />
+                      <View className="absolute bottom-2 left-3">
+                        <Text className="text-white font-bold">{diagnosis.eye} Eye</Text>
+                      </View>
+                    </View>
 
                     {/* Diagnosis info */}
                     <View className="p-4">
-                      <View className="flex-row justify-between items-center mb-2">
+                      <View className="flex-row justify-between items-center mb-3">
                         <View className="flex-row items-center">
-                          <Text className="text-gray-800 font-semibold mr-2">{diagnosis.diagnosis}</Text>
-                          <View className={`px-2 py-1 rounded ${severityColor}`}>
-                            <Text className={`text-xs font-medium ${severityColor.split(" ")[1]}`}>{severity}</Text>
+                          <Text className="text-gray-800 font-bold text-lg mr-3">{diagnosis.diagnosis}</Text>
+                          <View className={`px-3 py-1 rounded-full ${severityColor}`}>
+                            <Text className={`text-xs font-medium ${severityColor.split(" ")[1]}`}>
+                              {severity} Risk
+                            </Text>
                           </View>
                         </View>
-                        <Text className="text-gray-500 text-xs">{formatDate(diagnosis.uploadedAt)}</Text>
+                        <View className="bg-sky-50 px-3 py-1 rounded-full">
+                          <Text className="text-sky-600 text-xs font-medium">{formatDate(diagnosis.uploadedAt)}</Text>
+                        </View>
                       </View>
 
-                      <Text className="text-gray-700 mb-2">{diagnosis.eye} Eye</Text>
-
                       {diagnosis.recommend.note ? (
-                        <Text className="text-gray-600 text-sm mb-3" numberOfLines={2}>
-                          {diagnosis.recommend.note}
-                        </Text>
+                        <View className="mb-3 bg-sky-50 p-3 rounded-lg">
+                          <Text className="text-gray-700 text-sm font-medium mb-1">Doctor's Note:</Text>
+                          <Text className="text-gray-600 text-sm" numberOfLines={2}>
+                            {diagnosis.recommend.note}
+                          </Text>
+                        </View>
                       ) : null}
 
-                      <View className="flex-row justify-between items-center">
+                      <View className="flex-row justify-between items-center mt-2">
                         <View className="flex-row items-center">
                           {diagnosis.recommend.tests.length > 0 && (
-                            <View className="flex-row items-center mr-4">
-                              <Ionicons name="medical-outline" size={14} color="#6B7280" />
-                              <Text className="text-gray-500 text-xs ml-1">{diagnosis.recommend.tests.length} Tests</Text>
+                            <View className="flex-row items-center mr-4 bg-sky-100 px-2 py-1 rounded-full">
+                              <Ionicons name="medical-outline" size={14} color="#0284c7" />
+                              <Text className="text-sky-700 text-xs ml-1 font-medium">
+                                {diagnosis.recommend.tests.length} Tests
+                              </Text>
                             </View>
                           )}
 
-                          <View className="flex-row items-center">
-                            <Ionicons name="time-outline" size={14} color="#6B7280" />
-                            <Text className="text-gray-500 text-xs ml-1">{diagnosis.revisitTimeFrame}</Text>
+                          <View className="flex-row items-center bg-sky-100 px-2 py-1 rounded-full">
+                            <Ionicons name="time-outline" size={14} color="#0284c7" />
+                            <Text className="text-sky-700 text-xs ml-1 font-medium">
+                              {diagnosis.revisitTimeFrame}
+                            </Text>
                           </View>
                         </View>
 
                         <View className="flex-row items-center">
-                          <Text className="text-blue-600 text-xs mr-1">View Details</Text>
-                          <Ionicons name="chevron-forward" size={14} color="#3B82F6" />
+                          <Text className="text-sky-600 font-medium text-sm mr-1">View Details</Text>
+                          <Ionicons name="chevron-forward" size={16} color="#0284c7" />
                         </View>
                       </View>
                     </View>

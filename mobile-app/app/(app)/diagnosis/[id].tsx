@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,17 +8,19 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  Modal,
 } from "react-native";
 import {
   Ionicons,
   MaterialCommunityIcons,
   FontAwesome5,
+  AntDesign,
 } from "@expo/vector-icons";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import { useGetDiagnosisById } from "../../../services/diagnosis.service";
 import useAuthStore from "../../../stores/auth";
+import { WebView } from "react-native-webview";
 
-// Define interfaces locally
 interface Test {
   testName: string;
   status: "Pending" | "In Progress" | "Completed" | "Reviewed";
@@ -52,7 +54,6 @@ interface Diagnosis {
   reviewInfo: ReviewInfo[];
 }
 
-// Helper functions
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat("en-US", {
@@ -71,7 +72,36 @@ const formatTime = (dateString: string) => {
   }).format(date);
 };
 
-// Diagnosis mapping information
+const calculateNextVisitDate = (uploadDate: string, timeFrame: string): string => {
+  const date = new Date(uploadDate);
+  
+  switch(timeFrame) {
+    case "Monthly":
+      date.setMonth(date.getMonth() + 1);
+      break;
+    case "Quarterly":
+      date.setMonth(date.getMonth() + 3);
+      break;
+    case "Bi-annually":
+      date.setMonth(date.getMonth() + 6);
+      break;
+    case "Annually":
+      date.setFullYear(date.getFullYear() + 1);
+      break;
+    default:
+      return "Schedule as required";
+  }
+  
+  return formatDate(date.toString());
+};
+
+const getFileType = (url: string): "pdf" | "image" | "unknown" => {
+  const extension = url.split(".").pop()?.toLowerCase();
+  if (extension === "pdf") return "pdf";
+  if (["jpg", "jpeg", "png", "gif"].includes(extension || "")) return "image";
+  return "unknown";
+};
+
 const diagnosisInfo: {
   [key: string]: { description: string; severity: "Low" | "Medium" | "High" };
 } = {
@@ -148,8 +178,8 @@ const diagnosisInfo: {
 
 export default function DiagnosisDetailScreen() {
   const { id } = useLocalSearchParams();
-  const { user } = useAuthStore(); // Get the user from auth store
-  const patientId = user?.id?.toString() || "P1"; // Use user.id as patientId, fallback to "P1" if not logged in
+  const { user } = useAuthStore();
+  const patientId = user?.id?.toString() || "P2";
 
   const { data: diagnosis = null, isLoading, isError, error } = useGetDiagnosisById(patientId, id as string) as {
     data: Diagnosis | null;
@@ -158,23 +188,46 @@ export default function DiagnosisDetailScreen() {
     error: Error | null;
   };
 
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [selectedAttachmentUrl, setSelectedAttachmentUrl] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<"pdf" | "image" | "unknown">("unknown");
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
+  const openAttachment = (url: string) => {
+    const type = getFileType(url);
+    setFileType(type);
+    setSelectedAttachmentUrl(url);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setSelectedAttachmentUrl(null);
+    setFileType("unknown");
+  };
+
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section);
+  };
+
   if (isLoading) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#3b82f6" />
+      <View className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" color="#0284c7" />
       </View>
     );
   }
 
   if (isError || !diagnosis) {
     return (
-      <View className="flex-1 justify-center items-center p-4">
-        <Text className="text-lg text-gray-800 mb-2">Diagnosis Not Found</Text>
+      <View className="flex-1 justify-center items-center p-4 bg-white">
+        <MaterialCommunityIcons name="eye-off-outline" size={64} color="#94a3b8" />
+        <Text className="text-lg text-gray-800 font-medium mb-2 mt-4">Diagnosis Not Found</Text>
         <Text className="text-gray-600 text-center mb-4">
           The diagnosis you're looking for could not be found or may have been removed.
         </Text>
         <TouchableOpacity
-          className="bg-blue-500 px-4 py-2 rounded-lg"
+          className="bg-sky-500 px-6 py-3 rounded-lg shadow-sm"
           onPress={() => router.back()}
         >
           <Text className="text-white font-semibold">Go Back</Text>
@@ -183,50 +236,53 @@ export default function DiagnosisDetailScreen() {
     );
   }
 
-  // Get diagnosis info from our mapping, or provide defaults
   const diagInfo = diagnosisInfo[diagnosis.diagnosis] || {
     description: "Detailed information not available for this diagnosis type.",
     severity: "Medium",
   };
 
-  // Severity colors
+  const nextVisitDate = calculateNextVisitDate(diagnosis.uploadedAt, diagnosis.revisitTimeFrame);
+
   const severityColors = {
     Low: "bg-green-100 text-green-800",
-    Medium: "bg-yellow-100 text-yellow-800",
+    Medium: "bg-amber-100 text-amber-800",
     High: "bg-red-100 text-red-800",
   };
 
+  const eyeIcon = diagnosis.eye === "LEFT" ? "eye-outline" : "eye-outline";
+
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
+    <SafeAreaView className="flex-1 bg-gray-50">
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
-      <ScrollView className="flex-1 px-4 py-4">
-        {/* Diagnosis Header */}
-        <View className="bg-white p-4 rounded-xl shadow-sm mb-6">
-          <View className="flex-row justify-between items-center mb-4">
-            <View className="flex-1">
-              <Text className="text-2xl font-bold text-gray-800">{diagnosis.diagnosis}</Text>
-              <Text className="text-gray-500">{diagnosis.eye} Eye • {formatDate(diagnosis.uploadedAt)}</Text>
+      <ScrollView className="flex-1">
+        {/* Header Section */}
+        <View className="bg-white border-b border-gray-200 px-4 py-3">
+          <TouchableOpacity onPress={() => router.back()} className="mb-2">
+            <View className="flex-row items-center">
+              <Ionicons name="arrow-back" size={22} color="#0284c7" />
+              <Text className="text-sky-700 ml-1">Back</Text>
             </View>
-            <View
-              className={`px-3 py-1 rounded ${severityColors[diagInfo.severity]}`}
-            >
-              <Text
-                className={`font-medium ${severityColors[diagInfo.severity].split(" ")[1]}`}
-              >
-                {diagInfo.severity}
-              </Text>
-            </View>
+          </TouchableOpacity>
+          <Text className="text-2xl font-bold text-gray-800">{diagnosis.diagnosis}</Text>
+          <View className="flex-row items-center mt-1">
+            <Ionicons name={eyeIcon} size={16} color="#64748b" />
+            <Text className="text-gray-600 ml-1">{diagnosis.eye} Eye</Text>
           </View>
+        </View>
 
+        {/* Main Diagnosis Information */}
+        <View className="mx-4 mt-4">
+          {/* Overview */}
           <Text className="text-gray-700 mb-4">{diagInfo.description}</Text>
-
-          <View className="border-t border-gray-100 pt-3">
+          
+          {/* Confidence Score */}
+          <View className="mb-4">
             <Text className="text-gray-600 mb-1">Confidence Score</Text>
             <View className="flex-row items-center">
               <View className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden mr-3">
                 <View
-                  className="h-full bg-blue-500 rounded-full"
+                  className="h-full bg-sky-500 rounded-full"
                   style={{ width: `${(diagnosis.confidenceScores[0] || 0) * 100}%` }}
                 />
               </View>
@@ -235,140 +291,305 @@ export default function DiagnosisDetailScreen() {
               </Text>
             </View>
           </View>
-        </View>
 
-        {/* Retina Image */}
-        <View className="bg-white p-4 rounded-xl shadow-sm mb-6">
-          <Text className="text-lg font-semibold text-gray-800 mb-3">Retina Scan</Text>
-          <Image
-            source={{ uri: diagnosis.imageUrl }}
-            className="w-full h-64 rounded-lg"
-            resizeMode="contain"
-          />
-          <Text className="text-gray-500 text-xs text-center mt-2">
-            Scan taken on {formatDate(diagnosis.uploadedAt)} at {formatTime(diagnosis.uploadedAt)}
-          </Text>
-        </View>
-
-        {/* Doctor's Notes */}
-        {diagnosis.reviewInfo && diagnosis.reviewInfo.length > 0 && (
-          <View className="bg-white p-4 rounded-xl shadow-sm mb-6">
-            <Text className="text-lg font-semibold text-gray-800 mb-3">Doctor's Notes</Text>
-            {diagnosis.reviewInfo.map((review: ReviewInfo, index: number) => (
-              <View
-                key={review._id}
-                className={`pb-3 ${index < diagnosis.reviewInfo.length - 1 ? "mb-3 border-b border-gray-100" : ""}`}
-              >
-                <Text className="text-gray-700">{review.notes}</Text>
-                <Text className="text-gray-500 text-xs mt-1">{formatDate(review.updatedAt)}</Text>
-              </View>
-            ))}
+          {/* Diagnosis Date */}
+          <View className="flex-row items-center mb-4">
+            <MaterialCommunityIcons name="calendar-clock" size={18} color="#64748b" />
+            <Text className="text-gray-500 ml-2">
+              Diagnosed on {formatDate(diagnosis.uploadedAt)}
+            </Text>
           </View>
-        )}
 
-        {/* Treatment & Recommendations */}
-        <View className="bg-white p-4 rounded-xl shadow-sm mb-6">
-          <Text className="text-lg font-semibold text-gray-800 mb-3">Treatment & Recommendations</Text>
-
-          {diagnosis.recommend.medicine && (
-            <View className="mb-4">
-              <Text className="text-gray-700 font-medium mb-1">Prescribed Medication</Text>
-              <View className="bg-blue-50 p-3 rounded-lg">
-                <Text className="text-gray-800">{diagnosis.recommend.medicine}</Text>
-              </View>
+          {/* Risk Level */}
+          <View className="mb-4">
+            <Text className="text-gray-600 mb-1">Risk Level</Text>
+            <View className={`px-3 py-1 rounded-full w-24 ${severityColors[diagInfo.severity]}`}>
+              <Text className={`font-medium ${severityColors[diagInfo.severity].split(" ")[1]}`}>
+                {diagInfo.severity} Risk
+              </Text>
             </View>
-          )}
-
-          {diagnosis.recommend.note && (
-            <View className="mb-4">
-              <Text className="text-gray-700 font-medium mb-1">Notes</Text>
-              <Text className="text-gray-800">{diagnosis.recommend.note}</Text>
-            </View>
-          )}
-
-          <View className="mb-2">
-            <Text className="text-gray-700 font-medium mb-1">Follow-up Schedule</Text>
-            <Text className="text-gray-800">{diagnosis.revisitTimeFrame} check-ups recommended</Text>
           </View>
-        </View>
 
-        {/* Recommended Tests */}
-        {diagnosis.recommend.tests && diagnosis.recommend.tests.length > 0 && (
-          <View className="bg-white p-4 rounded-xl shadow-sm mb-6">
-            <Text className="text-lg font-semibold text-gray-800 mb-3">Recommended Tests</Text>
-            {diagnosis.recommend.tests.map((test: Test, index: number) => (
-              <View
-                key={test._id}
-                className={`${index < diagnosis.recommend.tests.length - 1 ? "border-b border-gray-100 pb-3 mb-3" : ""}`}
-              >
-                <View className="flex-row justify-between items-center mb-2">
-                  <Text className="text-gray-800 font-medium">{test.testName}</Text>
-                  <View
-                    className={`px-2 py-1 rounded ${
-                      test.status === "Reviewed"
-                        ? "bg-green-100"
-                        : test.status === "Completed"
-                        ? "bg-blue-100"
-                        : test.status === "In Progress"
-                        ? "bg-yellow-100"
-                        : "bg-gray-100"
-                    }`}
-                  >
-                    <Text
-                      className={`text-xs font-medium ${
-                        test.status === "Reviewed"
-                          ? "text-green-800"
-                          : test.status === "Completed"
-                          ? "text-blue-800"
-                          : test.status === "In Progress"
-                          ? "text-yellow-800"
-                          : "text-gray-800"
-                      }`}
-                    >
-                      {test.status}
-                    </Text>
+            {/* Next Visit */}
+                <View className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-row items-center">
+                      <MaterialCommunityIcons name="calendar-check" size={20} color="#0284c7" />
+                      <Text className="text-gray-800 font-medium ml-2">Next Visit</Text>
+                    </View>
+                    <View className="bg-sky-100 px-2 py-1 rounded-full">
+                      <Text className="text-sky-800 text-xs font-medium">{diagnosis.revisitTimeFrame}</Text>
+                    </View>
+                  </View>
+                  <View className="mt-3 flex-row items-center">
+                    <Text className="text-gray-700">Recommended date:</Text>
+                    <Text className="text-sky-700 font-medium ml-2">{nextVisitDate}</Text>
+                  </View>
+                </View>          
+
+          {/* Retina Scan */}
+          <View className="mb-6">
+            <Text className="text-gray-600 mb-2">Retina Scan</Text>
+            <Image
+              source={{ uri: diagnosis.imageUrl }}
+              className="w-full h-64 rounded-lg"
+              resizeMode="contain"
+            />
+            <Text className="text-gray-500 text-xs text-center mt-2">
+              Scan taken on {formatDate(diagnosis.uploadedAt)} at {formatTime(diagnosis.uploadedAt)}
+            </Text>
+          </View>
+
+          {/* Doctor's Treatment Section */}
+          <View className="bg-white rounded-xl shadow-sm mb-4">
+            <TouchableOpacity 
+              className="p-4 flex-row justify-between items-center border-b border-gray-100"
+              onPress={() => toggleSection("treatment")}
+            >
+              <View className="flex-row items-center">
+                <MaterialCommunityIcons name="pill" size={20} color="#0284c7" />
+                <Text className="text-lg font-semibold text-gray-800 ml-2">Treatment Plan</Text>
+              </View>
+              <AntDesign 
+                name={expandedSection === "treatment" ? "caretup" : "caretdown"} 
+                size={16} 
+                color="#0284c7" 
+              />
+            </TouchableOpacity>
+            
+            {expandedSection === "treatment" && (
+              <View className="p-4">
+                {/* Recommended Medication */}
+                {(diagnosis.recommend.medicine || (diagnosis.reviewInfo && diagnosis.reviewInfo[0]?.recommendedMedicine)) && (
+                  <View className="mb-4">
+                    <Text className="text-gray-700 font-medium mb-1">Recommended Medication</Text>
+                    <View className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                      <Text className="text-gray-800">
+                        {diagnosis.reviewInfo?.[0]?.recommendedMedicine || diagnosis.recommend.medicine}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* Doctor's Notes */}
+                {(diagnosis.recommend.note || (diagnosis.reviewInfo && diagnosis.reviewInfo[0]?.notes)) && (
+                  <View className="mb-4">
+                    <Text className="text-gray-700 font-medium mb-1">Doctor's Notes</Text>
+                    <View className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                      <Text className="text-gray-800">
+                        {diagnosis.reviewInfo?.[0]?.notes || diagnosis.recommend.note || "No additional notes provided."}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* Next Visit */}
+                <View className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-row items-center">
+                      <MaterialCommunityIcons name="calendar-check" size={20} color="#0284c7" />
+                      <Text className="text-gray-800 font-medium ml-2">Next Visit</Text>
+                    </View>
+                    <View className="bg-sky-100 px-2 py-1 rounded-full">
+                      <Text className="text-sky-800 text-xs font-medium">{diagnosis.revisitTimeFrame}</Text>
+                    </View>
+                  </View>
+                  <View className="mt-3 flex-row items-center">
+                    <Text className="text-gray-700">Recommended date:</Text>
+                    <Text className="text-sky-700 font-medium ml-2">{nextVisitDate}</Text>
                   </View>
                 </View>
-
-                <Text className="text-gray-500 text-xs mb-2">Added on {formatDate(test.addedAt)}</Text>
-
-                {test.attachmentURL && (
-                  <TouchableOpacity
-                    className="flex-row items-center bg-gray-50 p-2 rounded-lg"
-                    onPress={() => {
-                      /* View attachment */
-                    }}
-                  >
-                    <FontAwesome5 name="file-pdf" size={16} color="#f87171" />
-                    <Text className="text-gray-700 ml-2">View Test Results</Text>
-                  </TouchableOpacity>
-                )}
               </View>
-            ))}
+            )}
           </View>
-        )}
+
+          {/* Doctor's Review Section */}
+          {diagnosis.reviewInfo && diagnosis.reviewInfo.length > 0 && (
+            <View className="bg-white rounded-xl shadow-sm mb-4">
+              <TouchableOpacity 
+                className="p-4 flex-row justify-between items-center border-b border-gray-100"
+                onPress={() => toggleSection("reviews")}
+              >
+                <View className="flex-row items-center">
+                  <MaterialCommunityIcons name="doctor" size={20} color="#0284c7" />
+                  <Text className="text-lg font-semibold text-gray-800 ml-2">Doctor's Reviews</Text>
+                </View>
+                <AntDesign 
+                  name={expandedSection === "reviews" ? "caretup" : "caretdown"} 
+                  size={16} 
+                  color="#0284c7" 
+                />
+              </TouchableOpacity>
+              
+              {expandedSection === "reviews" && (
+                <View className="p-4">
+                  {diagnosis.reviewInfo.map((review: ReviewInfo, index: number) => (
+                    <View
+                      key={review._id}
+                      className={`pb-3 ${index < diagnosis.reviewInfo.length - 1 ? "mb-3 border-b border-gray-100" : ""}`}
+                    >
+                      {review.recommendedMedicine && (
+                        <View className="mb-3">
+                          <Text className="text-gray-700 font-medium mb-1">Recommended Medication</Text>
+                          <Text className="text-gray-800">{review.recommendedMedicine}</Text>
+                        </View>
+                      )}
+                      <View className="mb-2">
+                        <Text className="text-gray-700 font-medium mb-1">Notes</Text>
+                        <Text className="text-gray-700">{review.notes || "No additional notes provided."}</Text>
+                      </View>
+                      <Text className="text-sky-600 text-xs mt-2">
+                        Updated on {formatDate(review.updatedAt)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Recommended Tests Section */}
+          {diagnosis.recommend.tests && diagnosis.recommend.tests.length > 0 && (
+            <View className="bg-white rounded-xl shadow-sm mb-4">
+              <TouchableOpacity 
+                className="p-4 flex-row justify-between items-center border-b border-gray-100"
+                onPress={() => toggleSection("tests")}
+              >
+                <View className="flex-row items-center">
+                  <MaterialCommunityIcons name="test-tube" size={20} color="#0284c7" />
+                  <Text className="text-lg font-semibold text-gray-800 ml-2">
+                    Recommended Tests ({diagnosis.recommend.tests.length})
+                  </Text>
+                </View>
+                <AntDesign 
+                  name={expandedSection === "tests" ? "caretup" : "caretdown"} 
+                  size={16} 
+                  color="#0284c7" 
+                />
+              </TouchableOpacity>
+              
+              {expandedSection === "tests" && (
+                <View className="p-4">
+                  {diagnosis.recommend.tests.map((test: Test, index: number) => (
+                    <View
+                      key={test._id}
+                      className={`${index < diagnosis.recommend.tests.length - 1 ? "border-b border-gray-100 pb-4 mb-4" : ""}`}
+                    >
+                      <View className="flex-row justify-between items-center mb-2">
+                        <Text className="text-gray-800 font-medium">{test.testName}</Text>
+                        <View
+                          className={`px-2 py-1 rounded-full ${
+                            test.status === "Reviewed"
+                              ? "bg-green-100"
+                              : test.status === "Completed"
+                              ? "bg-sky-100"
+                              : test.status === "In Progress"
+                              ? "bg-amber-100"
+                              : "bg-gray-100"
+                          }`}
+                        >
+                          <Text
+                            className={`text-xs font-medium ${
+                              test.status === "Reviewed"
+                                ? "text-green-800"
+                                : test.status === "Completed"
+                                ? "text-sky-800"
+                                : test.status === "In Progress"
+                                ? "text-amber-800"
+                                : "text-gray-800"
+                            }`}
+                          >
+                            {test.status}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text className="text-gray-500 text-xs mb-2">Added on {formatDate(test.addedAt)}</Text>
+                      {test.attachmentURL && (
+                        <TouchableOpacity
+                          className="flex-row items-center bg-gray-50 p-3 rounded-lg mt-2 border border-gray-200"
+                          onPress={() => openAttachment(test.attachmentURL)}
+                        >
+                          <FontAwesome5 name="file-pdf" size={16} color="#0284c7" />
+                          <Text className="text-sky-700 font-medium ml-2">View Test Results</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
+        </View>
 
         {/* Action Buttons */}
-        <View className="flex-row justify-between mb-8">
+        <View className="flex-row justify-between m-4 mt-6 mb-8">
           <TouchableOpacity
-            className="bg-blue-500 rounded-xl py-3 px-5 flex-1 mr-2 items-center"
-            onPress={() => {
-              /* Book follow-up */
-            }}
+            className="bg-sky-500 rounded-xl py-3 px-5 flex-1 mr-2 items-center shadow-sm"
+            onPress={() => {/* Book follow-up */}}
           >
             <Text className="text-white font-semibold">Book Follow-up</Text>
           </TouchableOpacity>
-
           <TouchableOpacity
-            className="bg-white border border-blue-500 rounded-xl py-3 px-5 flex-1 ml-2 items-center"
-            onPress={() => {
-              /* Export or share */
-            }}
+            className="bg-white border border-sky-500 rounded-xl py-3 px-5 flex-1 ml-2 items-center"
+            onPress={() => {/* Export or share */}}
           >
-            <Text className="text-blue-500 font-semibold">Share Results</Text>
+            <Text className="text-sky-600 font-semibold">Share Results</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={isModalVisible}
+        animationType="slide"
+        onRequestClose={closeModal}
+      >
+        <SafeAreaView className="flex-1 bg-white">
+          <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
+            <Text className="text-lg font-semibold text-gray-800">Test Result</Text>
+            <TouchableOpacity onPress={closeModal}>
+              <Ionicons name="close" size={24} color="#0284c7" />
+            </TouchableOpacity>
+          </View>
+          {selectedAttachmentUrl ? (
+            fileType === "pdf" ? (
+              <WebView
+                source={{
+                  uri: `https://docs.google.com/viewer?url=${encodeURIComponent(selectedAttachmentUrl)}&embedded=true`,
+                }}
+                style={{ flex: 1 }}
+                startInLoadingState={true}
+                renderLoading={() => (
+                  <View className="flex-1 justify-center items-center">
+                    <ActivityIndicator size="large" color="#0284c7" />
+                  </View>
+                )}
+                onError={(syntheticEvent) => {
+                  const { nativeEvent } = syntheticEvent;
+                  console.error("WebView error:", nativeEvent);
+                }}
+              />
+            ) : fileType === "image" ? (
+              <Image
+                source={{ uri: selectedAttachmentUrl }}
+                style={{ flex: 1, width: "100%", height: "100%" }}
+                resizeMode="contain"
+              />
+            ) : (
+              <View className="flex-1 justify-center items-center p-4">
+                <Text className="text-center text-gray-700">
+                  Unsupported file type or invalid URL. Please contact support.
+                </Text>
+                <TouchableOpacity
+                  className="bg-sky-500 px-4 py-2 rounded-lg mt-4"
+                  onPress={closeModal}
+                >
+                  <Text className="text-white font-semibold">Close</Text>
+                </TouchableOpacity>
+              </View>
+            )
+          ) : null}
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
