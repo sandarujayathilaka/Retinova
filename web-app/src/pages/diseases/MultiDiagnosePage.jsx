@@ -3,6 +3,7 @@ import MultiDiagnose from "../../components/MultiDiagnose/MultiDiagnose";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { Spin } from "antd";
+import { api } from "@/services/api.service";
 
 const MultiDiagnosePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -14,9 +15,18 @@ const MultiDiagnosePage = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
 
+  const MAX_IMAGES = 10; // Define the maximum number of images allowed
+
   const handleSubmission = async (images, confirmed = false) => {
+    // Check if no images are uploaded
     if (images.length === 0) {
       toast.error("Please upload at least one image");
+      return;
+    }
+
+    // Check if the number of images exceeds the maximum allowed
+    if (images.length > MAX_IMAGES) {
+      toast.error(`You can upload a maximum of ${MAX_IMAGES} images`);
       return;
     }
 
@@ -141,7 +151,7 @@ const MultiDiagnosePage = () => {
         if (matchingPrediction) formData.append("files", image);
       });
 
-      const response = await axios.post("http://localhost:4000/api/patients/multiDataSave", formData, {
+      const response = await api.post("patients/multiDataSave", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -190,6 +200,7 @@ const MultiDiagnosePage = () => {
           isSaved={isSaved}
           handleReset={handleReset}
           processingProgress={processingProgress}
+          maxImages={MAX_IMAGES} // Pass the maxImages prop to the component
         />
       </Spin>
     </div>

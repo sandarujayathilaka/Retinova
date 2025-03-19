@@ -49,7 +49,7 @@ const UploadSection = ({
         <div className="p-6 md:p-8">
           <div className="mb-6 text-center max-w-2xl mx-auto">
             <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-2">
-              Upload Retinal Scan
+              Retinal Scan
             </h3>
             <Text className="text-base text-gray-600">
               The AI will analyze your retinal scan to detect signs of Diabetic Retinopathy
@@ -90,7 +90,7 @@ const UploadSection = ({
             ) : (
               <>
                 <p className="text-lg text-gray-800 font-medium mb-2">
-                  Drag & drop your retinal scan here
+                  Drag & drop your retinal Image here
                 </p>
                 <p className="text-base text-gray-600 mb-4">
                   or <span className="text-indigo-600 font-medium">browse files</span>
@@ -100,10 +100,10 @@ const UploadSection = ({
                     File naming convention:
                   </p>
                   <code className="text-xs bg-white px-2 py-1 rounded border border-gray-200 text-gray-800">
-                    patientId_randomtext.jpg
+                    patientId_eyeside_randomtext.jpg
                   </code>
                   <p className="text-xs text-gray-600 mt-2">
-                    Example: 123456_image.jpg
+                    Example: P1_right_image145.jpg
                   </p>
                 </div>
                 <p className="text-xs text-gray-500 mt-4">

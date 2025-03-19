@@ -85,7 +85,7 @@ const App = () => {
           <Route path="/monitorpatients" element={<MonitoringPatientsPage />} />
           <Route path="/pre-monitoring-patients" element={<PreMonitoringPatientsPage />} />
           <Route path="/completed-patients" element={<CompletedPatientsPage />} />
-          <Route path="/review-patients" element={<ReviewPatientsPage />} />
+          <Route path="/review-patients-profile" element={<ReviewPatientsPage />} />
 
           <Route path="/doctors" element={<DoctorsList />} />
 
@@ -152,7 +152,6 @@ const App = () => {
 
           <Route path="/patients/:patientId" element={<PatientProfile />} />
           <Route path="/patient/:patientId/test-records" element={<TestRecords />} />
-
           <Route path="/nursedashboard" element={<NurseDashboard />} />
           <Route path="/profile" element={<NurseProfile nurseId={SAMPLE_NURSE_ID} />} />
         </Route>

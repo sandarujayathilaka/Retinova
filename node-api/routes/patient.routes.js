@@ -21,6 +21,7 @@ const {
     deletemedicalHistory,
     uploadMedicalHistoryImage,
 } = require("../controllers/patient.controller");
+
 // const upload = require("../middleware/upload");
 const { requireAuth } = require("../middleware/require-auth");
 const { ROLES } = require("../constants/roles");

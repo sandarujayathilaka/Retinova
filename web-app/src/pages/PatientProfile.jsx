@@ -7,6 +7,7 @@ import TabContent from "../components/PatientProfile/TabContent";
 import Footer from "../components/PatientProfile/Footer";
 import ImageModal from "../components/diagnose/ImageModal";
 import { BadgeAlert, Activity } from "lucide-react";
+import { api } from "@/services/api.service";
 
 const PatientProfile = () => {
   const { patientId } = useParams();
@@ -25,8 +26,9 @@ const PatientProfile = () => {
   useEffect(() => {
     const fetchPatient = async () => {
       try {
-        const response = await axios.get(`http://localhost:4000/api/patients/${patientId}`);
+        const response = await api.get(`patients/${patientId}`);
         setPatient(response.data.data);
+        console.log("Patient data:", response.data.data);
       } catch (error) {
         console.error("Error fetching patient:", error);
         toast.error("Failed to load patient details");
@@ -110,9 +112,13 @@ const PatientProfile = () => {
                       {urgentItems} Urgent {urgentItems === 1 ? "Item" : "Items"}
                     </span>
                   )}
+
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Patient Status: {patient.patientStatus || patientId}
+                  </span>
                 </div>
                 <p className="text-gray-600">
-                  Admission: {patient.admissionDate || "No admission date"}
+                
                 </p>
               </div>
               <div className="mt-4 sm:mt-0">

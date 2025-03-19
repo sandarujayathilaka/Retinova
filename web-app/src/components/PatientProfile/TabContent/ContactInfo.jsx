@@ -105,50 +105,6 @@ const ContactInfo = ({ patient }) => {
         </div>
       </div>
       
-      {/* Referring Doctor Information */}
-      <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-indigo-100">
-        <div className="p-5 border-b border-indigo-50 bg-gradient-to-r from-blue-50 to-white">
-          <h3 className="flex items-center text-lg font-medium text-gray-900">
-            <User className="w-5 h-5 mr-2 text-blue-900" />
-            Referring Doctor Information
-          </h3>
-        </div>
-        
-        <div className="p-5">
-          {patient.referringDoctor ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex flex-col">
-                <span className="text-sm text-gray-500 mb-1">Doctor Name</span>
-                <span className="text-gray-900">{patient.referringDoctor.name || patient.referringDoctor || "N/A"}</span>
-              </div>
-              
-              <div className="flex flex-col">
-                <span className="text-sm text-gray-500 mb-1">Specialty</span>
-                <span className="text-gray-900">{patient.referringDoctor.specialty || "Not specified"}</span>
-              </div>
-              
-              <div className="flex flex-col">
-                <span className="text-sm text-gray-500 mb-1">Contact</span>
-                <a 
-                  href={`tel:${patient.referringDoctor.phone}`} 
-                  className="text-blue-900 hover:underline"
-                >
-                  {patient.referringDoctor.phone || "No phone provided"}
-                </a>
-              </div>
-              
-              {patient.referringDoctor.hospital && (
-                <div className="flex flex-col md:col-span-3">
-                  <span className="text-sm text-gray-500 mb-1">Hospital/Clinic</span>
-                  <span className="text-gray-900">{patient.referringDoctor.hospital}</span>
-                </div>
-              )}
-            </div>
-          ) : (
-            <p className="text-gray-500">No referring doctor information available</p>
-          )}
-        </div>
-      </div>
     </div>
   );
 };

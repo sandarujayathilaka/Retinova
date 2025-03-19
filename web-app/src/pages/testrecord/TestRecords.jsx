@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "../../../src/services/api.service";
 import { toast } from "react-hot-toast";
 import TestRecordItem from "../../components/testrecords/TestRecordItem";
 import TestRecordConfirmModal from "../../components/testrecords/TestRecordConfirmModal";
-import { TestTubes, AlertCircle, RefreshCw } from "lucide-react";
+import { TestTubes, AlertCircle, RefreshCw, ClipboardCheck } from "lucide-react";
 
 function TestRecords({ patientId }) {
   const [records, setRecords] = useState([]);
@@ -15,7 +15,7 @@ function TestRecords({ patientId }) {
   const fetchRecords = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`http://localhost:4000/api/patients/${patientId}/test-records`);
+      const res = await api.get(`/patients/${patientId}/test-records`); // Use api instead of axios
       if (res.data && Array.isArray(res.data.data)) {
         const sortedRecords = res.data.data.sort((a, b) => b._id.localeCompare(a._id));
         setRecords(sortedRecords);
@@ -38,7 +38,7 @@ function TestRecords({ patientId }) {
   const handleFileUpload = async (file, diagnoseId, testIndex) => {
     const formData = new FormData();
     formData.append("file", file);
-    const res = await axios.post("http://localhost:4000/api/patients/upload-test", formData);
+    const res = await api.post("/patients/upload-test", formData); // Use api instead of axios
     return res.data.data.attachmentURL;
   };
 
@@ -46,7 +46,7 @@ function TestRecords({ patientId }) {
     try {
       await Promise.all(
         updatedTests.map((test, index) =>
-          axios.put("http://localhost:4000/api/patients/update-test", {
+          api.put("/patients/update-test", { // Use api instead of axios
             patientId,
             diagnoseId,
             testIndex: index,
@@ -58,7 +58,7 @@ function TestRecords({ patientId }) {
       await fetchRecords(); // Refresh records after saving
       toast.success("Tests updated successfully!");
     } catch (err) {
-      console.error("Error saving tests:", err);
+      console.error("Error saving tests:", err.response || err.message);
       toast.error("Failed to update tests.");
     }
   };
@@ -78,10 +78,7 @@ function TestRecords({ patientId }) {
       if (!allTestsCompleted)
         throw new Error("Not all tests are completed or reviewed yet.");
 
-      const res = await axios.put(
-        `http://localhost:4000/api/patients/${patientId}/complete-diagnosis`,
-        { diagnoseId }
-      );
+      const res = await api.put(`/patients/${patientId}/complete-diagnosis`, { diagnoseId }); // Use api instead of axios
       const updatedRecords = records.map((record) =>
         record._id === diagnoseId
           ? { ...record, ...res.data.data.diagnose, status: "Test Completed" }
@@ -117,7 +114,7 @@ function TestRecords({ patientId }) {
       toast.error("Not all tests are completed or reviewed yet!");
     }
   };
-  
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchRecords();
@@ -126,7 +123,7 @@ function TestRecords({ patientId }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-50">
+      <div>
         <div className="flex flex-col items-center justify-center space-y-4 p-8 bg-white rounded-xl shadow-md">
           <div className="animate-spin text-blue-600">
             <RefreshCw className="h-12 w-12" />
@@ -147,7 +144,7 @@ function TestRecords({ patientId }) {
             <h3 className="text-lg font-semibold">Error Loading Records</h3>
           </div>
           <p className="text-gray-700 mb-4">{error}</p>
-          <button 
+          <button
             onClick={handleRefresh}
             className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center space-x-2"
           >
@@ -160,16 +157,15 @@ function TestRecords({ patientId }) {
   }
 
   return (
-    <div className="min-h-screen bg-blue-50 py-6 px-4 sm:px-6 lg:px-8">
+    <div>
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-blue-800 flex items-center gap-2">
-            <TestTubes className="h-7 w-7 text-blue-600" /> 
-            <span>Patient Test Records</span>
-          </h2>
-          
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="bg-blue-100 p-3 rounded-full flex-shrink-0">
+            <ClipboardCheck className="h-6 w-6 text-indigo-700" />
+          </div>
+          <h2 className="text-2xl font-bold text-blue-900">Required Tests for Patient</h2>
         </div>
-        
+
         {records.length > 0 ? (
           <div className="space-y-6">
             {records.map((record) => (
@@ -189,7 +185,6 @@ function TestRecords({ patientId }) {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Test Records Found</h3>
             <p className="text-gray-500 mb-6">There are no test records available for this patient.</p>
-            
           </div>
         )}
       </div>

@@ -1,9 +1,11 @@
 import React, { useCallback, useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { FaImages, FaTimes, FaUpload } from "react-icons/fa";
-import { Alert, Typography } from "antd";
 import { motion } from "framer-motion";
-import LoadingSection from "../diagnose/LoadingSection"; 
+import CustomAlert from "../custom-alert/CustomAlert";
+import ConfirmDialog from "../custom-dialog/ConfirmDialog";
+import LoadingSection from "../diagnose/LoadingSection";
+import { Typography } from "antd";
 
 const { Text } = Typography;
 
@@ -18,8 +20,9 @@ const MultiUploadSection = ({
   isSubmitting,
 }) => {
   const [invalidImages, setInvalidImages] = useState(new Set());
+  const [showClearAlert, setShowClearAlert] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  // Regex for filename validation: PatientID_(right|left|RIGHT|LEFT)_randomtext.extension
   const filenamePattern = /^[A-Za-z0-9]+_(right|left|RIGHT|LEFT)_[A-Za-z0-9]+\.(jpe?g|png)$/i;
 
   const validateFilename = (filename) => {
@@ -44,8 +47,6 @@ const MultiUploadSection = ({
 
       const newFiles = [...validImageFiles];
       const newUrls = newFiles.map((file) => URL.createObjectURL(file));
-
-      // Validate filenames
       const newInvalidIndices = new Set();
       newFiles.forEach((file, index) => {
         if (!validateFilename(file.name)) {
@@ -74,6 +75,23 @@ const MultiUploadSection = ({
     });
   };
 
+  const handleClearAllClick = () => {
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmClear = () => {
+    setImageUrls([]);
+    setImages([]);
+    setInvalidImages(new Set());
+    setShowClearAlert(true);
+    setShowConfirmDialog(false);
+    setTimeout(() => setShowClearAlert(false), 3000);
+  };
+
+  const handleCancelClear = () => {
+    setShowConfirmDialog(false);
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { "image/*": [".jpeg", ".jpg", ".png"] },
@@ -90,7 +108,7 @@ const MultiUploadSection = ({
       className="w-full"
     >
       {isSubmitting ? (
-        <LoadingSection /> // Show LoadingSection when isSubmitting is true
+        <LoadingSection />
       ) : (
         <div className="bg-white rounded-xl shadow-md border border-indigo-100 overflow-hidden">
           <div className="p-6 md:p-8">
@@ -129,7 +147,7 @@ const MultiUploadSection = ({
               ) : (
                 <>
                   <p className="text-lg text-gray-800 font-medium mb-2">
-                    Drag & drop multiple retinal scans here
+                    Drag & drop multiple retinal Images here
                   </p>
                   <p className="text-base text-gray-600 mb-4">
                     or{" "}
@@ -145,19 +163,21 @@ const MultiUploadSection = ({
             </div>
 
             {uploadError && (
-              <Alert
-                message={uploadError}
-                type="error"
-                showIcon
+              <CustomAlert message={uploadError} type="error" className="mt-6" />
+            )}
+
+            {invalidImages.size > 0 && (
+              <CustomAlert
+                message={`Please remove ${invalidImages.size} invalidly named image(s) before submitting`}
+                type="warning"
                 className="mt-6"
               />
             )}
 
-            {invalidImages.size > 0 && (
-              <Alert
-                message={`Please remove ${invalidImages.size} invalidly named image(s) before submitting`}
-                type="warning"
-                showIcon
+            {showClearAlert && (
+              <CustomAlert
+                message="All images have been successfully cleared!"
+                type="success"
                 className="mt-6"
               />
             )}
@@ -170,14 +190,8 @@ const MultiUploadSection = ({
                     <span className="text-indigo-600">({imageUrls.length})</span>
                   </h4>
                   <button
-                    onClick={() => {
-                      if (window.confirm("Remove all?")) {
-                        setImageUrls([]);
-                        setImages([]);
-                        setInvalidImages(new Set());
-                      }
-                    }}
-                    className="text-red-500 hover:text-red-600"
+                    onClick={handleClearAllClick}
+                    className="text-red-500 hover:text-red-600 transition-colors"
                   >
                     Clear All
                   </button>
@@ -236,6 +250,14 @@ const MultiUploadSection = ({
           </div>
         </div>
       )}
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        onConfirm={handleConfirmClear}
+        onCancel={handleCancelClear}
+        message="Are you sure you want to remove all images?"
+        confirmText="Yes, Clear All"
+        cancelText="Cancel"
+      />
     </motion.div>
   );
 };

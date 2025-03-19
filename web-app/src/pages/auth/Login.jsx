@@ -7,11 +7,11 @@ export default function Login() {
     <div className="grid min-h-svh lg:grid-cols-12 flex-wrap-reverse">
       <div className="relative hidden lg:block col-span-7">
         {/* Image container with sidebar-themed overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-950 via-indigo-900 to-violet-900 mix-blend-multiply z-10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-100 via-indigo-500 mix-blend-multiply z-10" />
         <img
           src={IMAGES.LOGIN_BACKGROUND}
           alt="Image"
-          className="absolute inset-0 h-full w-full object-cover opacity-80"
+          className="absolute inset-0 h-full w-full "
         />
       </div>
 
