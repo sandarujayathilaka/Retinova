@@ -53,7 +53,6 @@ const LatestDoctorsTable = ({ doctors, onSeeAll }) => {
                   <TableHead className="py-3 text-indigo-900 font-semibold">Name</TableHead>
                   <TableHead className="py-3 text-indigo-900 font-semibold">Specialization</TableHead>
                   <TableHead className="py-3 text-indigo-900 font-semibold">Type</TableHead>
-                  <TableHead className="py-3 text-indigo-900 font-semibold">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -68,11 +67,7 @@ const LatestDoctorsTable = ({ doctors, onSeeAll }) => {
                     <TableCell className="py-3 capitalize">
                       {doctor.type?.toLowerCase() || "N/A"}
                     </TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(doctor.status)}`}>
-                        {doctor.status ? "Online" : "Offline"}
-                      </span>
-                    </TableCell>
+                
                   </TableRow>
                 ))}
               </TableBody>
