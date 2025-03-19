@@ -1,5 +1,6 @@
-export const Roles = {
-  ADMIN: "Admin",
-  DOCTOR: "Doctor",
-  NURSE: "Nurse",
+export const ROLES = {
+  ADMIN: "admin",
+  DOCTOR: "doctor",
+  NURSE: "nurse",
+  PATIENT: "patient",
 };

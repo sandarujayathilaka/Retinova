@@ -5,11 +5,13 @@ import ForgotPasswordForm from "./ForgotPasswordForm";
 export default function ForgotPassword() {
   return (
     <div className="grid min-h-svh lg:grid-cols-12 flex-wrap-reverse">
-      <div className="relative hidden bg-red-300 lg:block col-span-7">
+      <div className="relative hidden lg:block col-span-7">
+        {/* Image container with sidebar-themed overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-950 via-indigo-900 to-violet-900 mix-blend-multiply z-10" />
         <img
           src={IMAGES.LOGIN_BACKGROUND}
           alt="Image"
-          className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+          className="absolute inset-0 h-full w-full object-cover opacity-80"
         />
       </div>
 
