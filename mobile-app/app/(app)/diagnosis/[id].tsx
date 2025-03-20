@@ -181,7 +181,7 @@ export default function DiagnosisDetailScreen() {
   const { user } = useAuthStore();
   const patientId = user?.id?.toString() || "P2";
 
-  const { data: diagnosis = null, isLoading, isError, error } = useGetDiagnosisById(patientId, id as string) as {
+  const { data: diagnosis = null, isLoading, isError, error } = useGetDiagnosisById(id as string) as {
     data: Diagnosis | null;
     isLoading: boolean;
     isError: boolean;
@@ -213,7 +213,7 @@ export default function DiagnosisDetailScreen() {
   if (isLoading) {
     return (
       <View className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#0284c7" />
+        <ActivityIndicator size="large" color="#1e3a8a" />
       </View>
     );
   }
@@ -221,13 +221,13 @@ export default function DiagnosisDetailScreen() {
   if (isError || !diagnosis) {
     return (
       <View className="flex-1 justify-center items-center p-4 bg-white">
-        <MaterialCommunityIcons name="eye-off-outline" size={64} color="#94a3b8" />
+        <MaterialCommunityIcons name="eye-off-outline" size={64} color="#1e40af" />
         <Text className="text-lg text-gray-800 font-medium mb-2 mt-4">Diagnosis Not Found</Text>
         <Text className="text-gray-600 text-center mb-4">
           The diagnosis you're looking for could not be found or may have been removed.
         </Text>
         <TouchableOpacity
-          className="bg-sky-500 px-6 py-3 rounded-lg shadow-sm"
+          className="bg-blue-900 px-6 py-3 rounded-xl shadow-md"
           onPress={() => router.back()}
         >
           <Text className="text-white font-semibold">Go Back</Text>
@@ -252,118 +252,110 @@ export default function DiagnosisDetailScreen() {
   const eyeIcon = diagnosis.eye === "LEFT" ? "eye-outline" : "eye-outline";
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+    <SafeAreaView className="flex-1 bg-white">
+      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
 
-      <ScrollView className="flex-1">
-        {/* Header Section */}
-        <View className="bg-white border-b border-gray-200 px-4 py-3">
-          <TouchableOpacity onPress={() => router.back()} className="mb-2">
-            <View className="flex-row items-center">
-              <Ionicons name="arrow-back" size={22} color="#0284c7" />
-              <Text className="text-sky-700 ml-1">Back</Text>
-            </View>
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold text-gray-800">{diagnosis.diagnosis}</Text>
-          <View className="flex-row items-center mt-1">
-            <Ionicons name={eyeIcon} size={16} color="#64748b" />
-            <Text className="text-gray-600 ml-1">{diagnosis.eye} Eye</Text>
+      {/* Fixed Header Section with z-index and absolute positioning to prevent scrolling content from going underneath */}
+      <View className="bg-blue-900 absolute top-0 left-0 right-0 z-10 px-5 pt-4 pb-6 rounded-b-3xl shadow-md">
+        <TouchableOpacity onPress={() => router.back()} className="mb-2">
+          <View className="flex-row items-center">
+            <Ionicons name="arrow-back" size={22} color="#ffffff" />
+            <Text className="text-white ml-1 font-medium">Back</Text>
+          </View>
+        </TouchableOpacity>
+        <Text className="text-2xl font-bold text-white mt-2">{diagnosis.diagnosis}</Text>
+        <View className="flex-row items-center mt-1">
+          <Ionicons name={eyeIcon} size={16} color="#e0e7ff" />
+          <Text className="text-white ml-1 font-medium">{diagnosis.eye} Eye</Text>
+        </View>
+        
+        {/* Enhanced Quick info pill cards with better visibility */}
+        <View className="flex-row mt-4 mb-1">
+          <View className="bg-white/30 rounded-xl px-3 py-2 mr-2">
+            <Text className="text-white text-xs">Diagnosed</Text>
+            <Text className="text-white font-medium">{formatDate(diagnosis.uploadedAt).split(',')[0]}</Text>
+          </View>
+          <View className="bg-white/30 rounded-xl px-3 py-2 mr-2">
+            <Text className="text-white text-xs">Next Visit</Text>
+            <Text className="text-white font-medium">{diagnosis.revisitTimeFrame}</Text>
+          </View>
+          <View className={`rounded-xl px-3 py-2 ${
+            diagInfo.severity === "High" ? "bg-red-500/60" : 
+            diagInfo.severity === "Medium" ? "bg-amber-500/60" : 
+            "bg-green-500/60"}`}>
+            <Text className="text-white text-xs">Risk Level</Text>
+            <Text className="text-white font-bold">{diagInfo.severity}</Text>
           </View>
         </View>
+      </View>
 
-        {/* Main Diagnosis Information */}
+      {/* Add a spacer to account for the fixed header */}
+      <View className="h-44" />
+
+      <ScrollView className="flex-1 bg-white z-0">
+        {/* Main content with refined card appearance */}
         <View className="mx-4 mt-4">
-          {/* Overview */}
-          <Text className="text-gray-700 mb-4">{diagInfo.description}</Text>
-          
-          {/* Confidence Score */}
-          <View className="mb-4">
-            <Text className="text-gray-600 mb-1">Confidence Score</Text>
-            <View className="flex-row items-center">
-              <View className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden mr-3">
+          {/* Overview Card with improved spacing and contrast */}
+          <View className="bg-white rounded-2xl shadow p-5 mb-5 border border-gray-100">
+            <Text className="text-lg font-semibold text-gray-900 mb-2">Overview</Text>
+            <Text className="text-gray-700 mb-4 leading-relaxed">{diagInfo.description}</Text>
+            
+            {/* Confidence Score with cleaner design and updated colors */}
+            <View className="mb-4">
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="text-gray-700 font-medium">Confidence Score</Text>
+                <Text className="text-blue-900 font-bold">
+                  {((diagnosis.confidenceScores[0] || 0) * 100).toFixed(1)}%
+                </Text>
+              </View>
+              <View className="h-3 bg-gray-100 rounded-full overflow-hidden">
                 <View
-                  className="h-full bg-sky-500 rounded-full"
+                  className="h-full bg-blue-900 rounded-full"
                   style={{ width: `${(diagnosis.confidenceScores[0] || 0) * 100}%` }}
                 />
               </View>
-              <Text className="text-gray-800 font-medium">
-                {((diagnosis.confidenceScores[0] || 0) * 100).toFixed(1)}%
-              </Text>
             </View>
-          </View>
 
-          {/* Diagnosis Date */}
-          <View className="flex-row items-center mb-4">
-            <MaterialCommunityIcons name="calendar-clock" size={18} color="#64748b" />
-            <Text className="text-gray-500 ml-2">
-              Diagnosed on {formatDate(diagnosis.uploadedAt)}
-            </Text>
-          </View>
-
-          {/* Risk Level */}
-          <View className="mb-4">
-            <Text className="text-gray-600 mb-1">Risk Level</Text>
-            <View className={`px-3 py-1 rounded-full w-24 ${severityColors[diagInfo.severity]}`}>
-              <Text className={`font-medium ${severityColors[diagInfo.severity].split(" ")[1]}`}>
-                {diagInfo.severity} Risk
-              </Text>
+            {/* Retina Scan with better container styling */}
+            <Text className="text-gray-700 font-medium mb-3 mt-2">Retina Scan</Text>
+            <View className="bg-gray-50 rounded-xl overflow-hidden mb-2 border border-gray-100">
+              <Image
+                source={{ uri: diagnosis.imageUrl }}
+                className="w-full h-72 rounded-xl"
+                resizeMode="contain"
+              />
             </View>
-          </View>
-
-            {/* Next Visit */}
-                <View className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <View className="flex-row justify-between items-center">
-                    <View className="flex-row items-center">
-                      <MaterialCommunityIcons name="calendar-check" size={20} color="#0284c7" />
-                      <Text className="text-gray-800 font-medium ml-2">Next Visit</Text>
-                    </View>
-                    <View className="bg-sky-100 px-2 py-1 rounded-full">
-                      <Text className="text-sky-800 text-xs font-medium">{diagnosis.revisitTimeFrame}</Text>
-                    </View>
-                  </View>
-                  <View className="mt-3 flex-row items-center">
-                    <Text className="text-gray-700">Recommended date:</Text>
-                    <Text className="text-sky-700 font-medium ml-2">{nextVisitDate}</Text>
-                  </View>
-                </View>          
-
-          {/* Retina Scan */}
-          <View className="mb-6">
-            <Text className="text-gray-600 mb-2">Retina Scan</Text>
-            <Image
-              source={{ uri: diagnosis.imageUrl }}
-              className="w-full h-64 rounded-lg"
-              resizeMode="contain"
-            />
-            <Text className="text-gray-500 text-xs text-center mt-2">
+            <Text className="text-gray-500 text-xs text-center">
               Scan taken on {formatDate(diagnosis.uploadedAt)} at {formatTime(diagnosis.uploadedAt)}
             </Text>
           </View>
 
-          {/* Doctor's Treatment Section */}
-          <View className="bg-white rounded-xl shadow-sm mb-4">
+          {/* Doctor's Treatment Section with improved visual hierarchy and updated colors */}
+          <View className="bg-white rounded-2xl shadow mb-5 border border-gray-100">
             <TouchableOpacity 
-              className="p-4 flex-row justify-between items-center border-b border-gray-100"
+              className="p-5 flex-row justify-between items-center border-b border-gray-100"
               onPress={() => toggleSection("treatment")}
             >
               <View className="flex-row items-center">
-                <MaterialCommunityIcons name="pill" size={20} color="#0284c7" />
-                <Text className="text-lg font-semibold text-gray-800 ml-2">Treatment Plan</Text>
+                <MaterialCommunityIcons name="pill" size={22} color="#1e3a8a" />
+                <Text className="text-lg font-bold text-gray-900 ml-3">Treatment Plan</Text>
               </View>
-              <AntDesign 
-                name={expandedSection === "treatment" ? "caretup" : "caretdown"} 
-                size={16} 
-                color="#0284c7" 
-              />
+              <View className="bg-blue-100 rounded-full p-1">
+                <AntDesign 
+                  name={expandedSection === "treatment" ? "up" : "down"} 
+                  size={16} 
+                  color="#1e3a8a" 
+                />
+              </View>
             </TouchableOpacity>
             
             {expandedSection === "treatment" && (
-              <View className="p-4">
-                {/* Recommended Medication */}
+              <View className="p-5">
+                {/* Recommended Medication with lighter BG for better contrast */}
                 {(diagnosis.recommend.medicine || (diagnosis.reviewInfo && diagnosis.reviewInfo[0]?.recommendedMedicine)) && (
                   <View className="mb-4">
-                    <Text className="text-gray-700 font-medium mb-1">Recommended Medication</Text>
-                    <View className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <Text className="text-gray-800 font-medium mb-2">Recommended Medication</Text>
+                    <View className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                       <Text className="text-gray-800">
                         {diagnosis.reviewInfo?.[0]?.recommendedMedicine || diagnosis.recommend.medicine}
                       </Text>
@@ -371,76 +363,85 @@ export default function DiagnosisDetailScreen() {
                   </View>
                 )}
 
-                {/* Doctor's Notes */}
+                {/* Doctor's Notes with lighter BG for better contrast */}
                 {(diagnosis.recommend.note || (diagnosis.reviewInfo && diagnosis.reviewInfo[0]?.notes)) && (
                   <View className="mb-4">
-                    <Text className="text-gray-700 font-medium mb-1">Doctor's Notes</Text>
-                    <View className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                      <Text className="text-gray-800">
+                    <Text className="text-gray-800 font-medium mb-2">Doctor's Notes</Text>
+                    <View className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                      <Text className="text-gray-800 leading-relaxed">
                         {diagnosis.reviewInfo?.[0]?.notes || diagnosis.recommend.note || "No additional notes provided."}
                       </Text>
                     </View>
                   </View>
                 )}
 
-                {/* Next Visit */}
-                <View className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <View className="flex-row justify-between items-center">
+                {/* Next Visit with updated gradient colors */}
+                <View className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+                  <View className="flex-row justify-between items-center mb-2">
                     <View className="flex-row items-center">
-                      <MaterialCommunityIcons name="calendar-check" size={20} color="#0284c7" />
-                      <Text className="text-gray-800 font-medium ml-2">Next Visit</Text>
+                      <MaterialCommunityIcons name="calendar-check" size={20} color="#1e3a8a" />
+                      <Text className="text-gray-800 font-bold ml-2">Next Visit</Text>
                     </View>
-                    <View className="bg-sky-100 px-2 py-1 rounded-full">
-                      <Text className="text-sky-800 text-xs font-medium">{diagnosis.revisitTimeFrame}</Text>
+                    <View className="bg-blue-900 px-3 py-1 rounded-full">
+                      <Text className="text-white text-xs font-medium">{diagnosis.revisitTimeFrame}</Text>
                     </View>
                   </View>
-                  <View className="mt-3 flex-row items-center">
+                  <View className="mt-2 flex-row items-center">
                     <Text className="text-gray-700">Recommended date:</Text>
-                    <Text className="text-sky-700 font-medium ml-2">{nextVisitDate}</Text>
+                    <Text className="text-blue-900 font-bold ml-2">{nextVisitDate}</Text>
                   </View>
                 </View>
               </View>
             )}
           </View>
 
-          {/* Doctor's Review Section */}
+          {/* Doctor's Review Section with better visual hierarchy and updated colors */}
           {diagnosis.reviewInfo && diagnosis.reviewInfo.length > 0 && (
-            <View className="bg-white rounded-xl shadow-sm mb-4">
+            <View className="bg-white rounded-2xl shadow mb-5 border border-gray-100">
               <TouchableOpacity 
-                className="p-4 flex-row justify-between items-center border-b border-gray-100"
+                className="p-5 flex-row justify-between items-center border-b border-gray-100"
                 onPress={() => toggleSection("reviews")}
               >
                 <View className="flex-row items-center">
-                  <MaterialCommunityIcons name="doctor" size={20} color="#0284c7" />
-                  <Text className="text-lg font-semibold text-gray-800 ml-2">Doctor's Reviews</Text>
+                  <MaterialCommunityIcons name="doctor" size={22} color="#1e3a8a" />
+                  <Text className="text-lg font-bold text-gray-900 ml-3">Doctor's Reviews</Text>
                 </View>
-                <AntDesign 
-                  name={expandedSection === "reviews" ? "caretup" : "caretdown"} 
-                  size={16} 
-                  color="#0284c7" 
-                />
+                <View className="bg-blue-100 rounded-full p-1">
+                  <AntDesign 
+                    name={expandedSection === "reviews" ? "up" : "down"} 
+                    size={16} 
+                    color="#1e3a8a" 
+                  />
+                </View>
               </TouchableOpacity>
               
               {expandedSection === "reviews" && (
-                <View className="p-4">
+                <View className="p-5">
                   {diagnosis.reviewInfo.map((review: ReviewInfo, index: number) => (
                     <View
                       key={review._id}
-                      className={`pb-3 ${index < diagnosis.reviewInfo.length - 1 ? "mb-3 border-b border-gray-100" : ""}`}
+                      className={`pb-4 ${index < diagnosis.reviewInfo.length - 1 ? "mb-4 border-b border-gray-100" : ""}`}
                     >
                       {review.recommendedMedicine && (
                         <View className="mb-3">
-                          <Text className="text-gray-700 font-medium mb-1">Recommended Medication</Text>
-                          <Text className="text-gray-800">{review.recommendedMedicine}</Text>
+                          <Text className="text-gray-800 font-medium mb-2">Recommended Medication</Text>
+                          <View className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                            <Text className="text-gray-800">{review.recommendedMedicine}</Text>
+                          </View>
                         </View>
                       )}
                       <View className="mb-2">
-                        <Text className="text-gray-700 font-medium mb-1">Notes</Text>
-                        <Text className="text-gray-700">{review.notes || "No additional notes provided."}</Text>
+                        <Text className="text-gray-800 font-medium mb-2">Notes</Text>
+                        <View className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                          <Text className="text-gray-700 leading-relaxed">{review.notes || "No additional notes provided."}</Text>
+                        </View>
                       </View>
-                      <Text className="text-sky-600 text-xs mt-2">
-                        Updated on {formatDate(review.updatedAt)}
-                      </Text>
+                      <View className="flex-row items-center mt-3">
+                        <MaterialCommunityIcons name="clock-outline" size={14} color="#1e3a8a" />
+                        <Text className="text-blue-800 text-xs ml-1">
+                          Updated on {formatDate(review.updatedAt)}
+                        </Text>
+                      </View>
                     </View>
                   ))}
                 </View>
@@ -448,52 +449,54 @@ export default function DiagnosisDetailScreen() {
             </View>
           )}
 
-          {/* Recommended Tests Section */}
+          {/* Recommended Tests Section with better visual hierarchy and updated colors */}
           {diagnosis.recommend.tests && diagnosis.recommend.tests.length > 0 && (
-            <View className="bg-white rounded-xl shadow-sm mb-4">
+            <View className="bg-white rounded-2xl shadow mb-5 border border-gray-100">
               <TouchableOpacity 
-                className="p-4 flex-row justify-between items-center border-b border-gray-100"
+                className="p-5 flex-row justify-between items-center border-b border-gray-100"
                 onPress={() => toggleSection("tests")}
               >
                 <View className="flex-row items-center">
-                  <MaterialCommunityIcons name="test-tube" size={20} color="#0284c7" />
-                  <Text className="text-lg font-semibold text-gray-800 ml-2">
+                  <MaterialCommunityIcons name="test-tube" size={22} color="#1e3a8a" />
+                  <Text className="text-lg font-bold text-gray-900 ml-3">
                     Recommended Tests ({diagnosis.recommend.tests.length})
                   </Text>
                 </View>
-                <AntDesign 
-                  name={expandedSection === "tests" ? "caretup" : "caretdown"} 
-                  size={16} 
-                  color="#0284c7" 
-                />
+                <View className="bg-blue-100 rounded-full p-1">
+                  <AntDesign 
+                    name={expandedSection === "tests" ? "up" : "down"} 
+                    size={16} 
+                    color="#1e3a8a" 
+                  />
+                </View>
               </TouchableOpacity>
               
               {expandedSection === "tests" && (
-                <View className="p-4">
+                <View className="p-5">
                   {diagnosis.recommend.tests.map((test: Test, index: number) => (
                     <View
                       key={test._id}
-                      className={`${index < diagnosis.recommend.tests.length - 1 ? "border-b border-gray-100 pb-4 mb-4" : ""}`}
+                      className={`${index < diagnosis.recommend.tests.length - 1 ? "border-b border-gray-100 pb-5 mb-5" : ""}`}
                     >
                       <View className="flex-row justify-between items-center mb-2">
-                        <Text className="text-gray-800 font-medium">{test.testName}</Text>
+                        <Text className="text-gray-800 font-semibold">{test.testName}</Text>
                         <View
-                          className={`px-2 py-1 rounded-full ${
+                          className={`px-3 py-1 rounded-full ${
                             test.status === "Reviewed"
                               ? "bg-green-100"
                               : test.status === "Completed"
-                              ? "bg-sky-100"
+                              ? "bg-blue-100"
                               : test.status === "In Progress"
                               ? "bg-amber-100"
                               : "bg-gray-100"
                           }`}
                         >
                           <Text
-                            className={`text-xs font-medium ${
+                            className={`text-xs font-bold ${
                               test.status === "Reviewed"
                                 ? "text-green-800"
                                 : test.status === "Completed"
-                                ? "text-sky-800"
+                                ? "text-blue-800"
                                 : test.status === "In Progress"
                                 ? "text-amber-800"
                                 : "text-gray-800"
@@ -503,14 +506,17 @@ export default function DiagnosisDetailScreen() {
                           </Text>
                         </View>
                       </View>
-                      <Text className="text-gray-500 text-xs mb-2">Added on {formatDate(test.addedAt)}</Text>
+                      <View className="flex-row items-center mb-3">
+                        <MaterialCommunityIcons name="calendar" size={14} color="#1e3a8a" />
+                        <Text className="text-gray-500 text-xs ml-1">Added on {formatDate(test.addedAt)}</Text>
+                      </View>
                       {test.attachmentURL && (
                         <TouchableOpacity
-                          className="flex-row items-center bg-gray-50 p-3 rounded-lg mt-2 border border-gray-200"
+                          className="flex-row items-center bg-blue-900 p-3 rounded-xl mt-2 shadow-sm"
                           onPress={() => openAttachment(test.attachmentURL)}
                         >
-                          <FontAwesome5 name="file-pdf" size={16} color="#0284c7" />
-                          <Text className="text-sky-700 font-medium ml-2">View Test Results</Text>
+                          <FontAwesome5 name="file-pdf" size={16} color="#ffffff" />
+                          <Text className="text-white font-medium ml-2">View Test Results</Text>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -521,33 +527,34 @@ export default function DiagnosisDetailScreen() {
           )}
         </View>
 
-        {/* Action Buttons */}
-        <View className="flex-row justify-between m-4 mt-6 mb-8">
+        {/* Action Buttons with updated colors */}
+        <View className="flex-row justify-between m-4 mt-6 mb-10">
           <TouchableOpacity
-            className="bg-sky-500 rounded-xl py-3 px-5 flex-1 mr-2 items-center shadow-sm"
+            className="bg-blue-900 rounded-xl py-4 px-5 flex-1 mr-2 items-center shadow"
             onPress={() => {/* Book follow-up */}}
           >
-            <Text className="text-white font-semibold">Book Follow-up</Text>
+            <Text className="text-white font-bold">Book Follow-up</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            className="bg-white border border-sky-500 rounded-xl py-3 px-5 flex-1 ml-2 items-center"
+            className="bg-white border-2 border-blue-900 rounded-xl py-4 px-5 flex-1 ml-2 items-center shadow-sm"
             onPress={() => {/* Export or share */}}
           >
-            <Text className="text-sky-600 font-semibold">Share Results</Text>
+            <Text className="text-blue-900 font-bold">Share Results</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
+      {/* Improved Modal for attachments with updated colors */}
       <Modal
         visible={isModalVisible}
         animationType="slide"
         onRequestClose={closeModal}
       >
         <SafeAreaView className="flex-1 bg-white">
-          <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
-            <Text className="text-lg font-semibold text-gray-800">Test Result</Text>
-            <TouchableOpacity onPress={closeModal}>
-              <Ionicons name="close" size={24} color="#0284c7" />
+          <View className="flex-row justify-between items-center p-4 bg-blue-900 shadow">
+            <Text className="text-lg font-bold text-white">Test Result</Text>
+            <TouchableOpacity onPress={closeModal} className="bg-white/20 rounded-full p-2">
+              <Ionicons name="close" size={22} color="#ffffff" />
             </TouchableOpacity>
           </View>
           {selectedAttachmentUrl ? (
@@ -560,7 +567,7 @@ export default function DiagnosisDetailScreen() {
                 startInLoadingState={true}
                 renderLoading={() => (
                   <View className="flex-1 justify-center items-center">
-                    <ActivityIndicator size="large" color="#0284c7" />
+                    <ActivityIndicator size="large" color="#1e3a8a" />
                   </View>
                 )}
                 onError={(syntheticEvent) => {
@@ -569,21 +576,27 @@ export default function DiagnosisDetailScreen() {
                 }}
               />
             ) : fileType === "image" ? (
-              <Image
-                source={{ uri: selectedAttachmentUrl }}
-                style={{ flex: 1, width: "100%", height: "100%" }}
-                resizeMode="contain"
-              />
+              <View className="flex-1 bg-gray-50 p-2">
+                <Image
+                  source={{ uri: selectedAttachmentUrl }}
+                  style={{ flex: 1, width: "100%", height: "100%" }}
+                  resizeMode="contain"
+                />
+              </View>
             ) : (
               <View className="flex-1 justify-center items-center p-4">
-                <Text className="text-center text-gray-700">
-                  Unsupported file type or invalid URL. Please contact support.
+                <MaterialCommunityIcons name="file-alert-outline" size={64} color="#1e3a8a" />
+                <Text className="text-center text-gray-700 mt-4 text-lg font-medium">
+                  Unsupported file type or invalid URL
+                </Text>
+                <Text className="text-center text-gray-500 mt-2 mb-6">
+                  Please contact support for assistance with this document.
                 </Text>
                 <TouchableOpacity
-                  className="bg-sky-500 px-4 py-2 rounded-lg mt-4"
+                  className="bg-blue-900 px-6 py-3 rounded-xl shadow-md"
                   onPress={closeModal}
                 >
-                  <Text className="text-white font-semibold">Close</Text>
+                  <Text className="text-white font-bold">Close</Text>
                 </TouchableOpacity>
               </View>
             )
