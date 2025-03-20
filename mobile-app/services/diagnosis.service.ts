@@ -1,26 +1,33 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "./api.service";
 
-// Get all diagnoses for a patient
-export const useGetDiagnoses = (patientId: string) => {
+export const useGetDiagnoses = () => {
   return useQuery<any[], Error>({
-    queryKey: ["diagnoses", patientId],
+    queryKey: ["diagnoses"],
     queryFn: async () => {
-      const response = await api.get(`/patients/${patientId}/history`);
-      return response.data;
+      try {
+        console.log("Fetching diagnoses from /patients/diagnosehistory");
+        const response = await api.get("/patients/my/diagnosehistory");
+        console.log("Diagnoses response:", response.data);
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching diagnoses:", JSON.stringify(error));
+        throw error; // Re-throw to let React Query handle the error state
+      }
     },
-    enabled: !!patientId, // Prevents query if no patientId is provided
   });
 };
 
-// Get diagnosis by ID
-export const useGetDiagnosisById = (patientId: string, diagnosisId: string) => {
+
+export const useGetDiagnosisById = (diagnosisId: string) => {
   return useQuery<any, Error>({
-    queryKey: ["diagnosis", patientId, diagnosisId],
+    queryKey: ["diagnosis", diagnosisId],
     queryFn: async () => {
-      const response = await api.get(`/patients/${patientId}/diagnoses/${diagnosisId}`);
+      console.log("Fetching diagnosis by ID:", diagnosisId);
+      const response = await api.get(`/patients/diagnoses/${diagnosisId}`);
+      console.log("Diagnosis response:", response.data);
       return response.data;
     },
-    enabled: !!patientId && !!diagnosisId, // Prevents query if no IDs are provided
+    enabled: !!diagnosisId,
   });
 };
