@@ -4,18 +4,45 @@ import { Progress } from "antd";
 import { FaExclamationCircle, FaCheckCircle, FaUser, FaNotesMedical, FaEye } from "react-icons/fa";
 
 const PredictionCard = ({ prediction, imageUrl, isExpanded, toggleExpand, index, setSelectedImage, setIsModalVisible }) => {
-  const getDiagnosisStyle = diagnosis => {
-    switch (diagnosis) {
-      case "PDR": return { color: "red", icon: <FaExclamationCircle className="text-red-500" /> };
-      case "NPDR": return { color: "orange", icon: <FaExclamationCircle className="text-orange-500" /> };
-      case "No_DR": return { color: "green", icon: <FaCheckCircle className="text-green-500" /> };
-      default: return { color: "gray", icon: null };
+  // const getDiagnosisStyle = diagnosis => {
+  //   switch (diagnosis) {
+  //     case "PDR": return { color: "red", icon: <FaExclamationCircle className="text-red-500" /> };
+  //     case "NPDR": return { color: "orange", icon: <FaExclamationCircle className="text-orange-500" /> };
+  //     case "No_DR": return { color: "green", icon: <FaCheckCircle className="text-green-500" /> };
+  //     default: return { color: "gray", icon: null };
+  //   }
+  // };
+
+
+  const diagnosisColorMap = {
+    red: ["PDR", "WET", "CRVO", "ADVANCED"],
+    orange: ["NPDR", "DRY", "BRVO", "EARLY"],
+    green: ["NO_DR", "NO_AMD", "NO_RVO", "NO_GLAUCOMA"],
+  };
+  const getDiagnosisStyle = (diagnosis) => {
+    const upperDiagnosis = diagnosis?.toUpperCase();
+  
+    // Check red group
+    if (diagnosisColorMap.red.includes(upperDiagnosis)) {
+      return { color: "red", icon: <FaExclamationCircle className="text-red-500" /> };
     }
+    // Check orange group
+    if (diagnosisColorMap.orange.includes(upperDiagnosis)) {
+      return { color: "orange", icon: <FaExclamationCircle className="text-orange-500" /> };
+    }
+    // Check green group
+    if (diagnosisColorMap.green.includes(upperDiagnosis)) {
+      return { color: "green", icon: <FaCheckCircle className="text-green-500" /> };
+    }
+    // Default case for unknown diagnoses
+    return { color: "gray", icon: null };
   };
 
-  const { color, icon } = getDiagnosisStyle(prediction.prediction.label);
-  const maxConfidence = Math.max(...prediction.prediction.confidence) * 100;
+console.log("prediction",prediction)
 
+  const { color, icon } = getDiagnosisStyle(prediction.prediction.label);
+  const confidence = prediction.prediction.confidence;
+  const maxConfidence = Array.isArray(confidence) ? Math.max(...confidence) * 100 : confidence * 100;
   return (
     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
       <div className={`h-1 bg-${color}-500 -mx-6 -mt-6 mb-6 rounded-t-lg`}></div>

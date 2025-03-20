@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import Filters from "../components/PatientsPage/Filters";
 import PatientsTable from "../components/PatientsPage/PatientsTable";
 import Pagination from "../components/PatientsPage/Pagination";
+import { ErrorAlert } from "@/components/error/ErrorAlert";
+import { api } from "@/services/api.service";
 
 const MonitoringPatientsPage = () => {
   const [patients, setPatients] = useState([]);
@@ -27,19 +29,20 @@ const MonitoringPatientsPage = () => {
   });
   const [loading, setLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const fetchMonitoringPatients = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:4000/api/patients/status", {
+      const response = await api.get("patients/status", {
         params: filters,
       });
       setPatients(response.data.data);
       setPagination(response.data.pagination);
     } catch (error) {
       console.error("Error fetching Monitoring patients:", error);
-      alert("Failed to fetch Monitoring patients");
+      setError(error.response?.data?.error || "Error fetching Monitoring patients");
     }
     setLoading(false);
   };
@@ -73,6 +76,9 @@ const MonitoringPatientsPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Monitoring Patients</h1>
+
+        {error && <ErrorAlert message={error} />}
+        
         <Filters
           filters={filters}
           handleFilterChange={handleFilterChange}
@@ -83,7 +89,9 @@ const MonitoringPatientsPage = () => {
           loading={loading}
           handleViewPatient={handleViewPatient}
         />
-        <Pagination pagination={pagination} handlePageChange={handlePageChange} />
+         <div className="mt-6">
+        <Pagination  pagination={pagination} handlePageChange={handlePageChange} />
+        </div>
       </div>
     </div>
   );

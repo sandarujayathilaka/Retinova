@@ -15,6 +15,9 @@ import {
   Shield,
   FlaskConical,
   Users2,
+  User2,
+  ClipboardList, 
+  Clock, 
 } from "lucide-react";
 import { ROLES } from "@/constants/roles"; // Ensure path is correct
 import { FaUserNurse } from "react-icons/fa";
@@ -40,7 +43,14 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
       icon: LayoutDashboard,
       url: "/dashboard",
       isExpandable: false,
-      allowedRoles: [ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE],
+      allowedRoles: [ROLES.ADMIN],
+    },
+    {
+      title: "Dashboard",
+      icon: LayoutDashboard,
+      url: "/doctordashboard",
+      isExpandable: false,
+      allowedRoles: [ROLES.DOCTOR],
     },
     {
       title: "Diagnose",
@@ -64,7 +74,7 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
           allowedRoles: [ROLES.DOCTOR],
           subItems: [
             { title: "Single Image", url: "/diagnose/amd", allowedRoles: [ROLES.DOCTOR] },
-            { title: "Multi Image", url: "/diagnose/amd/multi", allowedRoles: [ROLES.DOCTOR] },
+            { title: "Multi Image", url: "/diagnose/multiamd", allowedRoles: [ROLES.DOCTOR] },
           ],
         },
         {
@@ -73,7 +83,7 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
           allowedRoles: [ROLES.DOCTOR],
           subItems: [
             { title: "Single Image", url: "/diagnose/rvo", allowedRoles: [ROLES.DOCTOR] },
-            { title: "Multi Image", url: "/diagnose/rvo/multi", allowedRoles: [ROLES.DOCTOR] },
+            { title: "Multi Image", url: "/diagnose/multirvo", allowedRoles: [ROLES.DOCTOR] },
           ],
         },
         {
@@ -82,7 +92,7 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
           allowedRoles: [ROLES.DOCTOR],
           subItems: [
             { title: "Single Image", url: "/diagnose/glaucoma", allowedRoles: [ROLES.DOCTOR] },
-            { title: "Multi Image", url: "/diagnose/glaucoma/multi", allowedRoles: [ROLES.DOCTOR] },
+            { title: "Multi Image", url: "/diagnose/multiglaucoma", allowedRoles: [ROLES.DOCTOR] },
           ],
         },
       ],
@@ -98,23 +108,51 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
         { title: "Monitoring", url: "/monitorpatients", allowedRoles: [ROLES.DOCTOR] },
         { title: "Pre-Monitoring", url: "/pre-monitoring-patients", allowedRoles: [ROLES.DOCTOR] },
         { title: "Completed", url: "/completed-patients", allowedRoles: [ROLES.DOCTOR] },
-        { title: "Review", url: "/review-patients", allowedRoles: [ROLES.DOCTOR] },
+        { title: "Review", url: "/review-patients-profile", allowedRoles: [ROLES.DOCTOR] },
       ],
     },
+
     {
-      title: "Nurse Dashboard",
-      icon: FileText,
-      isExpandable: true,
-      section: "nurse",
-      allowedRoles: [ROLES.NURSE],
-      subItems: [
-        { title: "Admin Dashboard", url: "/dashboard", allowedRoles: [ROLES.NURSE] },
-        { title: "Add Patient", url: "/add-patient", allowedRoles: [ROLES.NURSE] },
-        { title: "Monitoring patients", url: "/monitoring-patients", allowedRoles: [ROLES.NURSE] },
-        { title: "Published patients", url: "/published-patients", allowedRoles: [ROLES.NURSE] },
-        { title: "Review patients", url: "/review-patients", allowedRoles: [ROLES.NURSE] },
-        { title: "Doctor Dashboard", url: "/doctordashboard", allowedRoles: [ROLES.NURSE] },
-      ],
+      title: "All Patients",
+       url: "/all-patients",
+       icon: Users,
+      isExpandable: false, 
+      allowedRoles: [ROLES.NURSE] 
+    },
+    {
+      title: "Add Patient",
+       url: "/add-patient",
+       icon: User2,
+      isExpandable: false, 
+      allowedRoles: [ROLES.NURSE] 
+    },
+    {
+      title: "Monitoring patients",
+       url: "/monitoring-patients",
+       icon: Activity,
+      isExpandable: false, 
+      allowedRoles: [ROLES.NURSE] 
+    },
+    {
+      title: "Published patients",
+       url: "/published-patients",
+       icon: ClipboardList,
+      isExpandable: false, 
+      allowedRoles: [ROLES.NURSE] 
+    },
+    {
+      title: "Review patients",
+       url: "/review-patients",
+       icon: Clock,
+      isExpandable: false, 
+      allowedRoles: [ROLES.NURSE] 
+    },
+    {
+      title: "Users",
+      icon: Users2,
+      url: "/users",
+      isExpandable: false,
+      allowedRoles: [ROLES.ADMIN],
     },
     {
       title: "Users",

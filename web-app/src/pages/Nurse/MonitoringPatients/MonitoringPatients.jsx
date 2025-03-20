@@ -1,120 +1,13 @@
-// import React, { useEffect, useState } from "react";
-// import { api } from "../../../services/api.service";
-// import { useNavigate } from "react-router-dom";
-// import { toast } from "react-hot-toast";
-// import PatientTable from "../CommonFiles/PatientTable";
-// import PatientFilters from "../CommonFiles/PatientFilters";
-// import PaginationControls from "../CommonFiles/PaginationControls";
-
-// const MonitoringPatients = () => {
-//   const [patients, setPatients] = useState([]);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [selectedGender, setSelectedGender] = useState("all");
-//   const [pagination, setPagination] = useState({
-//     currentPage: 1,
-//     totalPages: 1,
-//     totalPatients: 0,
-//     limit: 10,
-//   });
-//   const navigate = useNavigate();
-//   const [hasShownToast, setHasShownToast] = useState(false); // Flag to prevent duplicate toasts
-
-//   useEffect(() => {
-//     let isMounted = true; // Flag to prevent state updates on unmounted component
-//     setLoading(true);
-//     setHasShownToast(false); // Reset toast flag on new effect run
-
-//     const fetchMonitoringPatients = async (page = 1) => {
-//       try {
-//         const response = await api.get("/patients", {
-//           params: {
-//             status: "Monitoring",
-//             page,
-//             limit: pagination.limit,
-//             search: searchTerm || undefined,
-//             gender: selectedGender === "all" ? undefined : selectedGender,
-//           },
-//         });
-//         console.log(response.data.data)
-//         if (!response.data || !Array.isArray(response.data.data.patients)) {
-//           throw new Error("Invalid API response format");
-//         }
-
-//         if (isMounted) {
-//           setPatients(response.data.data.patients);
-//           setPagination(response.data.data.pagination || {
-//             currentPage: page,
-//             totalPages: response.data.data.pagination?.totalPages || 1,
-//             totalPatients: response.data.data.pagination?.totalPatients || response.data.data.patients.length,
-//             limit: pagination.limit,
-//           });
-//         }
-//       } catch (error) {
-//         console.error("Fetch Error:", error);
-//         if (isMounted && !hasShownToast) {
-//           toast.error("Failed to fetch monitoring patients. Please try again.");
-//           setError(`Failed to load patients: ${error.message}`);
-//           setHasShownToast(true); // Mark toast as shown
-//         }
-//       } finally {
-//         if (isMounted) setLoading(false);
-//       }
-//     };
-
-//     fetchMonitoringPatients(pagination.currentPage);
-
-//     // Cleanup function to prevent state updates on unmounted component
-//     return () => {
-//       isMounted = false;
-//     };
-//   }, [pagination.currentPage, searchTerm, selectedGender, pagination.limit]); // Added pagination.limit to dependency array
-
-//   const handleViewPatient = (patient) => {
-//     const patientId = patient.patientId;
-//     navigate(`/monitoring-patients/view/${patientId}`);
-//   };
-
-//   return (
-//     <div className="bg-gray-100">
-//       <div className="max-w-7xl mx-auto">
-//         <PatientFilters
-//           searchTerm={searchTerm}
-//           setSearchTerm={setSearchTerm}
-//           selectedGender={selectedGender}
-//           setSelectedGender={setSelectedGender}
-//           setPagination={setPagination}
-//           title="Monitoring Patients"
-//         />
-//         <PatientTable
-//           patients={patients}
-//           loading={loading}
-//           error={error}
-//           onViewPatient={handleViewPatient}
-//         />
-//         <PaginationControls
-//           pagination={pagination}
-//           onPageChange={(newPage) =>
-//             setPagination((prev) => ({ ...prev, currentPage: newPage }))
-//           }
-//         />
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default MonitoringPatients;
-
-import React, { useEffect, useState } from "react";
-import { api } from "../../../services/api.service";
+import React, { useState, useEffect, useCallback,useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../../../services/api.service";
 import { toast } from "react-hot-toast";
-import PatientTable from "../CommonFiles/PatientTable";
-import PatientFilters from "../CommonFiles/PatientFilters";
-import PaginationControls from "../CommonFiles/PaginationControls";
+import PatientTable from "../../CommonFiles/PatientTable";
+import PatientFilters from "../../CommonFiles/PatientFilters";
+import PaginationControls from "../../CommonFiles/PaginationControls";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Activity, AlertCircle, Loader2 } from "lucide-react";
+import { showErrorToast, showSuccessToast, showNoChangesToast } from "../../utils/toastUtils"; 
 
 const MonitoringPatients = () => {
   const [patients, setPatients] = useState([]);
@@ -128,75 +21,78 @@ const MonitoringPatients = () => {
     totalPatients: 0,
     limit: 10,
   });
+  
   const navigate = useNavigate();
   const [hasShownToast, setHasShownToast] = useState(false);
+  const isFetching = useRef(false); 
+
+  // Data fetching with useCallback for memoization
+  const fetchMonitoringPatients = useCallback(async (page = 1) => {
+    if (isFetching.current) return; 
+    isFetching.current = true;
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await api.get("/ophthalmic-patients", {
+        params: {
+          status: "Monitoring",
+          page,
+          limit: pagination.limit,
+          search: searchTerm || undefined,
+          gender: selectedGender === "all" ? undefined : selectedGender,
+        },
+        headers: { "Cache-Control": "no-cache" },
+      });
+      
+      if (!response.data || !Array.isArray(response.data.data.patients)) {
+        throw new Error("Invalid API response format");
+      }
+
+      setPatients(response.data.data.patients);
+      setPagination(prev => ({
+        currentPage: page,
+        totalPages: response.data.data.pagination?.totalPages || 1,
+        totalPatients: response.data.data.pagination?.totalPatients || response.data.data.patients.length,
+        limit: prev.limit,
+      }));
+      
+      setHasShownToast(false);
+    } catch (error) {
+      console.error("Fetch Error:", error);
+      if (!hasShownToast) {
+        showErrorToast("Failed to fetch monitoring patients. Please try again.");
+        setHasShownToast(true);
+      }
+      setError(`Failed to load patients: ${error.message}`);
+    } finally {
+      setLoading(false);
+      isFetching.current = false;
+    }
+  }, [pagination.limit, searchTerm, selectedGender]);
+
+  
+  useEffect(() => {
+    fetchMonitoringPatients(pagination.currentPage);
+  }, [pagination.currentPage, fetchMonitoringPatients]);
+
 
   useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
-    setHasShownToast(false);
+    fetchMonitoringPatients(1);
+  }, [searchTerm, selectedGender, fetchMonitoringPatients]);
 
-    const fetchMonitoringPatients = async (page = 1) => {
-      try {
-        const response = await api.get("/patients", {
-          params: {
-            status: "Monitoring",
-            page,
-            limit: pagination.limit,
-            search: searchTerm || undefined,
-            gender: selectedGender === "all" ? undefined : selectedGender,
-          },
-        });
-        
-        if (!response.data || !Array.isArray(response.data.data.patients)) {
-          throw new Error("Invalid API response format");
-        }
-
-        if (isMounted) {
-          setPatients(response.data.data.patients);
-          setPagination(response.data.data.pagination || {
-            currentPage: page,
-            totalPages: response.data.data.pagination?.totalPages || 1,
-            totalPatients: response.data.data.pagination?.totalPatients || response.data.patients.length,
-            limit: pagination.limit,
-          });
-        }
-      } catch (error) {
-        console.error("Fetch Error:", error);
-        if (isMounted && !hasShownToast) {
-          // Custom styled toast
-          toast.custom(
-            (t) => (
-              <Card className="bg-red-50 text-red-800 p-3 rounded-xl border-2 border-red-200 shadow-xl">
-                <CardContent className="p-2 flex items-center gap-3">
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                  <p className="font-medium">Failed to fetch monitoring patients. Please try again.</p>
-                </CardContent>
-              </Card>
-            ),
-            { duration: 4000 }
-          );
-          
-          setError(`Failed to load patients: ${error.message}`);
-          setHasShownToast(true);
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchMonitoringPatients(pagination.currentPage);
-
-    return () => {
-      isMounted = false;
-    };
-  }, [pagination.currentPage, searchTerm, selectedGender, pagination.limit]);
-
-  const handleViewPatient = (patient) => {
+  // Memoize handler functions to prevent unnecessary re-renders
+  const handleViewPatient = useCallback((patient) => {
     const patientId = patient.patientId;
     navigate(`/monitoring-patients/view/${patientId}`);
-  };
-// max-w-7xl 
+  }, [navigate]);
+  
+  const handlePageChange = useCallback((newPage) => {
+    setPagination(prev => ({ ...prev, currentPage: newPage }));
+    setHasShownToast(false); 
+  }, []);
+
   return (
     <div className="bg-white min-h-screen p-6">
       <div className="mx-auto">
@@ -223,8 +119,6 @@ const MonitoringPatients = () => {
                   </p>
                 </div>
               </div>
-              
-              {/* Custom filters component styling will be managed in PatientFilters component */}
             </div>
           </CardHeader>
 
@@ -234,17 +128,11 @@ const MonitoringPatients = () => {
               setSearchTerm={setSearchTerm}
               selectedGender={selectedGender}
               setSelectedGender={setSelectedGender}
-              setPagination={setPagination}
+              setPagination={(newState) => setPagination(prev => ({ ...prev, currentPage: 1 }))}
               title=""
               customClass="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm mb-6"
             />
             
-            {error ? (
-              <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 flex items-center gap-3 mb-6">
-                <AlertCircle className="h-5 w-5 text-red-500" />
-                <p>{error}</p>
-              </div>
-            ) : null}
             
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <PatientTable
@@ -252,15 +140,16 @@ const MonitoringPatients = () => {
                 loading={loading}
                 error={error}
                 onViewPatient={handleViewPatient}
+                showStatus={true}
+                showStatusColumn={false}
+                tableType="monitoring"
               />
             </div>
             
             <div className="mt-6">
               <PaginationControls
                 pagination={pagination}
-                onPageChange={(newPage) =>
-                  setPagination((prev) => ({ ...prev, currentPage: newPage }))
-                }
+                onPageChange={handlePageChange}
                 customClass="flex justify-center"
                 buttonClass="h-10 w-10 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium flex items-center justify-center"
                 activeButtonClass="bg-indigo-600 hover:bg-indigo-700 text-white"

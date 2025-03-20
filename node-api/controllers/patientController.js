@@ -96,7 +96,7 @@ exports.predictAndFetch = async (req, res) => {
 
     if (!patientIdMatch) {
       return res.status(400).json({
-        error: "Invalid filename format. Expected: patientId_randomtext.jpg",
+        error: "Invalid filename format. Expected: patientId_eyeside_randomtext.jpg",
       });
     }
 
@@ -157,12 +157,12 @@ exports.predictAndFetch = async (req, res) => {
     const confidence = flaskResponse.data.confidence; // Confidence scores
     console.log(flaskResponse);
     console.log(confidence);
-    // **5. Return Data to Frontend**
+
     res.json({
       message: "Prediction Successful",
       diagnosis: diagnosisResult,
       confidenceScores: confidence,
-      patientData: patient, // Send patient data for reference
+      patientData: patient, 
     });
   } catch (error) {
     console.error("Error in prediction:", error);
@@ -175,6 +175,24 @@ exports.uploadImages = async (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: "No images uploaded" });
     }
+
+    const { diseaseType } = req.body;
+    if (
+      !diseaseType ||
+      !["amd", "dr", "rvo", "glaucoma"].includes(diseaseType.toLowerCase())
+    ) {
+      return res.status(400).json({
+        error:
+          "Invalid or missing diseaseType parameter. Use 'amd', 'dr', 'rvo', or 'glaucoma'.",
+      });
+    }
+
+    const flaskApiUrl = {
+      amd: process.env.FLASK_API_AMD_Multi,
+      dr: process.env.FLASK_API_DR_Multi,
+      rvo: process.env.FLASK_API_RVO_Multi,
+      glaucoma: process.env.FLASK_API_GLAUCOMA_Multi,
+    }[diseaseType.toLowerCase()];
 
     // Extract unique patient IDs from filenames
     let patientIds = [
@@ -219,7 +237,7 @@ exports.uploadImages = async (req, res) => {
       })
     );
 
-    // **2. Prepare FormData and Send All Images in One API Call**
+    // 2. Prepare FormData and Send All Images in One API Call
     const formData = new FormData();
     uploadedImages.forEach((img) => {
       formData.append("files", img.fileBuffer, {
@@ -229,14 +247,14 @@ exports.uploadImages = async (req, res) => {
     });
 
     const flaskResponse = await axios.post(
-      process.env.FLASK_API_URL_2,
+     flaskApiUrl,
       formData,
       { headers: { ...formData.getHeaders() } }
     );
 
     console.log("Flask Response:", flaskResponse.data);
 
-    // **3. Process Response and Update Database**
+    // 3. Process Response and Update Database
     let results = [];
     for (let i = 0; i < uploadedImages.length; i++) {
       const imgData = uploadedImages[i];
@@ -263,7 +281,7 @@ exports.uploadImages = async (req, res) => {
         patientDetails: patient,
       });
     }
-
+console.log("images",results);
     res.json({ message: "Upload and Diagnosis Complete", results });
   } catch (error) {
     console.error("Error in uploadImages:", error);
@@ -271,69 +289,31 @@ exports.uploadImages = async (req, res) => {
   }
 };
 
-// exports.multiImageSave = async (req, res) => {
-//   try {
-//     if (!req.files || req.files.length === 0) {
-//       return res.status(400).json({ error: "No images uploaded" });
-//     }
 
-//     // Extract patientId and eyeSide from filenames
-//     let patientData = req.files.map((file) => {
-//       const match = file.originalname.match(/^(.*?)_(LEFT|RIGHT)_.*?\.jpg$/);
-//       if (!match) {
-//         throw new Error(`Invalid filename format: ${file.originalname}`);
-//       }
-//       return { patientId: match[1], eyeSide: match[2], filename: file.originalname };
-//     });
 
-//     let patientIds = [...new Set(patientData.map((data) => data.patientId))];
-
-//     // Find all patients from the database
-//     let existingPatients = await Patient.find({ patientId: { $in: patientIds } });
-//     let existingPatientIds = new Set(existingPatients.map((p) => p.patientId));
-//     let missingPatientIds = patientIds.filter((id) => !existingPatientIds.has(id));
-
-//     if (missingPatientIds.length > 0) {
-//       return res.status(400).json({ error: "Unavailable Patient IDs", missingPatientIds });
-//     }
-
-//     // Prepare FormData and send images to Flask API
-//     const formData = new FormData();
-//     req.files.forEach((file) => {
-//       formData.append("files", file.buffer, { filename: file.originalname, contentType: file.mimetype });
-//     });
-
-//     const flaskResponse = await axios.post(process.env.FLASK_API_URL_2, formData, { headers: { ...formData.getHeaders() } });
-//     console.log("Flask Response:", flaskResponse.data);
-
-//     // Process Flask API Response
-//     let results = req.files.map((file, index) => {
-//       const predictionData = flaskResponse.data[index];
-//       const { patientId, eyeSide } = patientData[index];
-//       let patient = existingPatients.find((p) => p.patientId === patientId);
-
-//       return {
-//         patientId,
-//         eyeSide, // Store eye side
-//         diagnosis: predictionData.prediction.label,
-//         filename: predictionData.filename,
-//         confidenceScores: predictionData.prediction.confidence,
-//         patientDetails: patient,
-//       };
-//     });
-
-//     res.status(200).json({ message: "Analysis Complete", results });
-//   } catch (error) {
-//     console.error("Error in analyzeImages:", error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// };
-
-exports.multiImageSave = async (req, res) => {
+exports.multiImagePrediction = async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: "No images uploaded" });
     }
+
+    const { diseaseType } = req.body;
+    if (
+      !diseaseType ||
+      !["amd", "dr", "rvo", "glaucoma"].includes(diseaseType.toLowerCase())
+    ) {
+      return res.status(400).json({
+        error:
+          "Invalid or missing diseaseType parameter. Use 'amd', 'dr', 'rvo', or 'glaucoma'.",
+      });
+    }
+
+    const flaskApiUrl = {
+      amd: process.env.FLASK_API_AMD_Multi,
+      dr: process.env.FLASK_API_DR_Multi,
+      rvo: process.env.FLASK_API_RVO_Multi,
+      glaucoma: process.env.FLASK_API_GLAUCOMA_Multi,
+    }[diseaseType.toLowerCase()];
 
     // Extract patientId and eyeSide from filenames
     let patientData = req.files.map((file) => {
@@ -361,7 +341,7 @@ exports.multiImageSave = async (req, res) => {
       formData.append("files", file.buffer, { filename: file.originalname, contentType: file.mimetype });
     });
 
-    const flaskResponse = await axios.post(process.env.FLASK_API_URL_2, formData, { headers: { ...formData.getHeaders() } });
+    const flaskResponse = await axios.post(flaskApiUrl, formData, { headers: { ...formData.getHeaders() } });
     console.log("Flask Response:", flaskResponse.data);
 
     // Process Flask API Response
@@ -405,22 +385,25 @@ exports.saveMultipleDiagnoses = async (req, res) => {
 
     let results = [];
 
-
     for (let diagnosisEntry of diagnosisData) {
       const { patientId, diagnosis, confidenceScores } = diagnosisEntry;
-      
+
       const file = req.files.find((f) => {
-        const match = f.originalname.match(/^(.+?)_(left|right)_.*?\.jpg$/i); 
-        console.log(match);
+        // Updated regex to support multiple image extensions
+        const match = f.originalname.match(/^(.+?)_(left|right)_.*?(\.jpg|\.png|\.jpeg)$/i);
+        console.log(`Matching ${f.originalname} for ${patientId}:`, match);
         return match && match[1] === patientId;
       });
+
+      console.log(req.currentUser.profileId)
 
       if (!file) {
         console.error(`No image found for Patient ID: ${patientId}`);
         continue;
       }
 
-      let eyeSide = file.originalname.match(/^(.+?)_(left|right)_.*?\.jpg$/i)?.[2];
+      // Extract eye side from the second capture group
+      let eyeSide = file.originalname.match(/^(.+?)_(left|right)_.*?(\.jpg|\.png|\.jpeg)$/i)?.[2];
 
       if (!eyeSide) {
         console.error(`Could not determine eye side for Patient ID: ${patientId}`);
@@ -492,9 +475,9 @@ exports.updatePatientDiagnosis = async (req, res) => {
     ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    console.log(req.body.diagnosis);
+    console.log("Raw req.body.category:", req.body.category);
 
-    // Extract patient ID from filename (e.g., 12345_jndj.jpg → 12345)
+    // Extract patient ID from filename (e.g., P1_left_image.jpg → P1)
     const filename = req.file.originalname;
     const match = filename.match(/^([^_]+)_(left|right)_/i);
 
@@ -539,8 +522,8 @@ exports.updatePatientDiagnosis = async (req, res) => {
     try {
       recommend = JSON.parse(req.body.recommend);
       if (
-        typeof recommend.medicine !== "string" || // Must be a string
-        !Array.isArray(recommend.tests) || // Must be an array
+        typeof recommend.medicine !== "string" ||
+        !Array.isArray(recommend.tests) ||
         !recommend.tests.every(
           (test) =>
             typeof test.testName === "string" &&
@@ -549,7 +532,7 @@ exports.updatePatientDiagnosis = async (req, res) => {
             ) &&
             typeof test.attachmentURL === "string"
         ) ||
-        typeof recommend.note !== "string" // Must be a string
+        typeof recommend.note !== "string"
       ) {
         return res.status(400).json({ error: "Invalid recommend format" });
       }
@@ -557,22 +540,36 @@ exports.updatePatientDiagnosis = async (req, res) => {
       return res.status(400).json({ error: "Invalid recommend JSON format" });
     }
 
-    // Ensure category is an array
+    // Define valid categories
+    const validCategories = ["DR", "AMD", "Glaucoma", "RVO", "Others"];
+
+    // Normalize category to an array (handle single string like "DR")
     const category = Array.isArray(req.body.category)
       ? req.body.category
       : [req.body.category];
+    console.log("Processed category:", category);
 
-    // Update patient record
+    // Validate category
+    if (!category.every((cat) => validCategories.includes(cat))) {
+      return res.status(400).json({ error: "Invalid category value" });
+    }
+
+    // Update root-level patient.category (add new categories if not already present)
+    patient.category = [...new Set([...patient.category, ...category])]; 
+
+    patient.patientStatus = "Monitoring";
+
+    // Push new diagnosis into diagnoseHistory
     patient.diagnoseHistory.push({
       imageUrl,
       diagnosis: req.body.diagnosis,
       confidenceScores,
-      category,
       eye: sideIdentifier,
-      recommend, // Use the parsed recommend object directly
-      status: "Checked", // Default from schema
+      recommend,
+      status: "Checked",
     });
 
+    // Save the updated patient document
     await patient.save();
 
     // Response with consistent status
@@ -582,15 +579,16 @@ exports.updatePatientDiagnosis = async (req, res) => {
       imageUrl,
       diagnosis: req.body.diagnosis,
       confidenceScores,
-      category,
+      category: patient.category,
       recommend,
-      status: "Checked", // Match the pushed status
+      status: "Checked",
     });
   } catch (error) {
     console.error("Error in updatePatientDiagnosis:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 exports.getAllPatients = async (req, res) => {
   try {
@@ -638,13 +636,27 @@ exports.getAllPatients = async (req, res) => {
     const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
     const sortField = sortBy === "age" ? "age" : "createdAt"; // Use indexed fields
 
-    // Fetch patients with pagination, sorting, and lean for performance
     const patients = await Patient.find(query)
       .sort({ [sortField]: sortDirection })
       .skip(skip)
       .limit(limitNum)
-      .lean()
       .select("-__v"); // Exclude version key
+
+    // Convert to plain objects with virtuals (e.g., age)
+    const patientsWithVirtuals = patients.map((patient) =>
+      patient.toObject({ virtuals: true })
+    );
+
+    // Get total count for pagination metadata
+    // const totalPatients = await Patient.countDocuments(query)
+
+    // // Fetch patients with pagination, sorting, and lean for performance
+    // const patients = await Patient.find(query)
+    //   .sort({ [sortField]: sortDirection })
+    //   .skip(skip)
+    //   .limit(limitNum)
+    //   .lean({ virtuals: true})
+    //   .select("-__v"); // Exclude version key
 
     // Get total count for pagination metadata
     const totalPatients = await Patient.countDocuments(query);
@@ -656,7 +668,7 @@ exports.getAllPatients = async (req, res) => {
     // Response structure similar to your existing functions
     res.json({
       message: "Patients retrieved successfully",
-      data: patients,
+      data: patientsWithVirtuals,
       pagination: {
         currentPage: pageNum,
         totalPages: Math.ceil(totalPatients / limitNum),
@@ -680,16 +692,22 @@ exports.getAllPatients = async (req, res) => {
 exports.getPatientById = async (req, res) => {
   try {
     const { patientId } = req.params; // Extract patientId from URL parameters
+    console.log("Patient ID:", patientId);
 
     // Validate patientId
     if (!patientId) {
       return res.status(400).json({ error: "Patient ID is required" });
     }
+    
 
     // Fetch patient from database
     const patient = await Patient.findOne({ patientId })
-      .lean() // Use lean for performance (returns plain JS object)
       .select("-__v"); // Exclude version key
+
+    // Convert to plain objects with virtuals (e.g., age)
+
+     patient.toObject({ virtuals: true })
+    
 
     // Check if patient exists
     if (!patient) {
@@ -1062,18 +1080,6 @@ exports.updateTestStatus = async (req, res) => {
     // Update the test status
     diagnosis.recommend.tests[testIndex].status = status;
 
-    // Check for pending tests in recommend.tests
-    const hasPendingTests = diagnosis.recommend.tests.some(
-      (test) => test.status === "Pending"
-    );
-
-    // Update patient status based on test status
-    if (hasPendingTests) {
-      patient.patientStatus = "Monitoring";
-    } else {
-      patient.patientStatus = "Completed"; // Default to Completed if no pending tests
-    }
-
     // Save the updated patient
     await patient.save();
 
@@ -1082,7 +1088,6 @@ exports.updateTestStatus = async (req, res) => {
       data: {
         test: diagnosis.recommend.tests[testIndex],
         diagnosis: patient.diagnoseHistory[diagnosisIndex],
-        patientStatus: patient.patientStatus,
       },
     });
   } catch (error) {
@@ -1090,6 +1095,66 @@ exports.updateTestStatus = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };
+
+exports.addTestToDiagnose = async (req, res) => {
+  try {
+    const { patientId, diagnoseId } = req.params; // Extract from URL params
+    const { testName } = req.body; // Extract test details from body
+
+    // Validate required fields
+    if (!testName) {
+      return res.status(400).json({
+        error: "Test name is required",
+      });
+    }
+
+
+    // Find the patient by patientId (assuming patientId is a unique field, not _id)
+    const patient = await Patient.findOne({ patientId });
+    if (!patient) {
+      return res.status(404).json({ error: "Patient not found" });
+    }
+
+    // Find the diagnosis in the diagnoseHistory array
+    const diagnosisIndex = patient.diagnoseHistory.findIndex(
+      (diag) => diag._id.toString() === diagnoseId
+    );
+    if (diagnosisIndex === -1) {
+      return res.status(404).json({ error: "Diagnosis not found" });
+    }
+
+    const diagnosis = patient.diagnoseHistory[diagnosisIndex];
+
+    // Construct the new test object
+    const newTest = {
+      testName,
+      status: "Pending", // Default to "Pending" if not provided
+      addedAt: new Date(), // Automatically set current date/time
+    };
+
+    // Push the new test into the tests array
+    diagnosis.recommend.tests.push(newTest);
+
+    // Save the updated patient
+    await patient.save();
+
+    // Return success response with updated diagnosis
+    res.json({
+      message: "Test added successfully",
+      data: patient.diagnoseHistory[diagnosisIndex],
+      patientStatus: patient.patientStatus,
+    });
+  } catch (error) {
+    console.error("Error adding test to diagnose:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      details: error.message,
+    });
+  }
+};
+
+
+
 
 
 

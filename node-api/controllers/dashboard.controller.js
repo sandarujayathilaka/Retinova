@@ -1,103 +1,9 @@
-// controllers
 const Patient = require("../models/patient");
 const Doctor = require("../models/doctor.model");
+const Nurse = require("../models/nurse.model");
+const User = require("../models/user.model");
 const logger = require("../config/logger");
 
-
-
-const validateQueryParams = (page, limit, fields) => {
-  const parsedPage = parseInt(page, 10);
-  const parsedLimit = parseInt(limit, 10);
-
-  if (isNaN(parsedPage) || parsedPage < 1) {
-    throw new Error("Page must be a positive integer");
-  }
-  if (isNaN(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
-    throw new Error("Limit must be a positive integer between 1 and 100");
-  }
-  if (fields && typeof fields !== "string") {
-    throw new Error("Fields must be a string");
-  }
-
-  // Basic sanitization for fields (prevent injection)
-  const safeFields = fields ? fields.replace(/[^a-zA-Z0-9_ -]/g, "") : null;
-  return { page: parsedPage, limit: parsedLimit, fields: safeFields };
-};
-
-// const getAllPatients = async (req, res) => {
-//   try {
-//     const { fields, type, page = 1, limit = 10 } = req.query;
-//     let { page: parsedPage, limit: parsedLimit, fields: safeFields } = validateQueryParams(page, limit, fields);
-//     const skip = (parsedPage - 1) * parsedLimit;
-
-//     let patients, total;
-//     if (type === "summary") {
-//       // Use aggregation to extract diagnosis and status from diagnoseHistory
-//       patients = await Patient.aggregate([
-//         {
-//           $project: {
-//             fullName: 1,
-//             birthDate: 1,
-//             createdAt: 1,
-//             patientStatus: 1,
-//             category: 1,
-//             nextVisit:1,
-//             "diagnoseHistory.diagnosis": 1, // Include diagnosis field
-//             "diagnoseHistory.status": 1,    // Include status field
-//             "diagnoseHistory.uploadedAt": 1, 
-//             diagnoseHistoryLength: { $size:{ $ifNull: ["$diagnoseHistory", []] } },
-//           },
-//         },
-//         { $skip: skip },
-//         { $limit: parsedLimit },
-//       ]).exec();
-//       total = await Patient.countDocuments();
-//     } else {
-//       // Full retrieval with pagination
-//       patients = await Patient.find({})
-//         .select(safeFields || "-__v")// Use fields query param or all fields
-//         .skip(skip)
-//         .limit(parsedLimit)
-//         .lean();
-//        total = await Patient.countDocuments({});
-     
-//     }
-
-//     return res.status(200).json({ patients, total, page: parsedPage, limit: parsedLimit });
-//   } catch (error) {
-//     res.status(500).json({ message: "Error fetching patients", error: error.message });
-//   }
-// };
-
-// const getAllDoctors = async (req, res) => {
-//   try {
-//     const { fields, type, page = 1, limit = 10 } = req.query;
-//     let { page: parsedPage, limit: parsedLimit, fields: safeFields } = validateQueryParams(page, limit, fields);
-//     const skip = (parsedPage - 1) * parsedLimit;
-
-//     let doctors, total;
-//     if (type === "summary") {
-//       doctors = await Doctor.find({})
-//         .select("name status type specialty createdAt workingHours daysOff")
-//         .skip(skip)
-//         .limit(parsedLimit)
-//         .lean();
-//       total = await Doctor.countDocuments();
-//     } else {
-//       doctors = await Doctor.find({})
-//         .select(safeFields || "-__v")
-//         .skip(skip)
-//         .limit(parsedLimit)
-//         .lean();
-//        total = await Doctor.countDocuments({});
-      
-//     }
-
-//     return res.status(200).json({ doctors, total, page, limit });
-//   } catch (error) {
-//     res.status(500).json({ message: "Error fetching doctors", error: error.message });
-//   }
-// };
 
 const getAllPatients = async (req, res) => {
   try {
@@ -107,9 +13,24 @@ const getAllPatients = async (req, res) => {
     const safeFields = fields ? fields.replace(/[^a-zA-Z0-9\s-_]/g, '') : null;
 
     let patients;
+
     if (type === "summary") {
-      // Use aggregation to extract diagnosis and status from diagnoseHistory
+      // Use aggregation to include doctor name with $lookup
       patients = await Patient.aggregate([
+        {
+          $lookup: {
+            from: "doctors", // The name of the Doctor collection (lowercase, pluralized by Mongoose)
+            localField: "doctorId", // Field in Patient referencing Doctor
+            foreignField: "_id", // Field in Doctor collection (_id is the default primary key)
+            as: "doctorInfo", // Output array field where doctor data will be stored
+          },
+        },
+        {
+          $unwind: {
+            path: "$doctorInfo",
+            preserveNullAndEmptyArrays: true, // Include patients even if no doctor is found
+          },
+        },
         {
           $project: {
             fullName: 1,
@@ -118,18 +39,32 @@ const getAllPatients = async (req, res) => {
             patientStatus: 1,
             category: 1,
             nextVisit: 1,
-            "diagnoseHistory.diagnosis": 1, // Include diagnosis field
-            "diagnoseHistory.status": 1,    // Include status field
+            doctorId: 1, // Keep doctorId if needed
+            doctorName: "$doctorInfo.name", // Extract doctor's name from doctorInfo
+            "diagnoseHistory.diagnosis": 1,
+            "diagnoseHistory.status": 1,
             "diagnoseHistory.uploadedAt": 1,
             diagnoseHistoryLength: { $size: { $ifNull: ["$diagnoseHistory", []] } },
           },
         },
       ]).exec();
     } else {
-      // Full retrieval of all fields (or selected fields)
+      // Use populate for the default case
       patients = await Patient.find({})
-        .select(safeFields || "-__v") // Use fields query param or all fields except __v
+        .select(safeFields || "-__v")
+        .populate({
+          path: "doctorId", // Field in Patient schema referencing Doctor
+          select: "name", // Only fetch the doctor's name
+          model: Doctor, // Reference to the Doctor model
+        })
         .lean();
+
+      // Map patients to include doctorName explicitly if needed
+      patients = patients.map(patient => ({
+        ...patient,
+        doctorName: patient.doctorId?.name || "N/A", // Extract name or set default
+        doctorId: patient.doctorId?._id || patient.doctorId, // Keep doctorId as string or ObjectId
+      }));
     }
 
     // Total count is just the length of the returned patients
@@ -137,9 +72,52 @@ const getAllPatients = async (req, res) => {
 
     return res.status(200).json({ patients, total });
   } catch (error) {
+    logger.error("Error fetching patients:", error); // Log the error for debugging
     res.status(500).json({ message: "Error fetching patients", error: error.message });
   }
 };
+
+// const getAllPatients = async (req, res) => {
+//   try {
+//     const { fields, type } = req.query;
+
+//     // Sanitize fields (if provided) to prevent injection
+//     const safeFields = fields ? fields.replace(/[^a-zA-Z0-9\s-_]/g, '') : null;
+
+//     let patients;
+//     if (type === "summary") {
+//       // Use aggregation to extract diagnoseHistory
+//       patients = await Patient.aggregate([
+//         {
+//           $project: {
+//             fullName: 1,
+//             birthDate: 1,
+//             createdAt: 1,
+//             patientStatus: 1,
+//             category: 1,
+//             nextVisit: 1,
+//             "diagnoseHistory.diagnosis": 1, 
+//             "diagnoseHistory.status": 1,   
+//             "diagnoseHistory.uploadedAt": 1,
+//             diagnoseHistoryLength: { $size: { $ifNull: ["$diagnoseHistory", []] } },
+//           },
+//         },
+//       ]).exec();
+//     } else {
+
+//       patients = await Patient.find({})
+//         .select(safeFields || "-__v") 
+//         .lean();
+//     }
+
+//     // Total count is just the length of the returned patients
+//     const total = patients.length;
+
+//     return res.status(200).json({ patients, total });
+//   } catch (error) {
+//     res.status(500).json({ message: "Error fetching patients", error: error.message });
+//   }
+// };
 
 const getAllDoctors = async (req, res) => {
   try {
@@ -149,88 +127,115 @@ const getAllDoctors = async (req, res) => {
     const safeFields = fields ? fields.replace(/[^a-zA-Z0-9\s-_]/g, '') : null;
 
     let doctors;
+
     if (type === "summary") {
+      // Fetch doctors
       doctors = await Doctor.find({})
-        .select("name status type specialty createdAt workingHours daysOff")
+        .select("name type specialty createdAt workingHours daysOff")
         .lean();
+
+      // Fetch corresponding User records using profile field
+      const doctorIds = doctors.map(doc => doc._id);
+      const users = await User.find({
+        role: "doctor",
+        profile: { $in: doctorIds },
+      }).select("profile isActive").lean();
+
+      // Map isActive to status
+      doctors = doctors.map(doctor => {
+        const user = users.find(u => u.profile.toString() === doctor._id.toString());
+        return {
+          ...doctor,
+          status: user ? user.isActive : false, // Default to false if no user found
+        };
+      });
     } else {
       doctors = await Doctor.find({})
         .select(safeFields || "-__v")
         .lean();
+
+      // Fetch corresponding User records
+      const doctorIds = doctors.map(doc => doc._id);
+      const users = await User.find({
+        role: "doctor",
+        profile: { $in: doctorIds },
+      }).select("profile isActive").lean();
+
+      // Map isActive to status
+      doctors = doctors.map(doctor => {
+        const user = users.find(u => u.profile.toString() === doctor._id.toString());
+        return {
+          ...doctor,
+          status: user ? user.isActive : false, // Default to false if no user found
+        };
+      });
     }
 
-    // Total count is just the length of the returned doctors
     const total = doctors.length;
-
     return res.status(200).json({ doctors, total });
   } catch (error) {
+    logger.error("Error fetching doctors:", error);
     res.status(500).json({ message: "Error fetching doctors", error: error.message });
   }
 };
-// const getAllPatients = async (req, res) => {
-//   try {
-//     const { fields, type, page = 1, limit = 10 } = req.query;
-//     const skip = (page - 1) * limit;
 
-//     let patients;
-//     if (type === "summary") {
-//       // Use aggregation to extract diagnosis and status from diagnoseHistory
-//       patients = await Patient.aggregate([
-//         {
-//           $project: {
-//             fullName: 1,
-//             birthDate: 1,
-//             createdAt: 1,
-//             patientStatus: 1,
-//             category: 1,
-//             "diagnoseHistory.diagnosis": 1, // Include diagnosis field
-//             "diagnoseHistory.status": 1,    // Include status field
-//             "diagnoseHistory.uploadedAt": 1, 
-//             diagnoseHistoryLength: { $size: "$diagnoseHistory" }, // Calculate length
-//           },
-//         },
-//       ]).exec();
-//     } else {
-//       // Full retrieval with pagination
-//       patients = await Patient.find({})
-//         .select(fields || "") // Use fields query param or all fields
-//         .skip(skip)
-//         .limit(parseInt(limit))
-//         .lean();
-//       const total = await Patient.countDocuments({});
-//       return res.status(200).json({ patients, total, page: parseInt(page), limit: parseInt(limit) });
-//     }
+const getAllNurses = async (req, res) => {
+  try {
+    const { fields, type } = req.query;
 
-//     res.status(200).json({ patients });
-//   } catch (error) {
-//     res.status(500).json({ message: "Error fetching patients", error: error.message });
-//   }
-// };
+    // Sanitize fields (if provided) to prevent injection
+    const safeFields = fields ? fields.replace(/[^a-zA-Z0-9\s-_]/g, '') : null;
 
-// const getAllDoctors = async (req, res) => {
-//   try {
-//     const { fields, type, page = 1, limit = 10 } = req.query;
-//     const skip = (page - 1) * limit;
+    let nurses;
 
-//     let doctors;
-//     if (type === "summary") {
-//       doctors = await Doctor.find({})
-//         .select("name status type specialty createdAt workingHours daysOff")
-//         .lean();
-//     } else {
-//       doctors = await Doctor.find({})
-//         .select(fields || "")
-//         .skip(skip)
-//         .limit(parseInt(limit))
-//         .lean();
-//       const total = await Doctor.countDocuments({});
-//       return res.status(200).json({ doctors, total, page, limit });
-//     }
+    if (type === "summary") {
+      // Fetch nurses
+      nurses = await Nurse.find({})
+        .select("name type specialty createdAt workingHours daysOff")
+        .lean();
 
-//     res.status(200).json({ doctors });
-//   } catch (error) {
-//     res.status(500).json({ message: "Error fetching doctors", error: error.message });
-//   }
-// };
+      // Fetch corresponding User records using profile field
+      const nurseIds = nurses.map(nurse => nurse._id);
+      const users = await User.find({
+        role: "nurse",
+        profile: { $in: nurseIds },
+      }).select("profile isActive").lean();
 
-module.exports = { getAllPatients, getAllDoctors };
+      // Map isActive to status
+      nurses = nurses.map(nurse => {
+        const user = users.find(u => u.profile.toString() === nurse._id.toString());
+        return {
+          ...nurse,
+          status: user ? user.isActive : false, // Default to false if no user found
+        };
+      });
+    } else {
+      nurses = await Nurse.find({})
+        .select(safeFields || "-__v")
+        .lean();
+
+      // Fetch corresponding User records
+      const nurseIds = nurses.map(nurse => nurse._id);
+      const users = await User.find({
+        role: "nurse",
+        profile: { $in: nurseIds },
+      }).select("profile isActive").lean();
+
+      // Map isActive to status
+      nurses = nurses.map(nurse => {
+        const user = users.find(u => u.profile.toString() === nurse._id.toString());
+        return {
+          ...nurse,
+          status: user ? user.isActive : false, // Default to false if no user found
+        };
+      });
+    }
+
+    const total = nurses.length;
+    return res.status(200).json({ nurses, total });
+  } catch (error) {
+    logger.error("Error fetching nurses:", error);
+    res.status(500).json({ message: "Error fetching nurses", error: error.message });
+  }
+};
+module.exports = { getAllPatients, getAllDoctors,getAllNurses };
