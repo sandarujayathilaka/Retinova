@@ -47,4 +47,9 @@ router.get("/:patientId/history",requireAuth([ROLES.DOCTOR]), getPatientHistory)
 router.get("/:patientId",requireAuth([ROLES.DOCTOR]), getPatientById);
 
 
+//for mobile
+router.get("/my/diagnosehistory", requireAuth([ROLES.PATIENT, ROLES.DOCTOR]), getMyDiagnoseHistory);
+router.get("/diagnoses/:diagnosisId", requireAuth([ROLES.PATIENT, ROLES.DOCTOR]), getDiagnosisById);
+
+
 module.exports = router;
