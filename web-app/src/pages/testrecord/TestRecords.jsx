@@ -15,7 +15,7 @@ function TestRecords({ patientId }) {
   const fetchRecords = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/patients/${patientId}/test-records`); // Use api instead of axios
+      const res = await api.get(`/patients/tests/${patientId}/test-records`); // Use api instead of axios
       if (res.data && Array.isArray(res.data.data)) {
         const sortedRecords = res.data.data.sort((a, b) => b._id.localeCompare(a._id));
         setRecords(sortedRecords);
@@ -38,7 +38,7 @@ function TestRecords({ patientId }) {
   const handleFileUpload = async (file, diagnoseId, testIndex) => {
     const formData = new FormData();
     formData.append("file", file);
-    const res = await api.post("/patients/upload-test", formData); // Use api instead of axios
+    const res = await api.post("/patients/tests/upload-test", formData); // Use api instead of axios
     return res.data.data.attachmentURL;
   };
 
@@ -46,7 +46,7 @@ function TestRecords({ patientId }) {
     try {
       await Promise.all(
         updatedTests.map((test, index) =>
-          api.put("/patients/update-test", { // Use api instead of axios
+          api.put("/patients/tests/update-test", { // Use api instead of axios
             patientId,
             diagnoseId,
             testIndex: index,
@@ -78,7 +78,7 @@ function TestRecords({ patientId }) {
       if (!allTestsCompleted)
         throw new Error("Not all tests are completed or reviewed yet.");
 
-      const res = await api.put(`/patients/${patientId}/complete-diagnosis`, { diagnoseId }); // Use api instead of axios
+      const res = await api.put(`/patients/tests/${patientId}/complete-diagnosis`, { diagnoseId }); // Use api instead of axios
       const updatedRecords = records.map((record) =>
         record._id === diagnoseId
           ? { ...record, ...res.data.data.diagnose, status: "Test Completed" }
