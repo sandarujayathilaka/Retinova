@@ -6,6 +6,7 @@ const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 
 const FormData = require("form-data"); // Import FormData
+const User = require("../models/user.model");
 
 exports.uploadImage = async (req, res) => {
   try {
@@ -1090,23 +1091,69 @@ exports.updateTestStatus = async (req, res) => {
   }
 };
 
+
+
+//mobile used
+//Get Patient's Diagnosis History
+
+exports.getMyDiagnoseHistory = async (req, res) => {
+  try {
+    const { id } = req.currentUser;
+    console.log("Current user ID:", id);
+ 
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const patientId = user.profile;
+    const patient = await Patient.findOne({ _id: patientId });
+    console.log("Patient found:", patient ? patient._id : "Not found");
+    console.log("DiagnoseHistory:", patient ? patient.diagnoseHistory : "No patient");
+
+    if (!patient) {
+      return res.status(404).json({ error: "Patient not found" });
+    }
+
+    res.json(patient.diagnoseHistory);
+  } catch (error) {
+    console.error("Error in getDiagnoseHistory:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// Get a Specific Diagnosis by ID
 // Get a Specific Diagnosis by ID
 exports.getDiagnosisById = async (req, res) => {
   try {
-    const { patientId, diagnosisId } = req.params;
-    const patient = await Patient.findOne({ patientId });
+    const { id } = req.currentUser; // User ID from token
+    const { diagnosisId } = req.params; // Diagnosis ID from URL
 
-    if (!patient) return res.status(404).json({ error: "Patient not found" });
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const patientId = user.profile; 
+    const patient = await Patient.findOne({ _id: patientId });
+    console.log("Patient found:", patient ? patient._id : "Not found");
+
+    if (!patient) {
+      return res.status(404).json({ error: "Patient not found" });
+    }
 
     const diagnosis = patient.diagnoseHistory.find(
       (diag) => diag._id.toString() === diagnosisId
     );
 
-    if (!diagnosis) return res.status(404).json({ error: "Diagnosis not found" });
+    if (!diagnosis) {
+      console.log(`Diagnosis with ID ${diagnosisId} not found in patient ${patient._id}'s history`);
+      return res.status(404).json({ error: "Diagnosis not found" });
+    }
 
     res.json(diagnosis);
   } catch (error) {
-    console.error(error);
+    console.error("Error in getDiagnosisById:", JSON.stringify(error));
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

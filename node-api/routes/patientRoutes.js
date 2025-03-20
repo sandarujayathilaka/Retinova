@@ -14,9 +14,15 @@ const {
   updateDiagnosisRecommendations,
   updateDiagnosisReviewRecommendations,
   updateTestStatus,
+
+  getMyDiagnoseHistory,
   getDiagnosisById,
+
 } = require("../controllers/patientController");
 const upload = require("../middleware/upload");
+const { requireAuth } = require("../middleware/require-auth");
+const { ROLES } = require("../constants/roles");
+
 
 const router = express.Router();
 
@@ -38,5 +44,10 @@ router.put("/:patientId/diagnoses/:diagnosisId/tests/:testId/status", updateTest
 router.get("/:patientId/history", getPatientHistory);
 router.get("/:patientId/diagnoses/:diagnosisId", getDiagnosisById);
 router.get("/getAllPatients", getAllPatients);
+
+//for mobile
+router.get("/my/diagnosehistory", requireAuth([ROLES.PATIENT, ROLES.DOCTOR]), getMyDiagnoseHistory);
+router.get("/diagnoses/:diagnosisId", requireAuth([ROLES.PATIENT, ROLES.DOCTOR]), getDiagnosisById);
+
 
 module.exports = router;
