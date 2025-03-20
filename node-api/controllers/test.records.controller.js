@@ -47,7 +47,7 @@ const uploadTestAttachment = asyncHandler(async (req, res) => {
 
   const file = req.file;
   const params = {
-    Bucket: process.env.S3_BUCKET,
+    Bucket: process.env.S3_BUCKET_NAME,
     Key: `${uuidv4()}-${file.originalname}`,
     Body: file.buffer,
     ContentType: file.mimetype,

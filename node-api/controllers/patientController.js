@@ -156,12 +156,12 @@ exports.predictAndFetch = async (req, res) => {
     const confidence = flaskResponse.data.confidence; // Confidence scores
     console.log(flaskResponse);
     console.log(confidence);
-    // **5. Return Data to Frontend**
+
     res.json({
       message: "Prediction Successful",
       diagnosis: diagnosisResult,
       confidenceScores: confidence,
-      patientData: patient, // Send patient data for reference
+      patientData: patient, 
     });
   } catch (error) {
     console.error("Error in prediction:", error);
@@ -236,7 +236,7 @@ exports.uploadImages = async (req, res) => {
       })
     );
 
-    // **2. Prepare FormData and Send All Images in One API Call**
+    // 2. Prepare FormData and Send All Images in One API Call
     const formData = new FormData();
     uploadedImages.forEach((img) => {
       formData.append("files", img.fileBuffer, {
@@ -253,7 +253,7 @@ exports.uploadImages = async (req, res) => {
 
     console.log("Flask Response:", flaskResponse.data);
 
-    // **3. Process Response and Update Database**
+    // 3. Process Response and Update Database
     let results = [];
     for (let i = 0; i < uploadedImages.length; i++) {
       const imgData = uploadedImages[i];
