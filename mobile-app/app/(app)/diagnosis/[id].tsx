@@ -20,6 +20,7 @@ import { Link, router, useLocalSearchParams } from "expo-router";
 import { useGetDiagnosisById } from "../../../services/diagnosis.service";
 import useAuthStore from "../../../stores/auth";
 import { WebView } from "react-native-webview";
+import { LinearGradient } from "expo-linear-gradient"; // Added import
 
 interface Test {
   testName: string;
@@ -255,14 +256,28 @@ export default function DiagnosisDetailScreen() {
     <SafeAreaView className="flex-1 bg-white">
       <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
 
-      {/* Fixed Header Section with z-index and absolute positioning to prevent scrolling content from going underneath */}
-      <View className="bg-blue-900 absolute top-0 left-0 right-0 z-10 px-5 pt-4 pb-6 rounded-b-3xl shadow-md">
-        <TouchableOpacity onPress={() => router.back()} className="mb-2">
-          <View className="flex-row items-center">
-            <Ionicons name="arrow-back" size={22} color="#ffffff" />
-            <Text className="text-white ml-1 font-medium">Back</Text>
-          </View>
-        </TouchableOpacity>
+      {/* Updated Header Section with LinearGradient */}
+      <LinearGradient
+        colors={["#1e3a8a", "#3b82f6"]}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          paddingHorizontal: 20,
+          paddingTop: 16,
+          paddingBottom: 24,
+          borderBottomLeftRadius: 24,
+          borderBottomRightRadius: 24,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 6,
+          elevation: 4,
+        }}
+      >
+       
         <Text className="text-2xl font-bold text-white mt-2">{diagnosis.diagnosis}</Text>
         <View className="flex-row items-center mt-1">
           <Ionicons name={eyeIcon} size={16} color="#e0e7ff" />
@@ -287,9 +302,9 @@ export default function DiagnosisDetailScreen() {
             <Text className="text-white font-bold">{diagInfo.severity}</Text>
           </View>
         </View>
-      </View>
+      </LinearGradient>
 
-      {/* Add a spacer to account for the fixed header */}
+      {/* Spacer remains unchanged */}
       <View className="h-44" />
 
       <ScrollView className="flex-1 bg-white z-0">
@@ -338,7 +353,7 @@ export default function DiagnosisDetailScreen() {
             >
               <View className="flex-row items-center">
                 <MaterialCommunityIcons name="pill" size={22} color="#1e3a8a" />
-                <Text className="text-lg font-bold text-gray-900 ml-3">Treatment Plan</Text>
+                <Text className="text-lg font-bold text-gray-900 ml-3">Initial Checkup Details</Text>
               </View>
               <View className="bg-blue-100 rounded-full p-1">
                 <AntDesign 
@@ -351,32 +366,28 @@ export default function DiagnosisDetailScreen() {
             
             {expandedSection === "treatment" && (
               <View className="p-5">
-                {/* Recommended Medication with lighter BG for better contrast */}
-                {(diagnosis.recommend.medicine || (diagnosis.reviewInfo && diagnosis.reviewInfo[0]?.recommendedMedicine)) && (
+                {/* Recommended Medication */}
+                {diagnosis.recommend.medicine && (
                   <View className="mb-4">
                     <Text className="text-gray-800 font-medium mb-2">Recommended Medication</Text>
                     <View className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                      <Text className="text-gray-800">
-                        {diagnosis.reviewInfo?.[0]?.recommendedMedicine || diagnosis.recommend.medicine}
-                      </Text>
+                      <Text className="text-gray-800">{diagnosis.recommend.medicine}</Text>
                     </View>
                   </View>
                 )}
 
-                {/* Doctor's Notes with lighter BG for better contrast */}
-                {(diagnosis.recommend.note || (diagnosis.reviewInfo && diagnosis.reviewInfo[0]?.notes)) && (
+                {/* Doctor's Notes */}
+                {diagnosis.recommend.note && (
                   <View className="mb-4">
                     <Text className="text-gray-800 font-medium mb-2">Doctor's Notes</Text>
                     <View className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                      <Text className="text-gray-800 leading-relaxed">
-                        {diagnosis.reviewInfo?.[0]?.notes || diagnosis.recommend.note || "No additional notes provided."}
-                      </Text>
+                      <Text className="text-gray-800 leading-relaxed">{diagnosis.recommend.note}</Text>
                     </View>
                   </View>
                 )}
 
-                {/* Next Visit with updated gradient colors */}
-                <View className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+                {/* Next Visit */}
+                <View className="bg-blue-50 p-4 rounded-xl border border-blue-200">
                   <View className="flex-row justify-between items-center mb-2">
                     <View className="flex-row items-center">
                       <MaterialCommunityIcons name="calendar-check" size={20} color="#1e3a8a" />
@@ -527,21 +538,7 @@ export default function DiagnosisDetailScreen() {
           )}
         </View>
 
-        {/* Action Buttons with updated colors */}
-        <View className="flex-row justify-between m-4 mt-6 mb-10">
-          <TouchableOpacity
-            className="bg-blue-900 rounded-xl py-4 px-5 flex-1 mr-2 items-center shadow"
-            onPress={() => {/* Book follow-up */}}
-          >
-            <Text className="text-white font-bold">Book Follow-up</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="bg-white border-2 border-blue-900 rounded-xl py-4 px-5 flex-1 ml-2 items-center shadow-sm"
-            onPress={() => {/* Export or share */}}
-          >
-            <Text className="text-blue-900 font-bold">Share Results</Text>
-          </TouchableOpacity>
-        </View>
+       
       </ScrollView>
 
       {/* Improved Modal for attachments with updated colors */}

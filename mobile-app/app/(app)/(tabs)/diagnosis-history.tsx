@@ -17,6 +17,9 @@ import { useGetDiagnoses } from "@/services/diagnosis.service";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
+// Create AnimatedLinearGradient for animation support
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
+
 // Define interfaces locally
 interface Test {
   testName: string;
@@ -252,30 +255,43 @@ export default function DiagnosisHistoryScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, paddingTop: insets.top }} className="bg-white">
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
       
-      {/* Animated Header */}
-      <Animated.View style={{ height: headerHeight }} className="bg-indigo-600">
-        <View className="px-5 py-4 flex-1 justify-end">
-          <Text className="text-2xl font-bold text-white">Eye Health History</Text>
-          <Animated.Text style={{ opacity: headerOpacity }} className="text-indigo-100 text-sm mt-1">
-            Track your eye condition progress over time
-          </Animated.Text>
-        </View>
-      </Animated.View>
+      {/* Updated Animated Header with LinearGradient */}
+      <AnimatedLinearGradient
+        colors={["#1e3a8a", "#3b82f6"]}
+        style={{
+          height: headerHeight,
+          paddingHorizontal: 20,
+          paddingVertical: 16,
+          justifyContent: "flex-end",
+          borderBottomLeftRadius: 24,
+          borderBottomRightRadius: 24,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 12,
+          elevation: 8,
+        }}
+      >
+        <Text className="text-2xl font-bold text-white">Eye Health History</Text>
+        <Animated.Text style={{ opacity: headerOpacity }} className="text-indigo-100 text-sm mt-1">
+          Track your eye condition progress over time
+        </Animated.Text>
+      </AnimatedLinearGradient>
       
       {/* Filter Tabs */}
       <View className="bg-white px-4 py-3 shadow-sm z-10 border-b border-gray-100">
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
           <TouchableOpacity
             className={`mr-3 py-2 px-5 rounded-lg ${
-              activeFilter === "All" ? "bg-indigo-600" : "bg-indigo-50"
+              activeFilter === "All" ? "bg-sky-600" : "bg-sky-50"
             }`}
             onPress={() => setActiveFilter("All")}
           >
             <Text
               className={`${
-                activeFilter === "All" ? "text-white font-bold" : "text-indigo-700 font-medium"
+                activeFilter === "All" ? "text-white font-bold" : "text-sky-500 font-medium"
               }`}
             >
               All Eyes
@@ -283,13 +299,13 @@ export default function DiagnosisHistoryScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             className={`mr-3 py-2 px-5 rounded-lg ${
-              activeFilter === "LEFT" ? "bg-indigo-600" : "bg-indigo-50"
+              activeFilter === "LEFT" ? "bg-cyan-600" : "bg-cyan-50"
             }`}
             onPress={() => setActiveFilter("LEFT")}
           >
             <Text
               className={`${
-                activeFilter === "LEFT" ? "text-white font-bold" : "text-indigo-700 font-medium"
+                activeFilter === "LEFT" ? "text-white font-bold" : "text-cyan-700 font-medium"
               }`}
             >
               Left Eye
@@ -297,13 +313,13 @@ export default function DiagnosisHistoryScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             className={`py-2 px-5 rounded-lg ${
-              activeFilter === "RIGHT" ? "bg-indigo-600" : "bg-indigo-50"
+              activeFilter === "RIGHT" ? "bg-teal-600" : "bg-teal-50"
             }`}
             onPress={() => setActiveFilter("RIGHT")}
           >
             <Text
               className={`${
-                activeFilter === "RIGHT" ? "text-white font-bold" : "text-indigo-700 font-medium"
+                activeFilter === "RIGHT" ? "text-white font-bold" : "text-teal-700 font-medium"
               }`}
             >
               Right Eye
