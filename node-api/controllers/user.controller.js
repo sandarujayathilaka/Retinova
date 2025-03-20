@@ -60,7 +60,7 @@ const signIn = async (req, res) => {
   // Send the response
   res.status(200).send({
     user: userWithProfileOverride,
-    token: generateToken(user.id, user.role),
+    token: generateToken(user.id, user.role, user?.profile?._id),
     refreshToken: generateRefreshToken(user.id),
   });
 };
@@ -89,7 +89,7 @@ const refreshToken = async (req, res) => {
   // Send the response with the user and generated tokens
   res.status(200).send({
     user: userWithProfileOverride,
-    token: generateToken(user.id, user.role),
+    token: generateToken(user.id, user.role, user?.profile?._id),
     refreshToken: generateRefreshToken(user.id),
   });
 };
