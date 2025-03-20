@@ -34,7 +34,10 @@ const signIn = async (req, res) => {
   const { email, password } = req.body;
 
   // Find user with populated profile fields
-  const user = await User.findOne({ email }).populate("profile", "name image");
+  const user = await User.findOne({ email }).populate(
+    "profile",
+    "name image _id"
+  );
 
   if (!user || !(await user.matchPassword(password))) {
     throw new Error("Invalid credentials");
@@ -46,6 +49,7 @@ const signIn = async (req, res) => {
     name: user.profile?.name, // Optional chaining in case there's no profile
     image: user.profile?.image,
     ...user.toObject(),
+    profileId: user.profile?._id,
     password: undefined,
     passwordChangedAt: undefined,
     profile: undefined,
@@ -66,7 +70,7 @@ const refreshToken = async (req, res) => {
   const { id } = jwt.verify(req.headers.refresh_token, process.env.JWT_SECRET);
 
   // Fetch the user and populate the profile fields
-  const user = await User.findById(id).populate("profile", "name image");
+  const user = await User.findById(id).populate("profile", "name image _id");
 
   // Structure the user data with profile overrides, excluding unnecessary fields
   const userWithProfileOverride = {
@@ -74,6 +78,7 @@ const refreshToken = async (req, res) => {
     name: user.profile?.name, // Optional chaining in case there's no profile
     image: user.profile?.image,
     ...user.toObject(),
+    profileId: user.profile?._id,
     password: undefined,
     passwordChangedAt: undefined,
     profile: undefined,
@@ -158,7 +163,7 @@ const getUser = async (req, res) => {
   // const user = await User.findById(req.params.id).populate("profile");
   const user = await User.findById(req.params.id).populate(
     "profile",
-    "name image"
+    "name image _id"
   );
 
   if (!user) {
@@ -174,6 +179,7 @@ const getUser = async (req, res) => {
     ...user.toObject(),
     name: user.profile.name,
     image: user.profile.image,
+    profileId: user.profile?._id,
     profile: undefined,
     password: undefined,
     passwordChangedAt: undefined,
