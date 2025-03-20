@@ -43,9 +43,9 @@ const MultiDiagnosePage = () => {
     try {
       const formData = new FormData();
       images.forEach(image => formData.append("files", image));
-      formData.append("patientId", 12345);
+      // formData.append("patientId", 12345);
       formData.append("diseaseType", "dr");
-      const response = await axios.post("http://localhost:4000/api/patients/multisave", formData, {
+      const response = await api.post("patients/multiImagePrediction", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

@@ -89,7 +89,9 @@ const MonitoringPatientsPage = () => {
           loading={loading}
           handleViewPatient={handleViewPatient}
         />
-        <Pagination pagination={pagination} handlePageChange={handlePageChange} />
+         <div className="mt-6">
+        <Pagination  pagination={pagination} handlePageChange={handlePageChange} />
+        </div>
       </div>
     </div>
   );

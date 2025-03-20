@@ -90,7 +90,9 @@ const CompletedPatientsPage = () => {
         loading={loading}
         handleViewPatient={handleViewPatient}
       />
+      <div className="mt-6">
       <Pagination pagination={pagination} handlePageChange={handlePageChange} />
+      </div>
     </div>
   );
 };

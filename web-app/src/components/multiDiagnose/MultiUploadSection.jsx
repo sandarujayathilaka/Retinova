@@ -230,7 +230,7 @@ const MultiUploadSection = ({
                 <button
                   onClick={handleSubmission}
                   disabled={isSubmitDisabled}
-                  className={`mt-6 w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white rounded-lg ${
+                  className={`mt-6 w-full sm:w-auto px-8 py-3 bg-indigo-900 text-white rounded-lg ${
                     isSubmitDisabled
                       ? "opacity-50 cursor-not-allowed"
                       : "hover:bg-indigo-700"
@@ -240,7 +240,7 @@ const MultiUploadSection = ({
                     "Processing..."
                   ) : (
                     <>
-                      <FaUpload className="mr-2" /> Submit {imageUrls.length}{" "}
+                      <FaUpload className="mr-1" /> Submit {imageUrls.length}{" "}
                       Images
                     </>
                   )}

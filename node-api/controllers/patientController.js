@@ -414,7 +414,7 @@ exports.multiImagePrediction = async (req, res) => {
         patientDetails: patient,
       };
     });
-console.log("mulyi",results)
+
     res.status(200).json({ message: "Analysis Complete", results });
   } catch (error) {
     console.error("Error in analyzeImages:", error);
@@ -440,13 +440,13 @@ exports.saveMultipleDiagnoses = async (req, res) => {
 
     let results = [];
 
-
     for (let diagnosisEntry of diagnosisData) {
       const { patientId, diagnosis, confidenceScores } = diagnosisEntry;
-      
+
       const file = req.files.find((f) => {
-        const match = f.originalname.match(/^(.+?)_(left|right)_.*?\.jpg$/i); 
-        console.log(match);
+        // Updated regex to support multiple image extensions
+        const match = f.originalname.match(/^(.+?)_(left|right)_.*?(\.jpg|\.png|\.jpeg)$/i);
+        console.log(`Matching ${f.originalname} for ${patientId}:`, match);
         return match && match[1] === patientId;
       });
 
@@ -455,7 +455,8 @@ exports.saveMultipleDiagnoses = async (req, res) => {
         continue;
       }
 
-      let eyeSide = file.originalname.match(/^(.+?)_(left|right)_.*?\.jpg$/i)?.[2];
+      // Extract eye side from the second capture group
+      let eyeSide = file.originalname.match(/^(.+?)_(left|right)_.*?(\.jpg|\.png|\.jpeg)$/i)?.[2];
 
       if (!eyeSide) {
         console.error(`Could not determine eye side for Patient ID: ${patientId}`);

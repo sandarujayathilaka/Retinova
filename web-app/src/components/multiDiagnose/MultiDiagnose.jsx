@@ -31,8 +31,8 @@ const MultiDiagnose = ({
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("upload");
   const [selectedImage, setSelectedImage] = useState(null);
-  const [zoomLevel, setZoomLevel] = useState(1);  // Added for ImageModal
-  const [rotation, setRotation] = useState(0);    // Required by ImageModal
+  const [zoomLevel, setZoomLevel] = useState(1);  
+  const [rotation, setRotation] = useState(0);   
   const [expandedCards, setExpandedCards] = useState({});
 
   const onSubmit = () => {
