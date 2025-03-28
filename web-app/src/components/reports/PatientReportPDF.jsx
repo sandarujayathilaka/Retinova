@@ -338,10 +338,7 @@ const PatientInfoSection = ({ patientData }) => (
           <Text style={styles.label}>BMI:</Text>
           <Text style={styles.value}>{patientData?.bmi || "25.5"}</Text>
         </View>
-        <View style={styles.infoItem}>
-          <Text style={styles.label}>Allergies:</Text>
-          <Text style={styles.value}>{patientData?.allergies || "Penicillin"}</Text>
-        </View>
+        
       </View>
     </View>
   </View>
@@ -370,14 +367,8 @@ const PredictionSection = ({ prediction, imageUrl }) => (
                 <View style={styles.infoItem}>
                   <Text style={styles.label}>Date:</Text>
                   <Text style={styles.value}>
-                    {new Date(prediction.date).toLocaleDateString() || "N/A"}
+                    {new Date().toLocaleDateString() || "N/A"}
                   </Text>
-                </View>
-              </View>
-              <View style={{ width: "50%" }}>
-                <View style={styles.infoItem}>
-                  <Text style={styles.label}>Doctor:</Text>
-                  <Text style={styles.value}>Dr. {prediction.doctor || "AI System"}</Text>
                 </View>
               </View>
             </View>
@@ -572,7 +563,7 @@ const PatientReportPDF = ({ patientData, prediction, imageUrl }) => {
           {/* Footer */}
           <View style={styles.footer}>
             <Text style={{ fontSize: 8, fontWeight: "bold", marginBottom: 3, color: COLORS.primary }}>
-              Diabetic Retinopathy Diagnosis System
+              Eye Diagnosis System
             </Text>
             <Text style={{ marginBottom: 5 }}>Consult your healthcare provider for medical advice</Text>
             <Text>Report ID: {reportId} • Generated: {generationDate} • CONFIDENTIAL MEDICAL RECORD</Text>

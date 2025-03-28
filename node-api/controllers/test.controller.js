@@ -26,6 +26,12 @@ const getTests = async (req, res) => {
   res.send(tests);
 };
 
+const getOnlyActiveTests = async (req, res) => {
+  const tests = await Test.find({ isEnabled: true });
+  
+  res.send(tests);
+};
+
 const getTestById = async (req, res) => {
   const test = await Test.findById(req.params.id);
 
@@ -73,4 +79,5 @@ module.exports = {
   getTestById,
   updateTest,
   deleteTest,
+  getOnlyActiveTests
 };

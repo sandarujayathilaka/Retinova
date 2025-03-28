@@ -5,8 +5,9 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Diagnose from "./Diagnose";
+import { G } from "@react-pdf/renderer";
 
-const DR = () => {
+const Glaucoma = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [prediction, setPrediction] = useState({
@@ -99,9 +100,54 @@ const DR = () => {
   };
 
   // Handle saving prescription with image and form data
-  const handleSavePrescription = async formValues => {
-    // Existing prescription handling code...
-  };
+    const handleSavePrescription = async formValues => {
+      if (!imageFile || !prediction.type || !patientData?.patientId) {
+        toast.error("Missing required data to save prescription.");
+        return;
+      }
+  
+      setIsSaving(true);
+  
+      try {
+        const formData = new FormData();
+        formData.append("file", imageFile);
+        formData.append("diagnosis", prediction.type);
+        formData.append("confidenceScores", JSON.stringify([prediction.confidence]));
+        formData.append("category", "Glaucoma");
+  
+        // Format recommend according to the backend schema
+        const recommend = {
+          medicine: formValues.medicine || "",
+          tests: formValues.tests.map(test => ({
+            testName: test.testName,
+            status: "Pending",
+            attachmentURL: "",
+          })),
+          note: formValues.note || "",
+        };
+        formData.append("recommend", JSON.stringify(recommend));
+  
+        const response = await api.post(
+          "patients/onedatasave",
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          },
+        );
+  
+        console.log("Save response:", response.data);
+        toast.success("Prescription saved successfully!");
+        resetState();
+      } catch (error) {
+        console.error("Error saving prescription:", error);
+        const errorMsg = error.response?.data?.error || "Failed to save prescription.";
+        setErrorMessage(errorMsg);
+        toast.error(errorMsg);
+      } finally {
+        setIsSaving(false);
+      }
+    };
+ 
 
   // Reset all states
   const resetState = () => {
@@ -609,4 +655,4 @@ const DR = () => {
   );
 };
 
-export default DR;
+export default Glaucoma;

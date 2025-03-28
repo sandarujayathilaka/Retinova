@@ -210,7 +210,7 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
                   <Hospital className="h-7 w-7 text-blue-200" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white tracking-tight">MediSys</h1>
+                  <h1 className="text-xl font-bold text-white tracking-tight">Retinova</h1>
                   <p className="text-xs font-medium text-blue-200/80">Healthcare Dashboard</p>
                 </div>
               </div>
