@@ -1,3 +1,4 @@
+import { IMAGES } from "@/constants/images";
 import { ROLES } from "@/constants/roles"; // Ensure path is correct
 import useUserStore from "@/stores/auth";
 import {
@@ -7,7 +8,6 @@ import {
   ClipboardList,
   Clock,
   FlaskConical,
-  Hospital,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -207,11 +207,13 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
             {isOpen && (
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-white/10 backdrop-blur-sm rounded-xl">
-                  <Hospital className="h-7 w-7 text-blue-200" />
+                  {/* <Hospital className="h-7 w-7 text-blue-200" /> */}
+                  <img src={IMAGES.LOGO_ICON_WHITE} alt="Logo" className="size-7 min-w-7" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white tracking-tight">MediSys</h1>
-                  <p className="text-xs font-medium text-blue-200/80">Healthcare Dashboard</p>
+                  {/* <h1 className="text-xl font-bold text-white tracking-tight">MediSys</h1> */}
+                  <img src={IMAGES.LOGO_TEXT_WHITE} alt="Logo" className="w-full scale-105" />
+                  {/* <p className="text-xs font-medium text-blue-200/80">Healthcare Dashboard</p> */}
                 </div>
               </div>
             )}
