@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { Card, Typography, Progress, Button, Form, Input, Tabs, Space, Tooltip } from "antd";
+import { api } from "@/services/api.service"; // Adjust this import based on your project structure
+import { Button, Card, Form, Input, Progress, Tabs, Tooltip, Typography } from "antd";
 import { motion } from "framer-motion";
-import PatientTabs from "./PatientTabs";
-import PatientReport from "../reports/PatientReport";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast"; // Ensure toast is imported if used
+import { FaCamera, FaFilePdf } from "react-icons/fa";
 import DiagnosisHistory from "../PatientProfile/TabContent/DiagnosisHistory";
 import ConfirmDialog from "../custom-dialog/ConfirmDialog";
-import { FaFilePdf, FaCamera } from "react-icons/fa";
-import { api } from "@/services/api.service"; // Adjust this import based on your project structure
-import toast from "react-hot-toast"; // Ensure toast is imported if used
+import PatientReport from "../reports/PatientReport";
+import PatientTabs from "./PatientTabs";
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -31,7 +31,7 @@ const ResultsSection = ({
   const [availableTests, setAvailableTests] = useState([]);
   const [loadingTests, setLoadingTests] = useState(false); // Added loading state
 
-  const getMaxConfidence = (confidenceScores) => {
+  const getMaxConfidence = confidenceScores => {
     if (!confidenceScores || confidenceScores.length === 0) return "N/A";
     return `${(Math.max(...confidenceScores) * 100).toFixed(1)}%`;
   };
@@ -41,8 +41,8 @@ const ResultsSection = ({
       setLoadingTests(true);
       try {
         const response = await api.get("tests");
-        console.log("Available tests:", response.data); 
-        setAvailableTests(response.data); 
+        console.log("Available tests:", response.data);
+        setAvailableTests(response.data);
       } catch (error) {
         console.error("Error fetching tests:", error);
         toast.error("Failed to fetch available tests.");
@@ -53,11 +53,11 @@ const ResultsSection = ({
     fetchTests();
   }, []);
 
-  const openImage = (url) => {
+  const openImage = url => {
     setSelectedImage(url);
   };
 
-  const getPredictionDetails = (type) => {
+  const getPredictionDetails = type => {
     // ... (unchanged, keeping your existing logic)
     switch (type) {
       case "advanced":
@@ -118,6 +118,7 @@ const ResultsSection = ({
         };
       case "normal":
       case "No_DR":
+      case "No_AMD":
       case "Healthy":
         return {
           color: "green",
@@ -170,7 +171,7 @@ const ResultsSection = ({
     }
   };
 
-  const handleImageClick = (url) => setSelectedImage(url);
+  const handleImageClick = url => setSelectedImage(url);
 
   const predictionDetails = getPredictionDetails(prediction.type);
   const confidencePercent = Math.round(prediction.confidence * 100);
@@ -249,12 +250,7 @@ const ResultsSection = ({
       </div>
 
       <Card className="rounded-xl shadow-md border border-indigo-100 overflow-hidden">
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          type="card"
-          className="diagnosis-tabs"
-        >
+        <Tabs activeKey={activeTab} onChange={setActiveTab} type="card" className="diagnosis-tabs">
           <TabPane
             tab={
               <span className="flex items-center">
@@ -322,7 +318,10 @@ const ResultsSection = ({
                             <Text className={`text-sm font-medium ${predictionDetails.textColor}`}>
                               AI Assessment
                             </Text>
-                            <Text strong className={`text-lg block capitalize ${predictionDetails.textColor}`}>
+                            <Text
+                              strong
+                              className={`text-lg block capitalize ${predictionDetails.textColor}`}
+                            >
                               {prediction.type}
                             </Text>
                           </div>
@@ -330,7 +329,9 @@ const ResultsSection = ({
 
                         <div className="mt-4">
                           <div className="flex justify-between text-sm mb-1">
-                            <span className={`font-medium ${predictionDetails.textColor}`}>Confidence Level</span>
+                            <span className={`font-medium ${predictionDetails.textColor}`}>
+                              Confidence Level
+                            </span>
                             <span className={`${predictionDetails.textColor} font-semibold`}>
                               {confidencePercent}%
                             </span>
@@ -346,7 +347,9 @@ const ResultsSection = ({
                         </div>
 
                         <div className="mt-4 text-sm">
-                          <p className={`${predictionDetails.textColor}`}>{predictionDetails.message}</p>
+                          <p className={`${predictionDetails.textColor}`}>
+                            {predictionDetails.message}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -409,7 +412,11 @@ const ResultsSection = ({
                     className="space-y-5"
                   >
                     <Form.Item
-                      label={<Text strong className="text-gray-700">Prescribed Medicine</Text>}
+                      label={
+                        <Text strong className="text-gray-700">
+                          Prescribed Medicine
+                        </Text>
+                      }
                       name="medicine"
                     >
                       <Input
@@ -420,7 +427,9 @@ const ResultsSection = ({
 
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <Text strong className="text-gray-700">Recommended Tests</Text>
+                        <Text strong className="text-gray-700">
+                          Recommended Tests
+                        </Text>
                         <Button
                           type="default"
                           onClick={() => {
@@ -473,8 +482,8 @@ const ResultsSection = ({
                                         <>
                                           <option value="">Select Test {index + 1}</option>
                                           {availableTests
-                                            .filter((test) => test.isEnabled)
-                                            .map((test) => (
+                                            .filter(test => test.isEnabled)
+                                            .map(test => (
                                               <option key={test._id} value={test.name}>
                                                 {test.name}
                                               </option>
@@ -533,7 +542,14 @@ const ResultsSection = ({
                       </Form.List>
                     </div>
 
-                    <Form.Item label={<Text strong className="text-gray-700">Clinical Notes</Text>} name="note">
+                    <Form.Item
+                      label={
+                        <Text strong className="text-gray-700">
+                          Clinical Notes
+                        </Text>
+                      }
+                      name="note"
+                    >
                       <TextArea
                         rows={4}
                         placeholder="Add important notes about the diagnosis, treatment plan, or follow-up instructions..."
@@ -596,7 +612,11 @@ const ResultsSection = ({
             }
             key="patientInfo"
           >
-            <PatientTabs patientData={patientData} setSelectedImage={setSelectedImage} activeTab="patientInfo" />
+            <PatientTabs
+              patientData={patientData}
+              setSelectedImage={setSelectedImage}
+              activeTab="patientInfo"
+            />
           </TabPane>
 
           <TabPane
@@ -623,7 +643,11 @@ const ResultsSection = ({
             }
             key="medicalHistory"
           >
-            <PatientTabs patientData={patientData} setSelectedImage={setSelectedImage} activeTab="medicalHistory" />
+            <PatientTabs
+              patientData={patientData}
+              setSelectedImage={setSelectedImage}
+              activeTab="medicalHistory"
+            />
           </TabPane>
 
           <TabPane
