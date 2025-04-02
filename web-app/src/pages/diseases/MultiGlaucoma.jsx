@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import MultiDiagnose from "../../components/MultiDiagnose/MultiDiagnose";
-import toast from "react-hot-toast";
 import { api } from "@/services/api.service";
 import { Spin } from "antd";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import MultiDiagnose from "../../components/MultiDiagnose/MultiDiagnose";
 
 const MultiGlaucoma = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,7 +32,7 @@ const MultiGlaucoma = () => {
 
     try {
       const formData = new FormData();
-      images.forEach((image) => formData.append("files", image));
+      images.forEach(image => formData.append("files", image));
       formData.append("patientId", 12345); // Adjust if this needs to be dynamic
       formData.append("diseaseType", "glaucoma");
 
@@ -50,7 +50,7 @@ const MultiGlaucoma = () => {
         return;
       }
 
-      const formattedPredictions = response.data.results.map((item) => ({
+      const formattedPredictions = response.data.results.map(item => ({
         filename: item.filename,
         patientId: item.patientId,
         prediction: {
@@ -82,11 +82,11 @@ const MultiGlaucoma = () => {
   };
 
   const resizeImage = (file, maxSize = 1024) => {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const img = new Image();
       const reader = new FileReader();
 
-      reader.onload = (e) => {
+      reader.onload = e => {
         img.src = e.target.result;
       };
       img.onload = () => {
@@ -111,7 +111,7 @@ const MultiGlaucoma = () => {
         ctx.drawImage(img, 0, 0, width, height);
 
         canvas.toBlob(
-          (blob) => {
+          blob => {
             // Preserve the original filename structure for backend regex matching
             const resizedFile = new File([blob], file.name, {
               type: file.type,
@@ -120,7 +120,7 @@ const MultiGlaucoma = () => {
             resolve(resizedFile);
           },
           file.type === "image/png" ? "image/png" : "image/jpeg",
-          file.type === "image/png" ? undefined : 0.9
+          file.type === "image/png" ? undefined : 0.9,
         );
       };
 
@@ -128,12 +128,12 @@ const MultiGlaucoma = () => {
     });
   };
 
-  const handleSaveAll = async (images) => {
+  const handleSaveAll = async images => {
     if (predictions.length === 0) {
       toast.error("No predictions to save");
       return;
     }
-  
+
     setIsSaving(true);
     let progress = 0;
     const progressInterval = setInterval(() => {
@@ -141,12 +141,12 @@ const MultiGlaucoma = () => {
       if (progress > 90) progress = 90;
       setProcessingProgress(Math.min(Math.round(progress), 90));
     }, 200);
-  
+
     try {
       const formData = new FormData();
-  
+
       // Transform confidenceScores into an array of numbers
-      const diagnosisData = predictions.map((pred) => ({
+      const diagnosisData = predictions.map(pred => ({
         patientId: pred.patientId,
         diagnosis: pred.prediction.label,
         confidenceScores: [
@@ -155,25 +155,25 @@ const MultiGlaucoma = () => {
           pred.prediction.confidence.normal || 0,
         ],
       }));
-  
+
       console.log("Sending diagnosisData:", JSON.stringify(diagnosisData)); // Debug log
-  
+
       formData.append("diagnosisData", JSON.stringify(diagnosisData));
       formData.append("category", "Glaucoma");
-  
+
       // Resize images and ensure filenames match the prediction data
-      const resizedImages = await Promise.all(images.map((image) => resizeImage(image)));
-      resizedImages.forEach((image) => {
-        const matchingPrediction = predictions.find((p) => p.filename === image.name);
+      const resizedImages = await Promise.all(images.map(image => resizeImage(image)));
+      resizedImages.forEach(image => {
+        const matchingPrediction = predictions.find(p => p.filename === image.name);
         if (matchingPrediction) {
           formData.append("files", image);
         }
       });
-  
+
       const response = await api.post("patients/multiDataSave", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-  
+
       clearInterval(progressInterval);
       setProcessingProgress(100);
       toast.success(`Successfully saved ${predictions.length} diagnosis records!`);
