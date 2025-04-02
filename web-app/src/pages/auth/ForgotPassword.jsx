@@ -1,4 +1,3 @@
-import { GalleryVerticalEnd } from "lucide-react";
 import { IMAGES } from "@/constants/images";
 import ForgotPasswordForm from "./ForgotPasswordForm";
 
@@ -16,15 +15,13 @@ export default function ForgotPassword() {
       </div>
 
       <div className="flex flex-col w-full gap-4 p-6 md:p-10 col-span-5">
-        <div className="flex justify-center gap-2 md:justify-start">
+        <div className="flex flex-1 flex-col gap-24 items-center justify-center">
           <a href="#" className="flex items-center gap-2 font-medium">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <GalleryVerticalEnd className="size-4" />
+            <div className="flex h-6 w-6 items-center justify-center rounded-md">
+              <img src={IMAGES.LOGO_ICON} alt="Logo" className="size-12 min-w-12" />
             </div>
-            Retinova
+            <img src={IMAGES.LOGO_TEXT} alt="Logo" className="h-10" />
           </a>
-        </div>
-        <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
             <ForgotPasswordForm />
           </div>
