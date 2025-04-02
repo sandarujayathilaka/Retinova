@@ -119,6 +119,7 @@ const ResultsSection = ({
       case "normal":
       case "No_DR":
       case "No_AMD":
+      case "No_RVO":
       case "Healthy":
         return {
           color: "green",
