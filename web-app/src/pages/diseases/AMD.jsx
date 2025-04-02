@@ -91,8 +91,8 @@ const DR = () => {
       };
       formData.append("recommend", JSON.stringify(recommend));
 
-      const response = await axios.post(
-        "http://localhost:4000/api/patients/onedatasave",
+      const response = await api.post(
+        "patients/onedatasave",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },

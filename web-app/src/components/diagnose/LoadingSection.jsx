@@ -61,19 +61,7 @@ const LoadingSection = () => (
           <span className="font-medium">Analyzing image patterns</span>
         </div>
         
-        <div className="h-10 w-px bg-indigo-100 my-1"></div>
         
-        <div className="flex items-center space-x-2 text-sm text-gray-500">
-          <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-          <span>Identifying retinal features</span>
-        </div>
-        
-        <div className="h-10 w-px bg-indigo-100 my-1"></div>
-        
-        <div className="flex items-center space-x-2 text-sm text-gray-500">
-          <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-          <span>Generating diagnostic assessment</span>
-        </div>
       </div>
       
       <p className="text-xs text-gray-500 mt-8">

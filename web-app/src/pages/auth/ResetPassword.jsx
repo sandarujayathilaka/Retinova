@@ -12,7 +12,7 @@ export default function ResetPassword() {
               <GalleryVerticalEnd className="h-7 w-7 text-blue-200" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white text-center">MediSys</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white text-center">Retinova</h1>
           <div className="mt-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 backdrop-blur-sm">
             <Shield className="h-4 w-4 text-blue-300" />
             <span className="text-sm text-blue-200">Secure Password Reset</span>

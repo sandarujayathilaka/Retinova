@@ -134,7 +134,7 @@ exports.predictAndFetch = async (req, res) => {
 
     console.log(`Using Flask API: ${flaskApiUrl}`);
 
-    // **3. Prepare Image for Flask API**
+    // 3. Prepare Image for Flask API**
     const formData = new FormData();
     formData.append("file", req.file.buffer, {
       filename: req.file.originalname,
@@ -146,13 +146,15 @@ exports.predictAndFetch = async (req, res) => {
       headers: { ...formData.getHeaders() },
     });
 
+    console.log("Flask Response:", flaskResponse.data);
+
     let diagnosisResult;
     if (diseaseType == "glaucoma") {
-      diagnosisResult = flaskResponse.data.predicted_class;
+      diagnosisResult = flaskResponse.data.class;
     } else {
       diagnosisResult = flaskResponse.data.label;
     }
-    // Extract diagnosis label
+
     const confidence = flaskResponse.data.confidence; // Confidence scores
     console.log(flaskResponse);
     console.log(confidence);
@@ -288,63 +290,7 @@ console.log("images",results);
   }
 };
 
-// exports.multiImageSave = async (req, res) => {
-//   try {
-//     if (!req.files || req.files.length === 0) {
-//       return res.status(400).json({ error: "No images uploaded" });
-//     }
 
-//     // Extract patientId and eyeSide from filenames
-//     let patientData = req.files.map((file) => {
-//       const match = file.originalname.match(/^(.*?)_(LEFT|RIGHT)_.*?\.jpg$/);
-//       if (!match) {
-//         throw new Error(`Invalid filename format: ${file.originalname}`);
-//       }
-//       return { patientId: match[1], eyeSide: match[2], filename: file.originalname };
-//     });
-
-//     let patientIds = [...new Set(patientData.map((data) => data.patientId))];
-
-//     // Find all patients from the database
-//     let existingPatients = await Patient.find({ patientId: { $in: patientIds } });
-//     let existingPatientIds = new Set(existingPatients.map((p) => p.patientId));
-//     let missingPatientIds = patientIds.filter((id) => !existingPatientIds.has(id));
-
-//     if (missingPatientIds.length > 0) {
-//       return res.status(400).json({ error: "Unavailable Patient IDs", missingPatientIds });
-//     }
-
-//     // Prepare FormData and send images to Flask API
-//     const formData = new FormData();
-//     req.files.forEach((file) => {
-//       formData.append("files", file.buffer, { filename: file.originalname, contentType: file.mimetype });
-//     });
-
-//     const flaskResponse = await axios.post(process.env.FLASK_API_URL_2, formData, { headers: { ...formData.getHeaders() } });
-//     console.log("Flask Response:", flaskResponse.data);
-
-//     // Process Flask API Response
-//     let results = req.files.map((file, index) => {
-//       const predictionData = flaskResponse.data[index];
-//       const { patientId, eyeSide } = patientData[index];
-//       let patient = existingPatients.find((p) => p.patientId === patientId);
-
-//       return {
-//         patientId,
-//         eyeSide, // Store eye side
-//         diagnosis: predictionData.prediction.label,
-//         filename: predictionData.filename,
-//         confidenceScores: predictionData.prediction.confidence,
-//         patientDetails: patient,
-//       };
-//     });
-
-//     res.status(200).json({ message: "Analysis Complete", results });
-//   } catch (error) {
-//     console.error("Error in analyzeImages:", error);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// };
 
 exports.multiImagePrediction = async (req, res) => {
   try {
@@ -393,24 +339,42 @@ exports.multiImagePrediction = async (req, res) => {
     // Prepare FormData and send images to Flask API
     const formData = new FormData();
     req.files.forEach((file) => {
-      formData.append("files", file.buffer, { filename: file.originalname, contentType: file.mimetype });
+      formData.append("files", file.buffer, {
+        filename: file.originalname,
+        contentType: file.mimetype,
+      });
     });
 
-    const flaskResponse = await axios.post(flaskApiUrl, formData, { headers: { ...formData.getHeaders() } });
+    const flaskResponse = await axios.post(flaskApiUrl, formData, {
+      headers: { ...formData.getHeaders() },
+    });
     console.log("Flask Response:", flaskResponse.data);
 
     // Process Flask API Response
     let results = req.files.map((file, index) => {
-      const predictionData = flaskResponse.data[index];
+      const isGlaucoma = diseaseType.toLowerCase() === "glaucoma";
+      const predictionData = isGlaucoma
+        ? flaskResponse.data.results[index] // Glaucoma has "results" array
+        : flaskResponse.data[index]; // DR, AMD, RVO are direct array
+
       const { patientId, eyeSide } = patientData[index];
       let patient = existingPatients.find((p) => p.patientId === patientId);
 
+      // Determine diagnosis and confidence based on diseaseType
+      const diagnosis = isGlaucoma
+        ? predictionData.class // Glaucoma uses "class"
+        : predictionData.prediction.label; // Others use "prediction.label"
+
+      const confidenceScores = isGlaucoma
+        ? predictionData.probabilities // Glaucoma uses "probabilities" object
+        : predictionData.prediction.confidence; // Others use "prediction.confidence" array
+
       return {
         patientId,
-        eyeSide, // Store eye side
-        diagnosis: predictionData.prediction.label,
+        eyeSide,
+        diagnosis,
         filename: predictionData.filename,
-        confidenceScores: predictionData.prediction.confidence,
+        confidenceScores,
         patientDetails: patient,
       };
     });
@@ -449,6 +413,8 @@ exports.saveMultipleDiagnoses = async (req, res) => {
         console.log(`Matching ${f.originalname} for ${patientId}:`, match);
         return match && match[1] === patientId;
       });
+
+      console.log(req.currentUser.profileId)
 
       if (!file) {
         console.error(`No image found for Patient ID: ${patientId}`);
@@ -489,7 +455,8 @@ exports.saveMultipleDiagnoses = async (req, res) => {
         imageUrl,
         diagnosis,
         confidenceScores,
-        eye: eyeSide.toUpperCase(), // Store eye side
+        doctorId:"67d7127ed060b20213da7cb9",
+        eye: eyeSide.toUpperCase(), 
       });
 
       patient.patientStatus = "Pre-Monitoring";
@@ -519,6 +486,8 @@ exports.saveMultipleDiagnoses = async (req, res) => {
 exports.updatePatientDiagnosis = async (req, res) => {
   try {
     // Check for required fields
+
+    console.log(req.currentUser)
     if (
       !req.file ||
       !req.body.confidenceScores ||
@@ -616,6 +585,7 @@ exports.updatePatientDiagnosis = async (req, res) => {
     patient.diagnoseHistory.push({
       imageUrl,
       diagnosis: req.body.diagnosis,
+      doctorId: "67d7127ed060b20213da7cb9",
       confidenceScores,
       eye: sideIdentifier,
       recommend,
@@ -689,13 +659,27 @@ exports.getAllPatients = async (req, res) => {
     const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
     const sortField = sortBy === "age" ? "age" : "createdAt"; // Use indexed fields
 
-    // Fetch patients with pagination, sorting, and lean for performance
     const patients = await Patient.find(query)
       .sort({ [sortField]: sortDirection })
       .skip(skip)
       .limit(limitNum)
-      .lean()
       .select("-__v"); // Exclude version key
+
+    // Convert to plain objects with virtuals (e.g., age)
+    const patientsWithVirtuals = patients.map((patient) =>
+      patient.toObject({ virtuals: true })
+    );
+
+    // Get total count for pagination metadata
+    // const totalPatients = await Patient.countDocuments(query)
+
+    // // Fetch patients with pagination, sorting, and lean for performance
+    // const patients = await Patient.find(query)
+    //   .sort({ [sortField]: sortDirection })
+    //   .skip(skip)
+    //   .limit(limitNum)
+    //   .lean({ virtuals: true})
+    //   .select("-__v"); // Exclude version key
 
     // Get total count for pagination metadata
     const totalPatients = await Patient.countDocuments(query);
@@ -707,7 +691,7 @@ exports.getAllPatients = async (req, res) => {
     // Response structure similar to your existing functions
     res.json({
       message: "Patients retrieved successfully",
-      data: patients,
+      data: patientsWithVirtuals,
       pagination: {
         currentPage: pageNum,
         totalPages: Math.ceil(totalPatients / limitNum),
@@ -737,11 +721,16 @@ exports.getPatientById = async (req, res) => {
     if (!patientId) {
       return res.status(400).json({ error: "Patient ID is required" });
     }
+    
 
     // Fetch patient from database
     const patient = await Patient.findOne({ patientId })
-      .lean() // Use lean for performance (returns plain JS object)
       .select("-__v"); // Exclude version key
+
+    // Convert to plain objects with virtuals (e.g., age)
+
+     patient.toObject({ virtuals: true })
+    
 
     // Check if patient exists
     if (!patient) {

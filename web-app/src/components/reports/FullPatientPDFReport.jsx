@@ -339,12 +339,9 @@ const PatientDiagnosisReport = ({ patientData }) => {
 
         {/* Footer */}
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>Physician ID: {patientData?.primaryPhysician || "N/A"}</Text>
-          <Text style={styles.footerText}>Generated: {generationDate} | Report ID: {reportId}</Text>
-          <Text style={styles.footerText}>CONFIDENTIAL MEDICAL DOCUMENT</Text>
-          <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => (
-            `Page ${pageNumber} of ${totalPages}`
-          )} />
+          <Text style={styles.footerText}>Generated: {generationDate}</Text>
+          <Text style={styles.footerText}>CONFIDENTIAL MEDICAL DOCUMENT - Retinova Pvt Ltd</Text>
+
         </View>
       </Page>
     </Document>
