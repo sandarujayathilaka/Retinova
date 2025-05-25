@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Diagnose from "./Diagnose";
+import Diagnose from "../../../components/singleDiagnose/Diagnose";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { api } from "@/services/api.service";

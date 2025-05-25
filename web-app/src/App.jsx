@@ -3,11 +3,11 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AdminLayout from "./layouts/AdminLayout";
-import AMD from "./pages/diseases/AMD";
-import Diagnose from "./pages/diseases/Diagnose";
-import DR from "./pages/diseases/DR";
-import Glaucoma from "./pages/diseases/Glaucoma";
-import MultiDiagnosePage from "./pages/diseases/MultiDiagnosePage";
+import AMD from "./pages/diseases/singleDignose/AMD";
+import Diagnose from "./components/singleDiagnose/Diagnose";
+import DR from "./pages/diseases/singleDignose/DR";
+import Glaucoma from "./pages/diseases/singleDignose/Glaucoma";
+import MultiDiagnosePage from "./pages/diseases/MultiDiagnose/MultiDiagnosePage";
 import PatientsPage from "./pages/PatientsPage";
 import PatientProfile from "./pages/PatientProfile";
 import Test from "./pages/diseases/Test";
@@ -20,7 +20,7 @@ import MonitoringPatients from "./pages/Nurse/MonitoringPatients/MonitoringPatie
 import PublishedPatients from "./pages/Nurse/PublishedPatients/PublishedPatients";
 import AddPatient from "./pages/Nurse/AddPatient/AddPatient";
 import View from "./pages/Nurse/View/ViewPatient";
-import RVO from "./pages/diseases/RVO";
+import RVO from "./pages/diseases/singleDignose/RVO";
 import DoctorsList from "@/pages/admin/DoctorList.jsx";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/auth/ResetPassword";
@@ -41,9 +41,9 @@ import AddPatientWizard from "./pages/Nurse/AddPatient/AddPatientWizard";
 import ReviewPatients from "./pages/Nurse/ReviewPatients/ReviewPatients";
 import UserList from "./pages/admin/UserList";
 import AllNursePatients from "./pages/nurse/AllPatients/AllPatients"
-import MultiAMD from "./pages/diseases/MultiAMD";
-import MultiRVO from "./pages/diseases/MultiRVO";
-import MultiGlaucoma from "./pages/diseases/MultiGlaucoma";
+import MultiAMD from "./pages/diseases/MultiDiagnose/MultiAMD";
+import MultiRVO from "./pages/diseases/MultiDiagnose/MultiRVO";
+import MultiGlaucoma from "./pages/diseases/MultiDiagnose/MultiGlaucoma";
 
 
 const App = () => {
