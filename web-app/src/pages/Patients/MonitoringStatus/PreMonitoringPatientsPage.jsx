@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import Filters from "../components/PatientsPage/Filters";
-import PatientsTable from "../components/PatientsPage/PatientsTable";
-import Pagination from "../components/PatientsPage/Pagination";
+import Filters from "../../../components/PatientsPage/Filters";
+import PatientsTable from "../../../components/PatientsPage/PatientsTable";
+import Pagination from "../../../components/PatientsPage/Pagination";
+import { set } from "date-fns";
 import { ErrorAlert } from "@/components/error/ErrorAlert";
 import { api } from "@/services/api.service";
 
-const ReviewPatientsPage = () => {
+
+
+const PreMonitoringPatientsPage = () => {
   const [patients, setPatients] = useState([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -25,14 +28,14 @@ const ReviewPatientsPage = () => {
     search: "",
     sortBy: "createdAt",
     sortOrder: "desc",
-    status: "Review", // Fixed status for Review patients
+    status: "Pre-Monitoring", // Fixed status for Pre-Monitoring patients
   });
   const [loading, setLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const fetchReviewPatients = async () => {
+  const fetchPreMonitoringPatients = async () => {
     setLoading(true);
     try {
       const response = await api.get("patients/status", {
@@ -41,15 +44,15 @@ const ReviewPatientsPage = () => {
       setPatients(response.data.data);
       setPagination(response.data.pagination);
     } catch (error) {
-      console.error("Error fetching Review patients:", error);
-      setError(setError(error.response?.data?.error || "Error fetching Completed patients"));
+      console.error("Error fetching Pre-Monitoring patients:", error);
+      setError(error.response?.data?.error || "Error fetching Pre-Monitoring patients");
     }
     setLoading(false);
   };
 
   useEffect(() => {
     if (isInitialLoad) {
-      fetchReviewPatients();
+      fetchPreMonitoringPatients();
       setIsInitialLoad(false);
     }
   }, [isInitialLoad]);
@@ -60,21 +63,20 @@ const ReviewPatientsPage = () => {
   };
 
   const handleSearch = () => {
-    fetchReviewPatients();
+    fetchPreMonitoringPatients();
   };
 
   const handlePageChange = newPage => {
     setFilters(prev => ({ ...prev, page: newPage }));
-    fetchReviewPatients();
+    fetchPreMonitoringPatients();
   };
 
-  const handleViewPatient = patientId => {
-    navigate(`/patients/${patientId}`);
-  };
-
+const handleViewPatient = patientId => {
+  navigate(`/patients/${patientId}`, { state: { referrer: "PreMonitoringPatientsPage" } });
+};
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Review Patients</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Pre-Monitoring Patients</h1>
       {error && <ErrorAlert message={error} />}
       <Filters
         filters={filters}
@@ -82,9 +84,11 @@ const ReviewPatientsPage = () => {
         handleSearch={handleSearch}
       />
       <PatientsTable patients={patients} loading={loading} handleViewPatient={handleViewPatient} />
-      <Pagination pagination={pagination} handlePageChange={handlePageChange} />
+      <div className="mt-6">
+      <Pagination  pagination={pagination} handlePageChange={handlePageChange} />
+      </div>
     </div>
   );
 };
 
-export default ReviewPatientsPage;
+export default PreMonitoringPatientsPage;
