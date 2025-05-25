@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import Filters from "../components/PatientsPage/Filters";
-import PatientsTable from "../components/PatientsPage/PatientsTable";
-import Pagination from "../components/PatientsPage/Pagination";
+import Filters from "../../../components/PatientsPage/Filters";
+import PatientsTable from "../../../components/PatientsPage/PatientsTable";
+import Pagination from "../../../components/PatientsPage/Pagination";
 import { ErrorAlert } from "@/components/error/ErrorAlert";
 import { api } from "@/services/api.service";
 
-const MonitoringPatientsPage = () => {
+const ReviewPatientsPage = () => {
   const [patients, setPatients] = useState([]);
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -25,14 +25,14 @@ const MonitoringPatientsPage = () => {
     search: "",
     sortBy: "createdAt",
     sortOrder: "desc",
-    status: "Monitoring", // Fixed status for Monitoring patients
+    status: "Review", // Fixed status for Review patients
   });
   const [loading, setLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const fetchMonitoringPatients = async () => {
+  const fetchReviewPatients = async () => {
     setLoading(true);
     try {
       const response = await api.get("patients/status", {
@@ -41,15 +41,15 @@ const MonitoringPatientsPage = () => {
       setPatients(response.data.data);
       setPagination(response.data.pagination);
     } catch (error) {
-      console.error("Error fetching Monitoring patients:", error);
-      setError(error.response?.data?.error || "Error fetching Monitoring patients");
+      console.error("Error fetching Review patients:", error);
+      setError(setError(error.response?.data?.error || "Error fetching Completed patients"));
     }
     setLoading(false);
   };
 
   useEffect(() => {
     if (isInitialLoad) {
-      fetchMonitoringPatients();
+      fetchReviewPatients();
       setIsInitialLoad(false);
     }
   }, [isInitialLoad]);
@@ -60,12 +60,12 @@ const MonitoringPatientsPage = () => {
   };
 
   const handleSearch = () => {
-    fetchMonitoringPatients();
+    fetchReviewPatients();
   };
 
   const handlePageChange = newPage => {
     setFilters(prev => ({ ...prev, page: newPage }));
-    fetchMonitoringPatients();
+    fetchReviewPatients();
   };
 
   const handleViewPatient = patientId => {
@@ -73,28 +73,18 @@ const MonitoringPatientsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Monitoring Patients</h1>
-
-        {error && <ErrorAlert message={error} />}
-        
-        <Filters
-          filters={filters}
-          handleFilterChange={handleFilterChange}
-          handleSearch={handleSearch}
-        />
-        <PatientsTable
-          patients={patients}
-          loading={loading}
-          handleViewPatient={handleViewPatient}
-        />
-         <div className="mt-6">
-        <Pagination  pagination={pagination} handlePageChange={handlePageChange} />
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Review Patients</h1>
+      {error && <ErrorAlert message={error} />}
+      <Filters
+        filters={filters}
+        handleFilterChange={handleFilterChange}
+        handleSearch={handleSearch}
+      />
+      <PatientsTable patients={patients} loading={loading} handleViewPatient={handleViewPatient} />
+      <Pagination pagination={pagination} handlePageChange={handlePageChange} />
     </div>
   );
 };
 
-export default MonitoringPatientsPage;
+export default ReviewPatientsPage;

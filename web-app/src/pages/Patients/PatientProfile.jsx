@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import Header from "../components/PatientProfile/Header";
-import TabNavigation from "../components/PatientProfile/TabNavigation";
-import TabContent from "../components/PatientProfile/TabContent";
-import Footer from "../components/PatientProfile/Footer";
-import ImageModal from "../components/diagnose/ImageModal";
+import Header from "../../components/PatientProfile/Header";
+import TabNavigation from "../../components/PatientProfile/TabNavigation";
+import TabContent from "../../components/PatientProfile/TabContent";
+import Footer from "../../components/PatientProfile/Footer";
+import ImageModal from "../../components/diagnose/ImageModal";
 import { BadgeAlert, Activity } from "lucide-react";
 import { api } from "@/services/api.service";
 
