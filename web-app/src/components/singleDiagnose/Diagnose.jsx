@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Typography, Alert } from "antd";
-import UploadSection from "../../components/diagnose/UploadSection";
-import LoadingSection from "../../components/diagnose/LoadingSection";
-import ResultsSection from "../../components/diagnose/ResultsSection";
-import ImageModal from "../../components/diagnose/ImageModal";
+import UploadSection from "../diagnose/UploadSection";
+import LoadingSection from "../diagnose/LoadingSection";
+import ResultsSection from "../diagnose/ResultsSection";
+import ImageModal from "../diagnose/ImageModal";
 
 const { Title } = Typography;
 

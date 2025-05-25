@@ -4,7 +4,7 @@ import { useGetExplanations } from "@/services/diagnose.service";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import Diagnose from "./Diagnose";
+import Diagnose from "../../../components/singleDiagnose/Diagnose";
 
 const Glaucoma = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
