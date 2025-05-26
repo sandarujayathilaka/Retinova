@@ -36,7 +36,7 @@ const MultiDiagnosePage = () => {
       images.forEach(image => formData.append("files", image));
       formData.append("patientId", 12345);
       formData.append("diseaseType", "rvo");
-      const response = await api.post("patients/multiImagePrediction", formData, {
+      const response = await api.post("predictions/multiImagePrediction", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 console.log(response)
@@ -143,7 +143,7 @@ console.log(response)
         if (matchingPrediction) formData.append("files", image);
       });
 
-      const response = await api.post("patients/multiDataSave", formData, {
+      const response = await api.post("predictions/multiDataSave", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

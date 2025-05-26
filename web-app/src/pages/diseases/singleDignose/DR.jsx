@@ -30,7 +30,7 @@ const DR = () => {
       const formData = new FormData();
       formData.append("file", image); 
       formData.append("diseaseType", "dr");
-      const response = await api.post("patients/predict", formData, {
+      const response = await api.post("predictions/singleImagePredict", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -92,8 +92,8 @@ const DR = () => {
       };
       formData.append("recommend", JSON.stringify(recommend));
 
-      const response = await api.post(
-        "patients/onedatasave",
+      const response = await api.put(
+        "predictions/savePatientDiagnose",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
