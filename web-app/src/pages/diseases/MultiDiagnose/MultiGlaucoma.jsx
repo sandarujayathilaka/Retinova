@@ -36,7 +36,7 @@ const MultiGlaucoma = () => {
       formData.append("patientId", 12345); // Adjust if this needs to be dynamic
       formData.append("diseaseType", "glaucoma");
 
-      const response = await api.post("patients/multiImagePrediction", formData, {
+      const response = await api.post("predictions/multiImagePrediction", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -170,7 +170,7 @@ const MultiGlaucoma = () => {
         }
       });
 
-      const response = await api.post("patients/multiDataSave", formData, {
+      const response = await api.post("predictions/multiDataSave", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

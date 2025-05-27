@@ -191,7 +191,7 @@ useEffect(() => {
     setSubmitting((prev) => ({ ...prev, [addTestDiagnosisId]: true }));
     try {
       const response = await api.put(
-        `patients/${patient.patientId}/diagnoses/${addTestDiagnosisId}/tests`,
+        `predictions/${patient.patientId}/diagnoses/${addTestDiagnosisId}/tests`,
         { testName: newTestName }
       );
 
@@ -256,7 +256,7 @@ useEffect(() => {
     setSubmitting((prev) => ({ ...prev, [diagnosisId]: true }));
     try {
       await api.put(
-        `patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
+        `predictions/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
         {
           medicine: data.medicine,
           tests: data.tests,
@@ -285,7 +285,7 @@ useEffect(() => {
     try {
       const filteredTests = reviewFormData.additionalTests.filter((test) => test.testName.trim());
       const response = await api.put(
-        `patients/${patient._id}/diagnoses/${reviewDiagnosisId}/review`,
+        `predictions/${patient._id}/diagnoses/${reviewDiagnosisId}/review`,
         {
           reviewInfo: {
             recommendedMedicine: reviewFormData.recommendedMedicine,
@@ -349,7 +349,7 @@ useEffect(() => {
     setSubmitting((prev) => ({ ...prev, [diagnosisId]: true }));
     try {
       await api.put(
-        `patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
+        `predictions/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
         {
           medicine: "",
           tests: [],
@@ -369,7 +369,7 @@ useEffect(() => {
     setSubmitting((prev) => ({ ...prev, [testId]: true }));
     try {
       const response = await api.put(
-        `patients/${patient._id}/diagnoses/${diagnosisId}/tests/${testId}/status`,
+        `predictions/${patient._id}/diagnoses/${diagnosisId}/tests/${testId}/status`,
         { status: "Reviewed" }
       );
       toast.success("Test marked as reviewed successfully!");
