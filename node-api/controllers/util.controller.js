@@ -17,7 +17,7 @@ const uploadImage = async (req, res) => {
       Key: fileName,
       Body: req.file.buffer,
       ContentType: req.file.mimetype,
-      ACL: "public-read",
+      // ACL: "public-read",
     };
 
     // Upload Image
