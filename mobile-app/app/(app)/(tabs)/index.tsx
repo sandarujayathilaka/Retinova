@@ -38,6 +38,7 @@ interface Profile {
   fullName: string;
   patientStatus?: string;
   nextVisit?: string | Date;
+  
 }
 
 // Helper functions
@@ -633,42 +634,30 @@ export default function HomeScreen() {
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <MaterialCommunityIcons
-              name="eye-check" 
-              size={28} 
-              color="#fff" 
+            <Image
+                  source={require("@/assets/images/retinova_logo_white.png")}
+                  className="w-10 h-10"
+                  resizeMode="contain"
             />
             <Text
               style={{
                 fontSize: 22,
                 fontWeight: "bold",
-                color: "#fff",
+                color: "#f2f2f2",
                 marginLeft: 8,
               }}
             >
-              EyeDiagnosis
+              RETINOVA
             </Text>
           </View>
           
-          <TouchableOpacity
-            style={{
-              width: 40,
-              height: 40,
-              backgroundColor: "rgba(255, 255, 255, 0.2)",
-              borderRadius: 20,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-            // onPress={() => router.push("/(tabs)/notifications" as const)}
-          >
-            <Ionicons name="notifications" size={22} color="#fff" />
-          </TouchableOpacity>
+          
         </View>
         
         <View style={{ paddingHorizontal: 16 }}>
           <Text
             style={{
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: "700",
               color: "#fff",
               marginBottom: 2,
@@ -854,13 +843,13 @@ export default function HomeScreen() {
             <EyeStatus 
               diagnoses={diagnoses} 
               eye="LEFT" 
-              label="Left Eye (OS)" 
+              label="Left Eye" 
               abbreviation="L" 
             />
             <EyeStatus 
               diagnoses={diagnoses} 
               eye="RIGHT" 
-              label="Right Eye (OD)" 
+              label="Right Eye" 
               abbreviation="R" 
             />
           </View>

@@ -254,7 +254,7 @@ export default function DiagnosisDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+      <StatusBar barStyle="light-content" backgroundColor="#3b82f6" />
 
       {/* Updated Header Section with LinearGradient */}
       <LinearGradient
@@ -320,13 +320,13 @@ export default function DiagnosisDetailScreen() {
               <View className="flex-row justify-between items-center mb-2">
                 <Text className="text-gray-700 font-medium">Confidence Score</Text>
                 <Text className="text-blue-900 font-bold">
-                  {((diagnosis.confidenceScores[0] || 0) * 100).toFixed(1)}%
+                  {((Math.max(...(diagnosis.confidenceScores || [0])) || 0) * 100).toFixed(1)}%
                 </Text>
               </View>
               <View className="h-3 bg-gray-100 rounded-full overflow-hidden">
                 <View
                   className="h-full bg-blue-900 rounded-full"
-                  style={{ width: `${(diagnosis.confidenceScores[0] || 0) * 100}%` }}
+                  style={{ width: `${(Math.max(...(diagnosis.confidenceScores || [0])) || 0) * 100}%` }}
                 />
               </View>
             </View>
