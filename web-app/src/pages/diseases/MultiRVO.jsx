@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import MultiDiagnose from "../../components/MultiDiagnose/MultiDiagnose";
+import MultiDiagnose from "../../components/multiDiagnose/MultiDiagnose";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { Spin } from "antd";
@@ -23,7 +23,7 @@ const MultiDiagnosePage = () => {
 
     setIsSubmitting(true);
     setMissingPatientIds([]);
-    
+
     let progress = 0;
     const progressInterval = setInterval(() => {
       progress += Math.random() * 15;
@@ -39,7 +39,7 @@ const MultiDiagnosePage = () => {
       const response = await api.post("patients/multiImagePrediction", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-console.log(response)
+      console.log(response);
       clearInterval(progressInterval);
       setProcessingProgress(100);
 
@@ -56,7 +56,7 @@ console.log(response)
         prediction: { label: item.diagnosis, confidence: item.confidenceScores },
         patientDetails: item.patientDetails,
       }));
-      console.log(formattedPredictions)
+      console.log(formattedPredictions);
       setPredictions(formattedPredictions);
       setPatientData(response.data.results[0]?.patientDetails);
       toast.success(`Successfully analyzed ${formattedPredictions.length} images!`);
@@ -83,29 +83,41 @@ console.log(response)
       const img = new Image();
       const reader = new FileReader();
 
-      reader.onload = e => { img.src = e.target.result; };
+      reader.onload = e => {
+        img.src = e.target.result;
+      };
       img.onload = () => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         let { width, height } = img;
 
         if (width > height) {
-          if (width > maxSize) { height *= maxSize / width; width = maxSize; }
+          if (width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          }
         } else {
-          if (height > maxSize) { width *= maxSize / height; height = maxSize; }
+          if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
         }
 
         canvas.width = width;
         canvas.height = height;
         ctx.drawImage(img, 0, 0, width, height);
 
-        canvas.toBlob(blob => {
-          const resizedFile = new File([blob], file.name, {
-            type: file.type,
-            lastModified: file.lastModified,
-          });
-          resolve(resizedFile);
-        }, file.type === "image/png" ? "image/png" : "image/jpeg", file.type === "image/png" ? undefined : 0.9);
+        canvas.toBlob(
+          blob => {
+            const resizedFile = new File([blob], file.name, {
+              type: file.type,
+              lastModified: file.lastModified,
+            });
+            resolve(resizedFile);
+          },
+          file.type === "image/png" ? "image/png" : "image/jpeg",
+          file.type === "image/png" ? undefined : 0.9,
+        );
       };
 
       reader.readAsDataURL(file);
@@ -133,7 +145,7 @@ console.log(response)
         diagnosis: pred.prediction.label,
         confidenceScores: pred.prediction.confidence,
       }));
-      console.log("diagnosisData",diagnosisData)
+      console.log("diagnosisData", diagnosisData);
       formData.append("diagnosisData", JSON.stringify(diagnosisData));
       formData.append("category", "RVO");
       formData.append("diseaseType", "rvo");
@@ -174,10 +186,7 @@ console.log(response)
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <Spin
-        spinning={isSaving} 
-        tip={`Saving... ${processingProgress}%`}
-      >
+      <Spin spinning={isSaving} tip={`Saving... ${processingProgress}%`}>
         <MultiDiagnose
           disease="Retinal Vein Occlusion"
           handleSubmission={handleSubmission}
