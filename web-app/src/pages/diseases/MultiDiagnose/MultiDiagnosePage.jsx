@@ -32,7 +32,7 @@ const MultiDiagnosePage = () => {
 
     setIsSubmitting(true);
     setMissingPatientIds([]);
-    
+
     let progress = 0;
     const progressInterval = setInterval(() => {
       progress += Math.random() * 15;
@@ -92,29 +92,41 @@ const MultiDiagnosePage = () => {
       const img = new Image();
       const reader = new FileReader();
 
-      reader.onload = e => { img.src = e.target.result; };
+      reader.onload = e => {
+        img.src = e.target.result;
+      };
       img.onload = () => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         let { width, height } = img;
 
         if (width > height) {
-          if (width > maxSize) { height *= maxSize / width; width = maxSize; }
+          if (width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          }
         } else {
-          if (height > maxSize) { width *= maxSize / height; height = maxSize; }
+          if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
         }
 
         canvas.width = width;
         canvas.height = height;
         ctx.drawImage(img, 0, 0, width, height);
 
-        canvas.toBlob(blob => {
-          const resizedFile = new File([blob], file.name, {
-            type: file.type,
-            lastModified: file.lastModified,
-          });
-          resolve(resizedFile);
-        }, file.type === "image/png" ? "image/png" : "image/jpeg", file.type === "image/png" ? undefined : 0.9);
+        canvas.toBlob(
+          blob => {
+            const resizedFile = new File([blob], file.name, {
+              type: file.type,
+              lastModified: file.lastModified,
+            });
+            resolve(resizedFile);
+          },
+          file.type === "image/png" ? "image/png" : "image/jpeg",
+          file.type === "image/png" ? undefined : 0.9,
+        );
       };
 
       reader.readAsDataURL(file);
@@ -182,10 +194,7 @@ const MultiDiagnosePage = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <Spin
-        spinning={isSaving} 
-        tip={`Saving... ${processingProgress}%`}
-      >
+      <Spin spinning={isSaving} tip={`Saving... ${processingProgress}%`}>
         <MultiDiagnose
           disease="Diabetic Retinopathy"
           handleSubmission={handleSubmission}
