@@ -2,7 +2,7 @@ import { api } from "@/services/api.service";
 import { Spin } from "antd";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import MultiDiagnose from "../../../components/MultiDiagnose/MultiDiagnose";
+import MultiDiagnose from "../../../components/multiDiagnose/MultiDiagnose";
 
 const MultiDiagnosePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);

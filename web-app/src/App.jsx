@@ -40,11 +40,10 @@ import DoctorDashboard from "./pages/DoctorDashboard/DoctorDashboard";
 import AddPatientWizard from "./pages/Nurse/AddPatient/AddPatientWizard";
 import ReviewPatients from "./pages/Nurse/ReviewPatients/ReviewPatients";
 import UserList from "./pages/admin/UserList";
-import AllNursePatients from "./pages/nurse/AllPatients/AllPatients"
+import AllNursePatients from "./pages/Nurse/AllPatients/AllPatients";
 import MultiAMD from "./pages/diseases/MultiDiagnose/MultiAMD";
 import MultiRVO from "./pages/diseases/MultiDiagnose/MultiRVO";
 import MultiGlaucoma from "./pages/diseases/MultiDiagnose/MultiGlaucoma";
-
 
 const App = () => {
   const SAMPLE_NURSE_ID = "67d1eec052a3868b43b617d3"; // Replace with a real ID

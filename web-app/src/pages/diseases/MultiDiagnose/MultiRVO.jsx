@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import MultiDiagnose from "../../../components/MultiDiagnose/MultiDiagnose";
+import MultiDiagnose from "../../../components/multiDiagnose/MultiDiagnose";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { Spin } from "antd";
