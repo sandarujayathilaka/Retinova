@@ -4,7 +4,7 @@ import { useGetExplanations } from "@/services/diagnose.service";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import Diagnose from "./Diagnose";
+import Diagnose from "../../../components/singleDiagnose/Diagnose";
 
 const Glaucoma = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +44,7 @@ const Glaucoma = () => {
       const formData = new FormData();
       formData.append("file", image);
       formData.append("diseaseType", "glaucoma");
-      const response = await api.post("patients/predict", formData, {
+      const response = await api.post("predictions/singleImagePredictt", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -126,7 +126,7 @@ const Glaucoma = () => {
       };
       formData.append("recommend", JSON.stringify(recommend));
 
-      const response = await api.post("patients/onedatasave", formData, {
+      const response = await api.put("predictions/savePatientDiagnose", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

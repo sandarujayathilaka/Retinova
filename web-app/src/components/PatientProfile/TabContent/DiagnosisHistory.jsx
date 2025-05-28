@@ -73,6 +73,9 @@ useEffect(() => {
   fetchTests();
 }, []);
 
+
+// Initialize form data for each diagnosis in the history
+
   const handleInputChange = (diagnosisId, field, value, testIndex = null) => {
     setFormData((prev) => {
       const diagnosisForm = prev[diagnosisId] || initializeFormData(diagnosisId);
@@ -95,6 +98,9 @@ useEffect(() => {
       return { ...prev, [field]: value };
     });
   };
+
+
+  //Adding and Removing Test Fields
 
   const addTestField = (diagnosisId) => {
     setFormData((prev) => {
@@ -135,6 +141,10 @@ useEffect(() => {
       additionalTests: prev.additionalTests.filter((_, idx) => idx !== testIndex),
     }));
   };
+
+
+
+  //Modal Control Functions
 
   const openModal = (diagnosisId) => {
     setSelectedDiagnosisId(diagnosisId);
@@ -182,6 +192,8 @@ useEffect(() => {
     setNewTestName("");
   };
 
+
+  //Submit a new test for a diagnosis to the backend and update the UI
   const handleAddTestSubmit = async () => {
     if (!newTestName.trim()) {
       toast.error("Please enter a test name.");
@@ -191,7 +203,7 @@ useEffect(() => {
     setSubmitting((prev) => ({ ...prev, [addTestDiagnosisId]: true }));
     try {
       const response = await api.put(
-        `patients/${patient.patientId}/diagnoses/${addTestDiagnosisId}/tests`,
+        `predictions/${patient.patientId}/diagnoses/${addTestDiagnosisId}/tests`,
         { testName: newTestName }
       );
 
@@ -229,6 +241,9 @@ useEffect(() => {
     setSubmitting((prev) => ({ ...prev, [addTestDiagnosisId]: false }));
   };
 
+
+  //PDF Viewer and Toggle Functions
+
   const openPdfViewer = (url) => {
     setCurrentPdfUrl(url);
     setPdfViewerOpen(true);
@@ -246,6 +261,9 @@ useEffect(() => {
     }));
   };
 
+  //Form Submission Handlers
+  //handleSubmit use to Submits recommendations (medicine, tests, note) for a diagnosis
+
   const handleSubmit = async (diagnosisId) => {
     const data = formData[diagnosisId];
     if (!data || !data.medicine || !data.tests.length || !data.note) {
@@ -256,7 +274,7 @@ useEffect(() => {
     setSubmitting((prev) => ({ ...prev, [diagnosisId]: true }));
     try {
       await api.put(
-        `patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
+        `predictions/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
         {
           medicine: data.medicine,
           tests: data.tests,
@@ -275,6 +293,9 @@ useEffect(() => {
     setSubmitting((prev) => ({ ...prev, [diagnosisId]: false }));
   };
 
+
+  //handleReviewSubmit use to Submits review information (medicine, notes, tests, status) for a diagnosis.
+
   const handleReviewSubmit = async () => {
     if (!reviewFormData.recommendedMedicine && !reviewFormData.notes) {
       toast.error("Please provide at least one of recommended medicine or notes.");
@@ -285,7 +306,7 @@ useEffect(() => {
     try {
       const filteredTests = reviewFormData.additionalTests.filter((test) => test.testName.trim());
       const response = await api.put(
-        `patients/${patient._id}/diagnoses/${reviewDiagnosisId}/review`,
+        `predictions/${patient._id}/diagnoses/${reviewDiagnosisId}/review`,
         {
           reviewInfo: {
             recommendedMedicine: reviewFormData.recommendedMedicine,
@@ -345,11 +366,14 @@ useEffect(() => {
     setSubmitting((prev) => ({ ...prev, [reviewDiagnosisId]: false }));
   };
 
+
+  //Marks a diagnosis as checked
+
   const handleMarkAsChecked = async (diagnosisId) => {
     setSubmitting((prev) => ({ ...prev, [diagnosisId]: true }));
     try {
       await api.put(
-        `patients/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
+        `predictions/${patient._id}/diagnoses/${diagnosisId}/recommendations`,
         {
           medicine: "",
           tests: [],
@@ -365,11 +389,13 @@ useEffect(() => {
     setSubmitting((prev) => ({ ...prev, [diagnosisId]: false }));
   };
 
+
+  //Marks a test as reviewed
   const handleMarkAsReviewed = async (diagnosisId, testId) => {
     setSubmitting((prev) => ({ ...prev, [testId]: true }));
     try {
       const response = await api.put(
-        `patients/${patient._id}/diagnoses/${diagnosisId}/tests/${testId}/status`,
+        `predictions/${patient._id}/diagnoses/${diagnosisId}/tests/${testId}/status`,
         { status: "Reviewed" }
       );
       toast.success("Test marked as reviewed successfully!");
@@ -400,6 +426,9 @@ useEffect(() => {
     setSubmitting((prev) => ({ ...prev, [testId]: false }));
   };
 
+
+
+  //Fetches the latest diagnosis history from the backend
   const refreshDiagnosisHistory = async () => {
     try {
       console.log(patient._id);
@@ -412,6 +441,8 @@ useEffect(() => {
     }
   };
 
+
+  //Opens a PDF in the PDF viewer or an image using the openImage prop based on the file type.
   const handleFileClick = (url, fileType) => {
     if (fileType === "pdf") {
       openPdfViewer(url);
@@ -424,6 +455,9 @@ useEffect(() => {
     return tests.length > 0 && tests.every((test) => test.status === "Reviewed");
   };
 
+
+  //Updates diagnoseHistory whenever the patient prop changes
+
   useEffect(() => {
     setDiagnoseHistory(patient.diagnoseHistory || []);
   }, [patient]);
@@ -434,6 +468,8 @@ useEffect(() => {
         <Activity className="w-6 h-6 mr-2 text-indigo-600" />
         <span>Diagnosis History</span>
       </div>
+
+      {/* Diagnosis Table */}
 
       {diagnoseHistory.length === 0 ? (
         <p className="text-gray-600 italic text-center py-4">No diagnosis history available</p>

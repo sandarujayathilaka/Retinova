@@ -2,9 +2,9 @@ import { api } from "@/services/api.service";
 import { Spin } from "antd";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import MultiDiagnose from "../../components/multiDiagnose/MultiDiagnose";
+import MultiDiagnose from "../../../components/multiDiagnose/MultiDiagnose";
 
-const MultiGlaucoma = () => {
+const MultiDiagnosePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [predictions, setPredictions] = useState([]);
   const [patientData, setPatientData] = useState(null);
@@ -33,13 +33,12 @@ const MultiGlaucoma = () => {
     try {
       const formData = new FormData();
       images.forEach(image => formData.append("files", image));
-      formData.append("patientId", 12345); // Adjust if this needs to be dynamic
-      formData.append("diseaseType", "glaucoma");
-
-      const response = await api.post("patients/multiImagePrediction", formData, {
+      formData.append("patientId", 12345);
+      formData.append("diseaseType", "amd");
+      const response = await api.post("predictions/multiImagePrediction", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
+      console.log("AMD", response);
       clearInterval(progressInterval);
       setProcessingProgress(100);
 
@@ -53,13 +52,10 @@ const MultiGlaucoma = () => {
       const formattedPredictions = response.data.results.map(item => ({
         filename: item.filename,
         patientId: item.patientId,
-        prediction: {
-          label: item.diagnosis,
-          confidence: item.confidenceScores, // { advanced, early, normal }
-        },
+        prediction: { label: item.diagnosis, confidence: item.confidenceScores },
         patientDetails: item.patientDetails,
       }));
-
+      console.log(formattedPredictions);
       setPredictions(formattedPredictions);
       setPatientData(response.data.results[0]?.patientDetails);
       toast.success(`Successfully analyzed ${formattedPredictions.length} images!`);
@@ -112,7 +108,6 @@ const MultiGlaucoma = () => {
 
         canvas.toBlob(
           blob => {
-            // Preserve the original filename structure for backend regex matching
             const resizedFile = new File([blob], file.name, {
               type: file.type,
               lastModified: file.lastModified,
@@ -144,33 +139,22 @@ const MultiGlaucoma = () => {
 
     try {
       const formData = new FormData();
-
-      // Transform confidenceScores into an array of numbers
       const diagnosisData = predictions.map(pred => ({
         patientId: pred.patientId,
         diagnosis: pred.prediction.label,
-        confidenceScores: [
-          pred.prediction.confidence.advanced || 0,
-          pred.prediction.confidence.early || 0,
-          pred.prediction.confidence.normal || 0,
-        ],
+        confidenceScores: pred.prediction.confidence,
       }));
-
-      console.log("Sending diagnosisData:", JSON.stringify(diagnosisData)); // Debug log
-
+      console.log("diagnosisData", diagnosisData);
       formData.append("diagnosisData", JSON.stringify(diagnosisData));
-      formData.append("category", "Glaucoma");
-
-      // Resize images and ensure filenames match the prediction data
+      formData.append("category", "AMD");
+      formData.append("diseaseType", "amd");
       const resizedImages = await Promise.all(images.map(image => resizeImage(image)));
       resizedImages.forEach(image => {
         const matchingPrediction = predictions.find(p => p.filename === image.name);
-        if (matchingPrediction) {
-          formData.append("files", image);
-        }
+        if (matchingPrediction) formData.append("files", image);
       });
 
-      const response = await api.post("patients/multiDataSave", formData, {
+      const response = await api.post("predictions/multiDataSave", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -203,7 +187,7 @@ const MultiGlaucoma = () => {
     <div className="bg-gray-50 min-h-screen">
       <Spin spinning={isSaving} tip={`Saving... ${processingProgress}%`}>
         <MultiDiagnose
-          disease="Glaucoma"
+          disease="Age Related Macular degeneration"
           handleSubmission={handleSubmission}
           isSubmitting={isSubmitting}
           predictions={predictions}
@@ -222,4 +206,4 @@ const MultiGlaucoma = () => {
   );
 };
 
-export default MultiGlaucoma;
+export default MultiDiagnosePage;
