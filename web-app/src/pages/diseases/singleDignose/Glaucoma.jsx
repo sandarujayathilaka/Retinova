@@ -44,7 +44,7 @@ const Glaucoma = () => {
       const formData = new FormData();
       formData.append("file", image);
       formData.append("diseaseType", "glaucoma");
-      const response = await api.post("predictions/singleImagePredictt", formData, {
+      const response = await api.post("predictions/singleImagePredict", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
