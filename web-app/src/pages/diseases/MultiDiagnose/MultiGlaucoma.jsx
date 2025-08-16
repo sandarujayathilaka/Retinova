@@ -1,11 +1,10 @@
-import React, { useState } from "react";
-import MultiDiagnose from "../../components/MultiDiagnose/MultiDiagnose";
-import toast from "react-hot-toast";
-import axios from "axios";
-import { Spin } from "antd";
 import { api } from "@/services/api.service";
+import { Spin } from "antd";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import MultiDiagnose from "../../../components/multiDiagnose/MultiDiagnose";
 
-const MultiDiagnosePage = () => {
+const MultiGlaucoma = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [predictions, setPredictions] = useState([]);
   const [patientData, setPatientData] = useState(null);
@@ -23,7 +22,7 @@ const MultiDiagnosePage = () => {
 
     setIsSubmitting(true);
     setMissingPatientIds([]);
-    
+
     let progress = 0;
     const progressInterval = setInterval(() => {
       progress += Math.random() * 15;
@@ -34,12 +33,13 @@ const MultiDiagnosePage = () => {
     try {
       const formData = new FormData();
       images.forEach(image => formData.append("files", image));
-      formData.append("patientId", 12345);
-      formData.append("diseaseType", "amd");
-      const response = await api.post("patients/multiImagePrediction", formData, {
+      formData.append("patientId", 12345); // Adjust if this needs to be dynamic
+      formData.append("diseaseType", "glaucoma");
+
+      const response = await api.post("predictions/multiImagePrediction", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-console.log(response)
+
       clearInterval(progressInterval);
       setProcessingProgress(100);
 
@@ -53,10 +53,13 @@ console.log(response)
       const formattedPredictions = response.data.results.map(item => ({
         filename: item.filename,
         patientId: item.patientId,
-        prediction: { label: item.diagnosis, confidence: item.confidenceScores },
+        prediction: {
+          label: item.diagnosis,
+          confidence: item.confidenceScores, // { advanced, early, normal }
+        },
         patientDetails: item.patientDetails,
       }));
-      console.log(formattedPredictions)
+
       setPredictions(formattedPredictions);
       setPatientData(response.data.results[0]?.patientDetails);
       toast.success(`Successfully analyzed ${formattedPredictions.length} images!`);
@@ -83,29 +86,42 @@ console.log(response)
       const img = new Image();
       const reader = new FileReader();
 
-      reader.onload = e => { img.src = e.target.result; };
+      reader.onload = e => {
+        img.src = e.target.result;
+      };
       img.onload = () => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         let { width, height } = img;
 
         if (width > height) {
-          if (width > maxSize) { height *= maxSize / width; width = maxSize; }
+          if (width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          }
         } else {
-          if (height > maxSize) { width *= maxSize / height; height = maxSize; }
+          if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
         }
 
         canvas.width = width;
         canvas.height = height;
         ctx.drawImage(img, 0, 0, width, height);
 
-        canvas.toBlob(blob => {
-          const resizedFile = new File([blob], file.name, {
-            type: file.type,
-            lastModified: file.lastModified,
-          });
-          resolve(resizedFile);
-        }, file.type === "image/png" ? "image/png" : "image/jpeg", file.type === "image/png" ? undefined : 0.9);
+        canvas.toBlob(
+          blob => {
+            // Preserve the original filename structure for backend regex matching
+            const resizedFile = new File([blob], file.name, {
+              type: file.type,
+              lastModified: file.lastModified,
+            });
+            resolve(resizedFile);
+          },
+          file.type === "image/png" ? "image/png" : "image/jpeg",
+          file.type === "image/png" ? undefined : 0.9,
+        );
       };
 
       reader.readAsDataURL(file);
@@ -128,22 +144,33 @@ console.log(response)
 
     try {
       const formData = new FormData();
+
+      // Transform confidenceScores into an array of numbers
       const diagnosisData = predictions.map(pred => ({
         patientId: pred.patientId,
         diagnosis: pred.prediction.label,
-        confidenceScores: pred.prediction.confidence,
+        confidenceScores: [
+          pred.prediction.confidence.advanced || 0,
+          pred.prediction.confidence.early || 0,
+          pred.prediction.confidence.normal || 0,
+        ],
       }));
-      console.log("diagnosisData",diagnosisData)
+
+      console.log("Sending diagnosisData:", JSON.stringify(diagnosisData)); // Debug log
+
       formData.append("diagnosisData", JSON.stringify(diagnosisData));
-      formData.append("category", "AMD");
-      formData.append("diseaseType", "amd");
+      formData.append("category", "Glaucoma");
+
+      // Resize images and ensure filenames match the prediction data
       const resizedImages = await Promise.all(images.map(image => resizeImage(image)));
       resizedImages.forEach(image => {
         const matchingPrediction = predictions.find(p => p.filename === image.name);
-        if (matchingPrediction) formData.append("files", image);
+        if (matchingPrediction) {
+          formData.append("files", image);
+        }
       });
 
-      const response = await api.post("patients/multiDataSave", formData, {
+      const response = await api.post("predictions/multiDataSave", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -174,12 +201,9 @@ console.log(response)
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <Spin
-        spinning={isSaving} 
-        tip={`Saving... ${processingProgress}%`}
-      >
+      <Spin spinning={isSaving} tip={`Saving... ${processingProgress}%`}>
         <MultiDiagnose
-          disease="Age Related Macular degeneration"
+          disease="Glaucoma"
           handleSubmission={handleSubmission}
           isSubmitting={isSubmitting}
           predictions={predictions}
@@ -198,4 +222,4 @@ console.log(response)
   );
 };
 
-export default MultiDiagnosePage;
+export default MultiGlaucoma;

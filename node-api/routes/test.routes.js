@@ -7,6 +7,7 @@ const {
   getTestById,
   updateTest,
   deleteTest,
+  getOnlyActiveTests,
 } = require("../controllers/test.controller");
 const { requireAuth } = require("../middleware/require-auth");
 const { ROLES } = require("../constants/roles");
@@ -24,5 +25,10 @@ router.get(
 );
 router.put("/:id", requireAuth([ROLES.ADMIN]), updateTest);
 router.delete("/:id", requireAuth([ROLES.ADMIN]), deleteTest);
+
+router.get(
+  "/activetests",
+  requireAuth([ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.PATIENT]),getOnlyActiveTests
+);
 
 module.exports = router;

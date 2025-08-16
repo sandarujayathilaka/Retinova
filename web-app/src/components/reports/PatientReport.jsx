@@ -79,7 +79,6 @@ const PatientReport = ({ visible, onClose, patientData, prediction, imageUrl }) 
                 <p className="mb-1"><span className="text-[#64748b]">Blood:</span> <strong>{patientData?.bloodGroup || "AB+"}</strong></p>
                 <p className="mb-1"><span className="text-[#64748b]">Height/Weight:</span> <strong>{patientData?.height || "175"} cm / {patientData?.weight || "78"} kg</strong></p>
                 <p className="mb-1"><span className="text-[#64748b]">BMI:</span> <strong>{patientData?.bmi || "25.5"}</strong></p>
-                <p className="mb-1"><span className="text-[#64748b]">Allergies:</span> <strong>{patientData?.allergies || "Penicillin"}</strong></p>
               </div>
             </div>
           </div>
@@ -100,10 +99,7 @@ const PatientReport = ({ visible, onClose, patientData, prediction, imageUrl }) 
                     <p className="mb-1"><span className="text-[#64748b]">Diagnosis:</span> <strong className="text-[#0f766e] text-[10px]">{prediction.type || "N/A"}</strong></p>
                     <div className="flex">
                       <div className="w-1/2">
-                        <p className="mb-1"><span className="text-[#64748b]">Date:</span> <strong>{new Date(prediction.date).toLocaleDateString() || "N/A"}</strong></p>
-                      </div>
-                      <div className="w-1/2">
-                        <p className="mb-1"><span className="text-[#64748b]">Doctor:</span> <strong>Dr. {prediction.doctor || "AI System"}</strong></p>
+                        <p className="mb-1"><span className="text-[#64748b]">Date:</span> <strong>{new Date().toLocaleDateString() || "N/A"}</strong></p>
                       </div>
                     </div>
                     {prediction.notes && (
@@ -139,35 +135,6 @@ const PatientReport = ({ visible, onClose, patientData, prediction, imageUrl }) 
             </div>
           </div>
 
-          {/* Treatment Section */}
-          <div className="mb-2 border border-[#cbd5e1] rounded-sm p-2 bg-white">
-            <div className="bg-[#e0eaff] px-2 py-1 -mx-2 -mt-2 mb-2 font-bold text-[10px] text-[#1a56db]">
-              Treatment & Medications
-            </div>
-            {(patientData?.medicalHistory?.slice(0, 2) || []).map((record, index) => (
-              <div key={index} className="mb-1 p-1 bg-[#f1f5f9] border-l-2 border-[#0f766e] rounded-sm">
-                <div className="flex justify-between mb-1">
-                  <span className="font-bold text-[#0f766e] text-[9px]">{record.condition}</span>
-                  <span className={`px-1 py-0.5 rounded-full text-[7px] text-white ${record.status === "Active" ? "bg-[#059669]" : "bg-[#64748b]"}`}>
-                    {record.status || "Active"}
-                  </span>
-                </div>
-                <div className="flex flex-wrap">
-                  <div className="w-1/3">
-                    <p className="mb-1"><span className="text-[#64748b]">Diagnosed:</span> <strong>{new Date(record.diagnosedAt).toLocaleDateString()}</strong></p>
-                  </div>
-                  <div className="w-1/3">
-                    <p className="mb-1"><span className="text-[#64748b]">Follow-up:</span> <strong>{record.followUpDate ? new Date(record.followUpDate).toLocaleDateString() : "As needed"}</strong></p>
-                  </div>
-                  <div className="w-1/3">
-                    <p className="mb-1"><span className="text-[#64748b]">Medications:</span> <strong>{record.medications?.join(", ") || "None"}</strong></p>
-                  </div>
-                </div>
-                {record.notes && <p className="text-[7px] italic mt-1">{record.notes}</p>}
-              </div>
-            ))}
-          </div>
-
           {/* Diagnosis History Section */}
           <div className="mb-2 border border-[#cbd5e1] rounded-sm p-2 bg-white">
             <div className="bg-[#e0eaff] px-2 py-1 -mx-2 -mt-2 mb-2 font-bold text-[10px] text-[#1a56db]">
@@ -199,9 +166,9 @@ const PatientReport = ({ visible, onClose, patientData, prediction, imageUrl }) 
 
           {/* Footer */}
           <div className="mt-2 text-center pt-2 pb-5 border-t border-[#cbd5e1] text-[7px] text-[#64748b]">
-            <p className="font-bold text-[#1a56db] mb-1 text-[8px]">Diabetic Retinopathy Diagnosis System</p>
+            <p className="font-bold text-[#1a56db] mb-1 text-[8px]">Retinova Eye Diagnosis System</p>
             <p className="mb-1">Consult your healthcare provider for medical advice</p>
-            <p>Report ID: {reportId} • Generated: {generationDate} • CONFIDENTIAL MEDICAL RECORD</p>
+            <p>• Generated: {generationDate} • CONFIDENTIAL MEDICAL RECORD</p>
           </div>
 
           {/* Buttons */}

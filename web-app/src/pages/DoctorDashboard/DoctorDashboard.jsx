@@ -20,14 +20,14 @@ import DiseaseStagesChart from "../CommonFiles/DiseaseStagesChart";
 import LatestPatientsTable from "../CommonFiles/LatestPatientsTable";
 
 
-const DOCTOR_ID = "67d7122bd060b20213da7cb1"; 
+ const DOCTOR_ID = "67d7127ed060b20213da7cb9"; 
 
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
 //   const { user: userData, logout } = useUserStore();
-// console.log(userData.id)
-// const DOCTOR_ID = userData.id.toString();
+// console.log(userData.profileId)
+// const DOCTOR_ID = userData.profileId
 
   const {
     doctor,

@@ -1,9 +1,8 @@
-import React, { useState } from "react";
-import MultiDiagnose from "../../components/MultiDiagnose/MultiDiagnose";
-import toast from "react-hot-toast";
-import axios from "axios";
-import { Spin } from "antd";
 import { api } from "@/services/api.service";
+import { Spin } from "antd";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import MultiDiagnose from "../../../components/multiDiagnose/MultiDiagnose";
 
 const MultiDiagnosePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -15,24 +14,15 @@ const MultiDiagnosePage = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
 
-  const MAX_IMAGES = 10; // Define the maximum number of images allowed
-
   const handleSubmission = async (images, confirmed = false) => {
-    // Check if no images are uploaded
     if (images.length === 0) {
       toast.error("Please upload at least one image");
       return;
     }
 
-    // Check if the number of images exceeds the maximum allowed
-    if (images.length > MAX_IMAGES) {
-      toast.error(`You can upload a maximum of ${MAX_IMAGES} images`);
-      return;
-    }
-
     setIsSubmitting(true);
     setMissingPatientIds([]);
-    
+
     let progress = 0;
     const progressInterval = setInterval(() => {
       progress += Math.random() * 15;
@@ -43,12 +33,12 @@ const MultiDiagnosePage = () => {
     try {
       const formData = new FormData();
       images.forEach(image => formData.append("files", image));
-      // formData.append("patientId", 12345);
-      formData.append("diseaseType", "dr");
-      const response = await api.post("patients/multiImagePrediction", formData, {
+      formData.append("patientId", 12345);
+      formData.append("diseaseType", "amd");
+      const response = await api.post("predictions/multiImagePrediction", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
+      console.log("AMD", response);
       clearInterval(progressInterval);
       setProcessingProgress(100);
 
@@ -65,7 +55,7 @@ const MultiDiagnosePage = () => {
         prediction: { label: item.diagnosis, confidence: item.confidenceScores },
         patientDetails: item.patientDetails,
       }));
-
+      console.log(formattedPredictions);
       setPredictions(formattedPredictions);
       setPatientData(response.data.results[0]?.patientDetails);
       toast.success(`Successfully analyzed ${formattedPredictions.length} images!`);
@@ -92,29 +82,41 @@ const MultiDiagnosePage = () => {
       const img = new Image();
       const reader = new FileReader();
 
-      reader.onload = e => { img.src = e.target.result; };
+      reader.onload = e => {
+        img.src = e.target.result;
+      };
       img.onload = () => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         let { width, height } = img;
 
         if (width > height) {
-          if (width > maxSize) { height *= maxSize / width; width = maxSize; }
+          if (width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          }
         } else {
-          if (height > maxSize) { width *= maxSize / height; height = maxSize; }
+          if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
         }
 
         canvas.width = width;
         canvas.height = height;
         ctx.drawImage(img, 0, 0, width, height);
 
-        canvas.toBlob(blob => {
-          const resizedFile = new File([blob], file.name, {
-            type: file.type,
-            lastModified: file.lastModified,
-          });
-          resolve(resizedFile);
-        }, file.type === "image/png" ? "image/png" : "image/jpeg", file.type === "image/png" ? undefined : 0.9);
+        canvas.toBlob(
+          blob => {
+            const resizedFile = new File([blob], file.name, {
+              type: file.type,
+              lastModified: file.lastModified,
+            });
+            resolve(resizedFile);
+          },
+          file.type === "image/png" ? "image/png" : "image/jpeg",
+          file.type === "image/png" ? undefined : 0.9,
+        );
       };
 
       reader.readAsDataURL(file);
@@ -142,16 +144,17 @@ const MultiDiagnosePage = () => {
         diagnosis: pred.prediction.label,
         confidenceScores: pred.prediction.confidence,
       }));
+      console.log("diagnosisData", diagnosisData);
       formData.append("diagnosisData", JSON.stringify(diagnosisData));
-      formData.append("category", "DR");
-      formData.append("diseaseType", "dr");
+      formData.append("category", "AMD");
+      formData.append("diseaseType", "amd");
       const resizedImages = await Promise.all(images.map(image => resizeImage(image)));
       resizedImages.forEach(image => {
         const matchingPrediction = predictions.find(p => p.filename === image.name);
         if (matchingPrediction) formData.append("files", image);
       });
 
-      const response = await api.post("patients/multiDataSave", formData, {
+      const response = await api.post("predictions/multiDataSave", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -182,12 +185,9 @@ const MultiDiagnosePage = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <Spin
-        spinning={isSaving} 
-        tip={`Saving... ${processingProgress}%`}
-      >
+      <Spin spinning={isSaving} tip={`Saving... ${processingProgress}%`}>
         <MultiDiagnose
-          disease="Diabetic Retinopathy"
+          disease="Age Related Macular degeneration"
           handleSubmission={handleSubmission}
           isSubmitting={isSubmitting}
           predictions={predictions}
@@ -200,7 +200,6 @@ const MultiDiagnosePage = () => {
           isSaved={isSaved}
           handleReset={handleReset}
           processingProgress={processingProgress}
-          maxImages={MAX_IMAGES} // Pass the maxImages prop to the component
         />
       </Spin>
     </div>

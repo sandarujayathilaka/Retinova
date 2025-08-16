@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Diagnose from "./Diagnose";
+import Diagnose from "../../../components/singleDiagnose/Diagnose";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { api } from "@/services/api.service";
@@ -28,9 +28,9 @@ const DR = () => {
       console.log("Uploading image for prediction:", image.name);
 
       const formData = new FormData();
-      formData.append("file", image); 
-      formData.append("diseaseType", "dr");
-      const response = await api.post("patients/predict", formData, {
+      formData.append("file", image); // Matches backend's expected field
+      formData.append("diseaseType", "rvo");
+      const response = await api.post("predictions/singleImagePredict", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -78,7 +78,7 @@ const DR = () => {
       formData.append("file", imageFile);
       formData.append("diagnosis", prediction.type);
       formData.append("confidenceScores", JSON.stringify([prediction.confidence]));
-      formData.append("category", "DR");
+      formData.append("category", "RVO");
 
       // Format recommend according to the backend schema
       const recommend = {
@@ -92,8 +92,8 @@ const DR = () => {
       };
       formData.append("recommend", JSON.stringify(recommend));
 
-      const response = await api.post(
-        "patients/onedatasave",
+      const response = await api.put(
+        "predictions/savePatientDiagnose",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -122,11 +122,11 @@ const DR = () => {
     setIsSaving(false);
     setImageFile(null);
   };
-
+  console.log(patientData);
   return (
     <div>
       <Diagnose
-        disease="Diabetic Retinopathy"
+        disease="Retinal Vein Occlusion"
         handleSubmission={handleSubmission}
         handleSavePrescription={handleSavePrescription}
         isSubmitting={isSubmitting}

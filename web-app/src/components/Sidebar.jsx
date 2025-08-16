@@ -1,27 +1,25 @@
-import React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { IMAGES } from "@/constants/images";
+import { ROLES } from "@/constants/roles"; // Ensure path is correct
+import useUserStore from "@/stores/auth";
 import {
-  Menu,
-  X,
-  LayoutDashboard,
-  Stethoscope,
-  Users,
   Activity,
-  FileText,
-  LogOut,
   ChevronDown,
   ChevronRight,
-  Hospital,
-  Shield,
+  ClipboardList,
+  Clock,
   FlaskConical,
-  Users2,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Shield,
+  Stethoscope,
   User2,
-  ClipboardList, 
-  Clock, 
+  Users,
+  Users2,
+  X,
 } from "lucide-react";
-import { ROLES } from "@/constants/roles"; // Ensure path is correct
 import { FaUserNurse } from "react-icons/fa";
-import useUserStore from "@/stores/auth";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => {
   const location = useLocation();
@@ -114,45 +112,38 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
 
     {
       title: "All Patients",
-       url: "/all-patients",
-       icon: Users,
-      isExpandable: false, 
-      allowedRoles: [ROLES.NURSE] 
+      url: "/all-patients",
+      icon: Users,
+      isExpandable: false,
+      allowedRoles: [ROLES.NURSE],
     },
     {
       title: "Add Patient",
-       url: "/add-patient",
-       icon: User2,
-      isExpandable: false, 
-      allowedRoles: [ROLES.NURSE] 
+      url: "/add-patient",
+      icon: User2,
+      isExpandable: false,
+      allowedRoles: [ROLES.NURSE],
     },
     {
       title: "Monitoring patients",
-       url: "/monitoring-patients",
-       icon: Activity,
-      isExpandable: false, 
-      allowedRoles: [ROLES.NURSE] 
+      url: "/monitoring-patients",
+      icon: Activity,
+      isExpandable: false,
+      allowedRoles: [ROLES.NURSE],
     },
     {
       title: "Published patients",
-       url: "/published-patients",
-       icon: ClipboardList,
-      isExpandable: false, 
-      allowedRoles: [ROLES.NURSE] 
+      url: "/published-patients",
+      icon: ClipboardList,
+      isExpandable: false,
+      allowedRoles: [ROLES.NURSE],
     },
     {
       title: "Review patients",
-       url: "/review-patients",
-       icon: Clock,
-      isExpandable: false, 
-      allowedRoles: [ROLES.NURSE] 
-    },
-    {
-      title: "Users",
-      icon: Users2,
-      url: "/users",
+      url: "/review-patients",
+      icon: Clock,
       isExpandable: false,
-      allowedRoles: [ROLES.ADMIN],
+      allowedRoles: [ROLES.NURSE],
     },
     {
       title: "Users",
@@ -216,11 +207,13 @@ const Sidebar = ({ isOpen, toggleSidebar, expandedSections, toggleSection }) => 
             {isOpen && (
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-white/10 backdrop-blur-sm rounded-xl">
-                  <Hospital className="h-7 w-7 text-blue-200" />
+                  {/* <Hospital className="h-7 w-7 text-blue-200" /> */}
+                  <img src={IMAGES.LOGO_ICON_WHITE} alt="Logo" className="size-7 min-w-7" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white tracking-tight">MediSys</h1>
-                  <p className="text-xs font-medium text-blue-200/80">Healthcare Dashboard</p>
+                  {/* <h1 className="text-xl font-bold text-white tracking-tight">MediSys</h1> */}
+                  <img src={IMAGES.LOGO_TEXT_WHITE} alt="Logo" className="w-full scale-105" />
+                  {/* <p className="text-xs font-medium text-blue-200/80">Healthcare Dashboard</p> */}
                 </div>
               </div>
             )}

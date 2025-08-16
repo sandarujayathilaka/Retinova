@@ -21,6 +21,7 @@ const treatmentRoutes = require("./routes/treatment.routes");
 // const patientRoutes = require("./routes/patient.routes.temp");
 const testRecordsRoutes = require("./routes/test.records.routes");
 const testRoutes = require("./routes/test.routes");
+const prediction = require("./routes/prediction.route");
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use("/api/patients", patientRoutes);
 app.use("/api/patients/tests", testRecordsRoutes);
 app.use("/api/nurses", nurseRoutes);
 app.use("/api/tests", testRoutes);
+app.use("/api/predictions", prediction);
 
 app.use(errorHandler);
 

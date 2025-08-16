@@ -7,7 +7,7 @@ export const useGetExplanations = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      return axios.post("http://18.142.160.128:5000/api/xai-predict", formData, {
+      return axios.post("http://13.250.115.70:5000/api/xai-predict", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
     },
