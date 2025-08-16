@@ -9,7 +9,11 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import { Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+  MaterialIcons,
+} from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import useAuthStore from "@/stores/auth";
@@ -38,7 +42,6 @@ interface Profile {
   fullName: string;
   patientStatus?: string;
   nextVisit?: string | Date;
-  
 }
 
 // Helper functions
@@ -70,7 +73,12 @@ interface ProgressRingProps {
   color: string;
 }
 
-const ProgressRing: React.FC<ProgressRingProps> = ({ progress, size, strokeWidth, color }) => {
+const ProgressRing: React.FC<ProgressRingProps> = ({
+  progress,
+  size,
+  strokeWidth,
+  color,
+}) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
@@ -123,18 +131,24 @@ const DiagnosisCard: React.FC<DiagnosisCardProps> = ({ diagnosis }) => {
         overflow: "hidden",
       }}
     >
-      <View 
-        style={{ 
-          position: "absolute", 
-          top: 0, 
-          left: 0, 
-          right: 0, 
-          height: 4, 
-          backgroundColor: severityStyles[severity].color 
-        }} 
+      <View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 4,
+          backgroundColor: severityStyles[severity].color,
+        }}
       />
-      
-      <View style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 12 }}>
+
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "flex-start",
+          marginBottom: 12,
+        }}
+      >
         {diagnosis.imageUrl ? (
           <Image
             source={{ uri: diagnosis.imageUrl }}
@@ -158,12 +172,23 @@ const DiagnosisCard: React.FC<DiagnosisCardProps> = ({ diagnosis }) => {
               marginRight: 12,
             }}
           >
-            <MaterialCommunityIcons name="eye-outline" size={32} color="#94a3b8" />
+            <MaterialCommunityIcons
+              name="eye-outline"
+              size={32}
+              color="#94a3b8"
+            />
           </View>
         )}
-        
+
         <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 4,
+            }}
+          >
             <Text style={{ fontSize: 16, fontWeight: "600", color: "#1e3a8a" }}>
               {diagnosis.diagnosis || "Undiagnosed"}
             </Text>
@@ -173,18 +198,25 @@ const DiagnosisCard: React.FC<DiagnosisCardProps> = ({ diagnosis }) => {
                 : "N/A"}
             </Text>
           </View>
-          
+
           <Text style={{ fontSize: 14, color: "#64748b", marginBottom: 6 }}>
             {diagnosis.eye} Eye
           </Text>
-          
+
           <Text style={{ fontSize: 14, color: "#4b5563", lineHeight: 20 }}>
             {diagnosis.recommend?.note || "AI-assisted diagnosis completed."}
           </Text>
         </View>
       </View>
 
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: 8,
+        }}
+      >
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View
             style={{
@@ -196,25 +228,27 @@ const DiagnosisCard: React.FC<DiagnosisCardProps> = ({ diagnosis }) => {
               alignItems: "center",
             }}
           >
-            <View 
-              style={{ 
-                width: 8, 
-                height: 8, 
-                borderRadius: 4, 
+            <View
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 4,
                 backgroundColor: severityStyles[severity].color,
-                marginRight: 6 
-              }} 
+                marginRight: 6,
+              }}
             />
-            <Text style={{ 
-              fontSize: 12, 
-              fontWeight: "500",
-              color: severityStyles[severity].color 
-            }}>
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "500",
+                color: severityStyles[severity].color,
+              }}
+            >
               {severity} Risk
             </Text>
           </View>
         </View>
-        
+
         <TouchableOpacity
           style={{
             backgroundColor: "#dbeafe",
@@ -226,7 +260,14 @@ const DiagnosisCard: React.FC<DiagnosisCardProps> = ({ diagnosis }) => {
           }}
           onPress={() => router.push(`/diagnosis/${diagnosis._id}` as const)}
         >
-          <Text style={{ fontSize: 14, color: "#1e3a8a", fontWeight: "500", marginRight: 4 }}>
+          <Text
+            style={{
+              fontSize: 14,
+              color: "#1e3a8a",
+              fontWeight: "500",
+              marginRight: 4,
+            }}
+          >
             View Details
           </Text>
           <MaterialIcons name="arrow-forward-ios" size={12} color="#1e3a8a" />
@@ -243,24 +284,33 @@ interface StatusIndicatorProps {
 
 const StatusIndicator: React.FC<StatusIndicatorProps> = ({ status }) => {
   const getStatusInfo = (statusText?: string) => {
-    const statusMap: Record<string, { color: string, icon: string }> = {
+    const statusMap: Record<string, { color: string; icon: string }> = {
       "High Risk": { color: "#ef4444", icon: "alert-circle" },
       "Medium Risk": { color: "#f59e0b", icon: "alert" },
       "Low Risk": { color: "#10b981", icon: "check-circle" },
-      "Normal": { color: "#10b981", icon: "check-circle" },
-      "Scheduled": { color: "#3b82f6", icon: "calendar" },
+      Normal: { color: "#10b981", icon: "check-circle" },
+      Scheduled: { color: "#3b82f6", icon: "calendar" },
     };
-    
-    return statusMap[statusText || ""] || { color: "#6b7280", icon: "information" };
+
+    return (
+      statusMap[statusText || ""] || { color: "#6b7280", icon: "information" }
+    );
   };
-  
+
   const statusInfo = getStatusInfo(status);
-  
+
   return (
     <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <MaterialCommunityIcons name={statusInfo.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={18} color={statusInfo.color} />
+      <MaterialCommunityIcons
+        name={statusInfo.icon as keyof typeof MaterialCommunityIcons.glyphMap}
+        size={18}
+        color={statusInfo.color}
+      />
       <Text style={{ fontSize: 14, color: "#4b5563", marginLeft: 6 }}>
-        Status: <Text style={{ color: statusInfo.color, fontWeight: "500" }}>{status || "Not Determined"}</Text>
+        Status:{" "}
+        <Text style={{ color: statusInfo.color, fontWeight: "500" }}>
+          {status || "Not Determined"}
+        </Text>
       </Text>
     </View>
   );
@@ -278,26 +328,29 @@ interface TestStatusProps {
 }
 
 const TestStatus: React.FC<TestStatusProps> = ({ test, index, totalTests }) => {
-  const statusStyles: Record<string, { bg: string, text: string, icon: string }> = {
-    "Reviewed": { 
-      bg: "bg-green-50", 
+  const statusStyles: Record<
+    string,
+    { bg: string; text: string; icon: string }
+  > = {
+    Reviewed: {
+      bg: "bg-green-50",
       text: "text-green-700",
-      icon: "check-circle" 
+      icon: "check-circle",
     },
-    "Scheduled": { 
-      bg: "bg-blue-50", 
+    Scheduled: {
+      bg: "bg-blue-50",
       text: "text-blue-700",
-      icon: "calendar-check" 
+      icon: "calendar-check",
     },
-    "Pending": { 
-      bg: "bg-gray-50", 
+    Pending: {
+      bg: "bg-gray-50",
       text: "text-gray-700",
-      icon: "clock-outline" 
+      icon: "clock-outline",
     },
   };
-  
+
   const style = statusStyles[test.status] || statusStyles["Pending"];
-  
+
   return (
     <View
       style={{
@@ -312,7 +365,12 @@ const TestStatus: React.FC<TestStatusProps> = ({ test, index, totalTests }) => {
     >
       <View style={{ flex: 1 }}>
         <Text
-          style={{ fontSize: 15, fontWeight: "500", color: "#334155", marginBottom: 2 }}
+          style={{
+            fontSize: 15,
+            fontWeight: "500",
+            color: "#334155",
+            marginBottom: 2,
+          }}
         >
           {test.testName}
         </Text>
@@ -360,21 +418,26 @@ interface EyeStatusProps {
   abbreviation: string;
 }
 
-const EyeStatus: React.FC<EyeStatusProps> = ({ diagnoses, eye, label, abbreviation }) => {
+const EyeStatus: React.FC<EyeStatusProps> = ({
+  diagnoses,
+  eye,
+  label,
+  abbreviation,
+}) => {
   const diagnosis = diagnoses?.find((d: Diagnosis) => d.eye === eye);
-  
+
   const getStatusColor = (diagnosisType?: string) => {
     const colorMap: Record<string, string> = {
-      PDR: "#ef4444",  // red
+      PDR: "#ef4444", // red
       NPDR: "#f59e0b", // amber
-      DME: "#f59e0b",  // amber
+      DME: "#f59e0b", // amber
       Normal: "#10b981", // green
     };
     return colorMap[diagnosisType || ""] || "#6b7280"; // gray default
   };
-  
+
   const statusColor = getStatusColor(diagnosis?.diagnosis);
-  
+
   return (
     <View style={{ flex: 1, alignItems: "center" }}>
       <View
@@ -392,9 +455,9 @@ const EyeStatus: React.FC<EyeStatusProps> = ({ diagnoses, eye, label, abbreviati
         }}
       >
         <MaterialCommunityIcons
-          name="eye-outline" 
-          size={36} 
-          color={diagnosis ? statusColor : "#94a3b8"} 
+          name="eye-outline"
+          size={36}
+          color={diagnosis ? statusColor : "#94a3b8"}
         />
         <View
           style={{
@@ -411,9 +474,7 @@ const EyeStatus: React.FC<EyeStatusProps> = ({ diagnoses, eye, label, abbreviati
             borderColor: "#e2e8f0",
           }}
         >
-          <Text
-            style={{ fontSize: 12, fontWeight: "bold", color: "#1e3a8a" }}
-          >
+          <Text style={{ fontSize: 12, fontWeight: "bold", color: "#1e3a8a" }}>
             {abbreviation}
           </Text>
         </View>
@@ -461,19 +522,21 @@ interface SectionHeaderProps {
   onAction?: () => void;
 }
 
-const SectionHeader: React.FC<SectionHeaderProps> = ({ 
-  title, 
-  hasAction = false, 
-  actionLabel = "View All", 
-  onAction 
+const SectionHeader: React.FC<SectionHeaderProps> = ({
+  title,
+  hasAction = false,
+  actionLabel = "View All",
+  onAction,
 }) => {
   return (
-    <View style={{ 
-      flexDirection: "row", 
-      justifyContent: "space-between", 
-      alignItems: "center", 
-      marginBottom: 12 
-    }}>
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 12,
+      }}
+    >
       <Text style={{ fontSize: 18, fontWeight: "600", color: "#1e3a8a" }}>
         {title}
       </Text>
@@ -493,7 +556,8 @@ export default function HomeScreen() {
   const { profile, refreshProfile, isLoggedIn } = useAuthStore();
   const insets = useSafeAreaInsets();
 
-  const { mutate: fetchProfile, isPending: profileLoading } = useGetUserProfile();
+  const { mutate: fetchProfile, isPending: profileLoading } =
+    useGetUserProfile();
   const { data: diagnoses, isLoading: diagnosesLoading } = useGetDiagnoses();
 
   React.useEffect(() => {
@@ -521,7 +585,14 @@ export default function HomeScreen() {
         style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
       >
         <ActivityIndicator size="large" color="#1e3a8a" />
-        <Text style={{ marginTop: 16, fontSize: 16, color: "#1e3a8a", fontWeight: "500" }}>
+        <Text
+          style={{
+            marginTop: 16,
+            fontSize: 16,
+            color: "#1e3a8a",
+            fontWeight: "500",
+          }}
+        >
           Loading your health data...
         </Text>
       </LinearGradient>
@@ -532,12 +603,17 @@ export default function HomeScreen() {
     return (
       <LinearGradient
         colors={["#f0f9ff", "#bfdbfe", "#3b82f6"]}
-        style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 20,
+        }}
       >
         <MaterialCommunityIcons
-          name="alert-circle-outline" 
-          size={60} 
-          color="#ef4444" 
+          name="alert-circle-outline"
+          size={60}
+          color="#ef4444"
         />
         <Text
           style={{
@@ -559,7 +635,8 @@ export default function HomeScreen() {
             marginBottom: 20,
           }}
         >
-          We couldn't retrieve your profile information. Please check your connection and try again.
+          We couldn't retrieve your profile information. Please check your
+          connection and try again.
         </Text>
         <TouchableOpacity
           style={{
@@ -578,7 +655,12 @@ export default function HomeScreen() {
           }}
           onPress={() => fetchProfile()}
         >
-          <Ionicons name="refresh" size={18} color="#fff" style={{ marginRight: 8 }} />
+          <Ionicons
+            name="refresh"
+            size={18}
+            color="#fff"
+            style={{ marginRight: 8 }}
+          />
           <Text style={{ fontSize: 16, color: "#fff", fontWeight: "600" }}>
             Try Again
           </Text>
@@ -603,13 +685,13 @@ export default function HomeScreen() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
-  
+
   const daysToNextVisit = getDaysToNextVisit();
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f8fafc" }}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
+      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+
       <LinearGradient
         colors={["#1e3a8a", "#3b82f6"]}
         style={{
@@ -635,9 +717,9 @@ export default function HomeScreen() {
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Image
-                  source={require("@/assets/images/retinova_logo_white.png")}
-                  className="w-10 h-10"
-                  resizeMode="contain"
+              source={require("@/assets/images/retinova_logo_white.png")}
+              className="w-10 h-10"
+              resizeMode="contain"
             />
             <Text
               style={{
@@ -650,10 +732,8 @@ export default function HomeScreen() {
               RETINOVA
             </Text>
           </View>
-          
-          
         </View>
-        
+
         <View style={{ paddingHorizontal: 16 }}>
           <Text
             style={{
@@ -672,8 +752,8 @@ export default function HomeScreen() {
       </LinearGradient>
 
       <ScrollView
-        contentContainerStyle={{ 
-          paddingHorizontal: 16, 
+        contentContainerStyle={{
+          paddingHorizontal: 16,
           paddingBottom: 20,
           paddingTop: 0,
         }}
@@ -709,18 +789,29 @@ export default function HomeScreen() {
             >
               <Ionicons name="calendar" size={28} color="#3b82f6" />
             </View>
-            
+
             <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
                 <Text
-                  style={{ fontSize: 16, fontWeight: "600", color: "#1e3a8a", marginBottom: 4 }}
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "600",
+                    color: "#1e3a8a",
+                    marginBottom: 4,
+                  }}
                 >
                   Next Appointment
                 </Text>
                 {daysToNextVisit !== null && (
                   <View
                     style={{
-                      backgroundColor: daysToNextVisit <= 3 ? "#fee2e2" : "#dbeafe",
+                      backgroundColor:
+                        daysToNextVisit <= 3 ? "#fee2e2" : "#dbeafe",
                       paddingVertical: 4,
                       paddingHorizontal: 8,
                       borderRadius: 8,
@@ -733,12 +824,16 @@ export default function HomeScreen() {
                         color: daysToNextVisit <= 3 ? "#dc2626" : "#1e3a8a",
                       }}
                     >
-                      {daysToNextVisit <= 0 ? "Today" : `${daysToNextVisit} day${daysToNextVisit !== 1 ? "s" : ""}`}
+                      {daysToNextVisit <= 0
+                        ? "Today"
+                        : `${daysToNextVisit} day${
+                            daysToNextVisit !== 1 ? "s" : ""
+                          }`}
                     </Text>
                   </View>
                 )}
               </View>
-              
+
               <Text style={{ fontSize: 15, color: "#334155", marginBottom: 2 }}>
                 {formatDate(profile.nextVisit)}
               </Text>
@@ -838,19 +933,21 @@ export default function HomeScreen() {
           }}
         >
           <SectionHeader title="Eye Health Status" />
-          
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <EyeStatus 
-              diagnoses={diagnoses} 
-              eye="LEFT" 
-              label="Left Eye" 
-              abbreviation="L" 
+
+          <View
+            style={{ flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <EyeStatus
+              diagnoses={diagnoses}
+              eye="LEFT"
+              label="Left Eye"
+              abbreviation="L"
             />
-            <EyeStatus 
-              diagnoses={diagnoses} 
-              eye="RIGHT" 
-              label="Right Eye" 
-              abbreviation="R" 
+            <EyeStatus
+              diagnoses={diagnoses}
+              eye="RIGHT"
+              label="Right Eye"
+              abbreviation="R"
             />
           </View>
         </View>
@@ -869,11 +966,13 @@ export default function HomeScreen() {
               elevation: 3,
             }}
           >
-            <SectionHeader 
-              title="Recent Diagnosis" 
-              hasAction 
+            <SectionHeader
+              title="Recent Diagnosis"
+              hasAction
               actionLabel="All History"
-              onAction={() => router.push("../../(tabs)/diagnosis-history" as const)} 
+              onAction={() =>
+                router.push("../../(tabs)/diagnosis-history" as const)
+              }
             />
             <DiagnosisCard diagnosis={latestDiagnosis} />
           </View>
@@ -894,13 +993,13 @@ export default function HomeScreen() {
             }}
           >
             <SectionHeader title="Recommended Tests" />
-            
+
             {latestDiagnosis.recommend.tests.map(
               (
                 test: { testName: string; status: string; addedAt?: string },
                 index: number
               ) => (
-                <TestStatus 
+                <TestStatus
                   key={index}
                   test={test}
                   index={index}
