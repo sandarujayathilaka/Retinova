@@ -87,7 +87,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="tests"
         options={{
           title: "Tests",
@@ -99,7 +99,7 @@ export default function TabLayout() {
             />
           ),
         }}
-      />
+      /> */}
       <Tabs.Screen
         name="profile"
         options={{

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,23 +9,30 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
+  Animated,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link } from "expo-router";
+import { useGetDiagnoses } from "@/services/diagnosis.service";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 
-// Define interfaces for our data model
-interface ReviewInfo {
-  recommendedMedicine: string;
-  notes: string;
-  updatedAt: string;
-  _id: string;
-}
+// Create AnimatedLinearGradient for animation support
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
+// Define interfaces locally
 interface Test {
   testName: string;
   status: "Pending" | "In Progress" | "Completed" | "Reviewed";
   attachmentURL: string;
   addedAt: string;
+  _id: string;
+}
+
+interface ReviewInfo {
+  recommendedMedicine: string;
+  notes: string;
+  updatedAt: string;
   _id: string;
 }
 
@@ -52,122 +59,6 @@ interface Diagnosis {
   reviewInfo: ReviewInfo[];
 }
 
-// Sample data for diagnosis history
-const sampleDiagnoses: Diagnosis[] = [
-  {
-    _id: "67d71ac3ebc0d8488ede7e17",
-    imageUrl:
-      "https://retinova.s3.amazonaws.com/diagnosis_images/1d6d4f96-c3d3-4e8f-a34b-eea849e5433a_P2_left_20251008.png",
-    diagnosis: "PDR",
-    doctorDiagnosis: "N/A",
-    eye: "LEFT",
-    status: "Checked",
-    confidenceScores: [0.5779826641082764],
-    recommend: {
-      medicine: "",
-      tests: [
-        {
-          testName: "AWS",
-          status: "Reviewed",
-          attachmentURL:
-            "https://patient-test-record-attachments.s3.ap-south-1.amazonaws.com/84ca92e0-d877-43d7-9871-9a1be0159c01-Rubric-PP-2.pdf",
-          _id: "67d71ac3ebc0d8488ede7e18",
-          addedAt: "2025-03-16T18:38:59.210Z",
-        },
-        {
-          testName: "AQW",
-          status: "Reviewed",
-          attachmentURL:
-            "https://patient-test-record-attachments.s3.ap-south-1.amazonaws.com/cff6dd95-2d45-4dad-809e-3074683510e6-WhatsApp%20Image%202025-03-05%20at%2010.18.32.jpeg",
-          addedAt: "2025-03-16T18:50:14.461Z",
-          _id: "67d71d66b25aa4663f414278",
-        },
-      ],
-      note: "Patient shows signs of proliferative diabetic retinopathy.",
-    },
-    revisitTimeFrame: "Monthly",
-    uploadedAt: "2025-03-16T18:38:59.216Z",
-    reviewInfo: [
-      {
-        recommendedMedicine: "",
-        notes: "check",
-        updatedAt: "2025-03-16T18:50:14.449Z",
-        _id: "67d71d66b25aa4663f414277",
-      },
-    ],
-  },
-  {
-    _id: "67d72038b25aa4663f414303",
-    imageUrl:
-      "https://retinova.s3.amazonaws.com/diagnosis_images/db831b36-ae20-4c08-96bc-e2bee0ac052c_P2_left_20251008.png",
-    diagnosis: "PDR",
-    doctorDiagnosis: "N/A",
-    eye: "LEFT",
-    status: "Checked",
-    confidenceScores: [0.5779826641082764],
-    recommend: {
-      medicine: "d",
-      tests: [
-        {
-          testName: "d",
-          status: "Pending",
-          attachmentURL: "",
-          _id: "67d72038b25aa4663f414304",
-          addedAt: "2025-03-16T19:02:16.039Z",
-        },
-      ],
-      note: "d",
-    },
-    revisitTimeFrame: "Monthly",
-    uploadedAt: "2025-03-16T19:02:16.047Z",
-    reviewInfo: [],
-  },
-  {
-    _id: "67d7214b8ab961e6d2836699",
-    imageUrl:
-      "https://retinova.s3.amazonaws.com/diagnosis_images/afec4223-3fbe-42cc-9d60-e84f878dfe92_P2_left_20251008.png",
-    diagnosis: "PDR",
-    doctorDiagnosis: "N/A",
-    eye: "LEFT",
-    status: "Checked",
-    confidenceScores: [0.5779826641082764],
-    recommend: {
-      medicine: "ok",
-      tests: [
-        {
-          testName: "s",
-          status: "Pending",
-          attachmentURL: "",
-          _id: "67d7214b8ab961e6d283669a",
-          addedAt: "2025-03-16T19:06:51.689Z",
-        },
-      ],
-      note: "",
-    },
-    revisitTimeFrame: "Monthly",
-    uploadedAt: "2025-03-16T19:06:51.691Z",
-    reviewInfo: [],
-  },
-  {
-    _id: "67d7214b8ab961e6d2836700",
-    imageUrl:
-      "https://retinova.s3.amazonaws.com/diagnosis_images/afec4223-3fbe-42cc-9d60-e84f878dfe92_P2_right_20251008.png",
-    diagnosis: "NPDR",
-    doctorDiagnosis: "N/A",
-    eye: "RIGHT",
-    status: "Checked",
-    confidenceScores: [0.6779826641082764],
-    recommend: {
-      medicine: "Eye drops",
-      tests: [],
-      note: "Mild non-proliferative diabetic retinopathy detected.",
-    },
-    revisitTimeFrame: "Quarterly",
-    uploadedAt: "2025-03-10T15:06:51.691Z",
-    reviewInfo: [],
-  },
-];
-
 // Helper functions
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -178,274 +69,374 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
-export default function DiagnosisHistoryScreen() {
-  const [diagnoses, setDiagnoses] = useState<Diagnosis[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<"All" | "LEFT" | "RIGHT">(
-    "All"
-  );
+// Diagnosis severity mapping
+const diagnosisSeverity: { [key: string]: "Low" | "Medium" | "High" } = {
+  PDR: "High",
+  NPDR: "Medium",
+  NODR: "Low",
+  No_DR: "Low",
+  "Early Glaucoma": "Medium",
+  "Advanced Glaucoma": "High",
+  "No Glaucoma": "Low",
+  "Dry AMD": "Medium",
+  "Wet AMD": "High",
+  "Normal (No AMD)": "Low",
+  CRVO: "High",
+  BRVO: "Medium",
+  "Healthy (No RVO)": "Low",
+  DME: "Medium",
+  Normal: "Low",
+};
 
-  useEffect(() => {
-    loadDiagnoses();
-  }, []);
+const DiagnosisCard = ({ diagnosis }: { diagnosis: Diagnosis }) => {
+  const severity = diagnosisSeverity[diagnosis.diagnosis] || "Medium";
 
-  const loadDiagnoses = () => {
-    // Simulate API fetch
-    setLoading(true);
-    setTimeout(() => {
-      setDiagnoses(sampleDiagnoses);
-      setLoading(false);
-    }, 1000);
-
-    // In a real app you'd do something like:
-    // async function fetchDiagnoses() {
-    //   try {
-    //     const response = await fetch('your-api-endpoint/diagnoses');
-    //     const data = await response.json();
-    //     setDiagnoses(data);
-    //   } catch (error) {
-    //     console.error('Error fetching diagnoses data:', error);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // }
-    // fetchDiagnoses();
-  };
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    // Reload diagnoses
-    setTimeout(() => {
-      loadDiagnoses();
-      setRefreshing(false);
-    }, 1000);
-  };
-
-  const filteredDiagnoses = () => {
-    if (activeFilter === "All") return diagnoses;
-    return diagnoses.filter((diagnosis) => diagnosis.eye === activeFilter);
-  };
-
-  // Get severity based on diagnosis type
-  const getSeverity = (diagnosisType: string) => {
-    const severityMap: { [key: string]: "Low" | "Medium" | "High" } = {
-      PDR: "High",
-      NPDR: "Medium",
-      DME: "Medium",
-      Normal: "Low",
-    };
-    return severityMap[diagnosisType] || "Medium";
-  };
-
-  // Get color classes based on severity
   const getSeverityColor = (severity: "Low" | "Medium" | "High") => {
     switch (severity) {
       case "Low":
-        return "bg-green-100 text-green-800";
+        return "bg-emerald-100 text-emerald-800";
       case "Medium":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-amber-100 text-amber-800";
       case "High":
-        return "bg-red-100 text-red-800";
+        return "bg-rose-100 text-rose-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
 
+  const severityColor = getSeverityColor(severity);
+
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
-
-      {/* Header */}
-      <View className="bg-white border-b border-gray-200 px-4 py-4">
-        <Text className="text-xl font-bold text-gray-800">
-          Diagnosis History
-        </Text>
-      </View>
-
-      {/* Filter tabs */}
-      <View className="flex-row px-4 py-3 bg-white border-b border-gray-100">
-        <TouchableOpacity
-          className={`mr-4 py-1 px-3 rounded-full ${
-            activeFilter === "All" ? "bg-blue-100" : "bg-transparent"
-          }`}
-          onPress={() => setActiveFilter("All")}
-        >
-          <Text
-            className={`${
-              activeFilter === "All"
-                ? "text-blue-700 font-medium"
-                : "text-gray-600"
-            }`}
-          >
-            All Eyes
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          className={`mr-4 py-1 px-3 rounded-full ${
-            activeFilter === "LEFT" ? "bg-blue-100" : "bg-transparent"
-          }`}
-          onPress={() => setActiveFilter("LEFT")}
-        >
-          <Text
-            className={`${
-              activeFilter === "LEFT"
-                ? "text-blue-700 font-medium"
-                : "text-gray-600"
-            }`}
-          >
-            Left Eye
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          className={`py-1 px-3 rounded-full ${
-            activeFilter === "RIGHT" ? "bg-blue-100" : "bg-transparent"
-          }`}
-          onPress={() => setActiveFilter("RIGHT")}
-        >
-          <Text
-            className={`${
-              activeFilter === "RIGHT"
-                ? "text-blue-700 font-medium"
-                : "text-gray-600"
-            }`}
-          >
-            Right Eye
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {loading ? (
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#3b82f6" />
+    <Link key={diagnosis._id} href={`/diagnosis/${diagnosis._id}`} asChild>
+      <TouchableOpacity
+        className="mb-5 overflow-hidden bg-white border border-gray-100 shadow-sm rounded-2xl"
+        style={{ elevation: 1 }}
+      >
+        <View className="relative">
+          <Image
+            source={{ uri: diagnosis.imageUrl }}
+            className="w-full h-48"
+            resizeMode="cover"
+          />
+          <LinearGradient
+            colors={["transparent", "rgba(0,0,0,0.75)"]}
+            className="absolute inset-x-0 bottom-0 h-24"
+          />
+          <View className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-black bg-opacity-60 flex-row items-center">
+            <Ionicons
+              name={diagnosis.eye === "LEFT" ? "eye-outline" : "eye-outline"}
+              size={14}
+              color="#FFFFFF"
+            />
+            <Text className="ml-1 text-xs font-medium text-white">
+              {diagnosis.eye === "LEFT" ? "Left" : "Right"} Eye
+            </Text>
+          </View>
+          <View className="absolute flex-row items-center justify-between bottom-3 left-3 right-3">
+            <View className={`px-3 py-1.5 rounded-full ${severityColor}`}>
+              <Text
+                className={`text-xs font-bold ${severityColor.split(" ")[1]}`}
+              >
+                {severity} Risk
+              </Text>
+            </View>
+            <View className="bg-white bg-opacity-90 px-3 py-1.5 rounded-full">
+              <Text className="text-xs font-medium text-gray-800">
+                {formatDate(diagnosis.uploadedAt)}
+              </Text>
+            </View>
+          </View>
         </View>
-      ) : (
-        <ScrollView
-          className="flex-1"
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
+
+        <View className="p-4">
+          <Text className="mb-2 text-lg font-bold text-gray-900">
+            {diagnosis.diagnosis}
+          </Text>
+
+          {diagnosis.recommend.note ? (
+            <View className="p-3 mb-4 border border-gray-100 bg-gray-50 rounded-xl">
+              <Text className="mb-1 text-sm font-semibold text-gray-700">
+                Doctor's Note:
+              </Text>
+              <Text className="text-sm text-gray-600" numberOfLines={2}>
+                {diagnosis.recommend.note}
+              </Text>
+            </View>
+          ) : null}
+
+          <View className="flex-row items-center justify-between mt-2">
+            <View className="flex-row flex-wrap items-center gap-2">
+              {diagnosis.recommend.tests.length > 0 && (
+                <View className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
+                  <Ionicons name="medical-outline" size={14} color="#1e40af" />
+                  <Text className="text-blue-700 text-xs ml-1.5 font-medium">
+                    {diagnosis.recommend.tests.length} Tests
+                  </Text>
+                </View>
+              )}
+              <View className="flex-row items-center bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
+                <Ionicons name="time-outline" size={14} color="#1e40af" />
+                <Text className="text-blue-700 text-xs ml-1.5 font-medium">
+                  {diagnosis.revisitTimeFrame}
+                </Text>
+              </View>
+            </View>
+
+            <View className="flex-row items-center px-3 py-2 bg-blue-600 rounded-lg">
+              <Text className="mr-1 text-xs font-semibold text-white">
+                Details
+              </Text>
+              <Ionicons name="chevron-forward" size={14} color="#FFFFFF" />
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    </Link>
+  );
+};
+
+export default function DiagnosisHistoryScreen() {
+  const insets = useSafeAreaInsets();
+  const {
+    data: diagnoses = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useGetDiagnoses() as {
+    data: Diagnosis[] | undefined;
+    isLoading: boolean;
+    isError: boolean;
+    error: Error | null;
+    refetch: () => void;
+  };
+
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<"All" | "LEFT" | "RIGHT">(
+    "All"
+  );
+  const scrollY = new Animated.Value(0);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    Promise.resolve(refetch()).finally(() => setRefreshing(false));
+  };
+
+  const filteredDiagnoses = () => {
+    if (activeFilter === "All") return diagnoses || [];
+    return (diagnoses || []).filter(
+      (diagnosis: Diagnosis) => diagnosis.eye === activeFilter
+    );
+  };
+
+  // Header animation values
+  const headerHeight = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [120, 80],
+    extrapolate: "clamp",
+  });
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 60],
+    outputRange: [1, 0],
+    extrapolate: "clamp",
+  });
+
+  if (isLoading) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, paddingTop: insets.top }}
+        className="bg-white"
+      >
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View className="items-center justify-center flex-1">
+          <ActivityIndicator size="large" color="#3b82f6" />
+          <Text className="mt-4 font-medium text-blue-700">
+            Loading your eye health data...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (isError) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, paddingTop: insets.top }}
+        className="bg-white"
+      >
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View className="items-center justify-center flex-1 p-6">
+          <View className="p-4 mb-4 rounded-full bg-red-50">
+            <MaterialCommunityIcons
+              name="alert-circle"
+              size={48}
+              color="#ef4444"
+            />
+          </View>
+          <Text className="mb-2 text-xl font-bold text-gray-800">
+            Failed to Load Diagnoses
+          </Text>
+          <Text className="mb-8 text-center text-gray-600">
+            {error?.message.includes("404")
+              ? "No diagnoses found. Please check your account or contact support."
+              : "An error occurred while fetching diagnoses. Please try again later."}
+          </Text>
+          <TouchableOpacity
+            className="bg-blue-600 px-8 py-3.5 rounded-xl shadow"
+            onPress={() => refetch()}
+          >
+            <Text className="font-bold text-white">Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView
+      style={{ flex: 1, paddingTop: insets.top }}
+      className="bg-white"
+    >
+      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+
+      {/* Updated Animated Header with LinearGradient */}
+      <AnimatedLinearGradient
+        colors={["#1e3a8a", "#3b82f6"]}
+        style={{
+          height: headerHeight,
+          paddingHorizontal: 20,
+          paddingVertical: 16,
+          justifyContent: "flex-end",
+          borderBottomLeftRadius: 24,
+          borderBottomRightRadius: 24,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 12,
+          elevation: 8,
+        }}
+      >
+        <Text className="text-2xl font-bold text-white">
+          Eye Health History
+        </Text>
+        <Animated.Text
+          style={{ opacity: headerOpacity }}
+          className="mt-1 text-sm text-indigo-100"
         >
-          {filteredDiagnoses().length === 0 ? (
-            <View className="flex-1 justify-center items-center p-8">
-              <MaterialCommunityIcons
-                name="eye-off-outline"
-                size={64}
-                color="#CBD5E1"
-              />
-              <Text className="text-lg font-medium text-gray-700 mt-4 mb-2">
-                No Diagnoses Found
-              </Text>
-              <Text className="text-gray-500 text-center">
-                {activeFilter === "All"
-                  ? "You don't have any diagnoses yet."
-                  : `You don't have any diagnoses for your ${activeFilter.toLowerCase()} eye.`}
-              </Text>
-            </View>
-          ) : (
-            <View className="p-4">
-              {filteredDiagnoses().map((diagnosis) => {
-                const severity = getSeverity(diagnosis.diagnosis);
-                const severityColor = getSeverityColor(severity);
+          Track your eye condition progress over time
+        </Animated.Text>
+      </AnimatedLinearGradient>
 
-                return (
-                  <Link
-                    key={diagnosis._id}
-                    href={`/diagnosis/${diagnosis._id}`}
-                    asChild
-                  >
-                    <TouchableOpacity className="bg-white rounded-xl mb-3 shadow-sm overflow-hidden">
-                      {/* Preview image */}
-                      <Image
-                        source={{ uri: diagnosis.imageUrl }}
-                        className="w-full h-32"
-                        resizeMode="cover"
-                      />
-
-                      {/* Diagnosis info */}
-                      <View className="p-4">
-                        <View className="flex-row justify-between items-center mb-2">
-                          <View className="flex-row items-center">
-                            <Text className="text-gray-800 font-semibold mr-2">
-                              {diagnosis.diagnosis}
-                            </Text>
-                            <View
-                              className={`px-2 py-1 rounded ${severityColor}`}
-                            >
-                              <Text
-                                className={`text-xs font-medium ${
-                                  severityColor.split(" ")[1]
-                                }`}
-                              >
-                                {severity}
-                              </Text>
-                            </View>
-                          </View>
-                          <Text className="text-gray-500 text-xs">
-                            {formatDate(diagnosis.uploadedAt)}
-                          </Text>
-                        </View>
-
-                        <Text className="text-gray-700 mb-2">
-                          {diagnosis.eye} Eye
-                        </Text>
-
-                        {diagnosis.recommend.note ? (
-                          <Text
-                            className="text-gray-600 text-sm mb-3"
-                            numberOfLines={2}
-                          >
-                            {diagnosis.recommend.note}
-                          </Text>
-                        ) : null}
-
-                        <View className="flex-row justify-between items-center">
-                          <View className="flex-row items-center">
-                            {diagnosis.recommend.tests.length > 0 && (
-                              <View className="flex-row items-center mr-4">
-                                <Ionicons
-                                  name="medical-outline"
-                                  size={14}
-                                  color="#6B7280"
-                                />
-                                <Text className="text-gray-500 text-xs ml-1">
-                                  {diagnosis.recommend.tests.length} Tests
-                                </Text>
-                              </View>
-                            )}
-
-                            <View className="flex-row items-center">
-                              <Ionicons
-                                name="time-outline"
-                                size={14}
-                                color="#6B7280"
-                              />
-                              <Text className="text-gray-500 text-xs ml-1">
-                                {diagnosis.revisitTimeFrame}
-                              </Text>
-                            </View>
-                          </View>
-
-                          <View className="flex-row items-center">
-                            <Text className="text-blue-600 text-xs mr-1">
-                              View Details
-                            </Text>
-                            <Ionicons
-                              name="chevron-forward"
-                              size={14}
-                              color="#3B82F6"
-                            />
-                          </View>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  </Link>
-                );
-              })}
-            </View>
-          )}
+      {/* Filter Tabs */}
+      <View className="z-10 px-4 py-3 bg-white border-b border-gray-100 shadow-sm">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="flex-row"
+        >
+          <TouchableOpacity
+            className={`mr-3 py-2 px-5 rounded-lg ${
+              activeFilter === "All" ? "bg-sky-600" : "bg-sky-50"
+            }`}
+            onPress={() => setActiveFilter("All")}
+          >
+            <Text
+              className={`${
+                activeFilter === "All"
+                  ? "text-white font-bold"
+                  : "text-sky-500 font-medium"
+              }`}
+            >
+              All Eyes
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className={`mr-3 py-2 px-5 rounded-lg ${
+              activeFilter === "LEFT" ? "bg-cyan-600" : "bg-cyan-50"
+            }`}
+            onPress={() => setActiveFilter("LEFT")}
+          >
+            <Text
+              className={`${
+                activeFilter === "LEFT"
+                  ? "text-white font-bold"
+                  : "text-cyan-700 font-medium"
+              }`}
+            >
+              Left Eye
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className={`py-2 px-5 rounded-lg ${
+              activeFilter === "RIGHT" ? "bg-teal-600" : "bg-teal-50"
+            }`}
+            onPress={() => setActiveFilter("RIGHT")}
+          >
+            <Text
+              className={`${
+                activeFilter === "RIGHT"
+                  ? "text-white font-bold"
+                  : "text-teal-700 font-medium"
+              }`}
+            >
+              Right Eye
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
-      )}
+      </View>
+
+      {/* Content */}
+      <Animated.ScrollView
+        className="flex-1 bg-white"
+        contentContainerStyle={
+          filteredDiagnoses().length === 0
+            ? { flex: 1 }
+            : { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#3b82f6"]}
+          />
+        }
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+      >
+        {filteredDiagnoses().length === 0 ? (
+          <View className="items-center justify-center flex-1 p-8 bg-white">
+            <View className="p-4 mb-6 rounded-full bg-indigo-50">
+              <MaterialCommunityIcons
+                name="eye-off"
+                size={50}
+                color="#3b82f6"
+              />
+            </View>
+            <Text className="mb-3 text-xl font-bold text-gray-800">
+              No Diagnoses Found
+            </Text>
+            <Text className="mb-8 text-center text-gray-500">
+              {activeFilter === "All"
+                ? "You don't have any diagnoses yet. Schedule an eye exam to get started."
+                : `You don't have any diagnoses for your ${activeFilter.toLowerCase()} eye.`}
+            </Text>
+            <TouchableOpacity
+              className="bg-[#3b82f6] px-8 py-3.5 rounded-xl shadow"
+              onPress={() => refetch()}
+            >
+              <Text className="font-bold text-white">Refresh</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          filteredDiagnoses().map((diagnosis: Diagnosis) => (
+            <DiagnosisCard key={diagnosis._id} diagnosis={diagnosis} />
+          ))
+        )}
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }

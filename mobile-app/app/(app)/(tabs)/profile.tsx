@@ -51,8 +51,7 @@ export default function ProfileScreen() {
     profile?.doctorId && doctors?.length
       ? doctors.find((doc: any) => doc._id === profile.doctorId)?.name
       : undefined;
-
-  console.log("Doctors", JSON.stringify(doctors));
+  console.log("profile:", profile);
 
   // useEffect(() => {
   //   async function loadProfileData() {
@@ -94,7 +93,7 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-slate-50">
+      <View className="items-center justify-center flex-1 bg-slate-50">
         <ActivityIndicator size="large" color="#3b82f6" />
         <Text className="mt-4 text-gray-600">Loading your profile...</Text>
       </View>
@@ -103,16 +102,16 @@ export default function ProfileScreen() {
 
   if (error || !profile) {
     return (
-      <View className="flex-1 justify-center items-center p-4 bg-slate-50">
-        <Text className="text-lg text-gray-800 mb-2">Profile Not Found</Text>
-        <Text className="text-gray-600 text-center mb-4">
+      <View className="items-center justify-center flex-1 p-4 bg-slate-50">
+        <Text className="mb-2 text-lg text-gray-800">Profile Not Found</Text>
+        <Text className="mb-4 text-center text-gray-600">
           There was an error loading your profile information.
         </Text>
         <TouchableOpacity
-          className="bg-blue-500 px-4 py-2 rounded-lg"
+          className="px-4 py-2 bg-blue-500 rounded-lg"
           onPress={() => refreshProfile()}
         >
-          <Text className="text-white font-semibold">Try Again</Text>
+          <Text className="font-semibold text-white">Try Again</Text>
         </TouchableOpacity>
       </View>
     );
@@ -120,22 +119,22 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
-      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
+      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
 
       {/* Header */}
-      <View className="bg-white border-b border-gray-200 px-4 py-4">
-        <Text className="text-xl font-bold text-gray-800">My Profile</Text>
+      <View className="px-4 py-4 bg-white border-b border-gray-200">
+        <Text className="text-xl font-bold text-gray-800">Profile</Text>
       </View>
 
       <ScrollView className="flex-1">
         {/* Profile Header */}
-        <View className="bg-white p-6 mb-6 shadow-sm">
+        <View className="p-6 mb-6 bg-white shadow-sm">
           <View className="flex-row items-center">
-            <View className="w-20 h-20 bg-blue-50 rounded-full items-center justify-center shadow-sm">
+            <View className="items-center justify-center w-20 h-20 rounded-full shadow-sm bg-blue-50">
               <FontAwesome5 name="user-alt" size={32} color="#3b82f6" />
             </View>
-            <View className="ml-4 flex-1 justify-center">
-              <Text className="text-xl capitalize font-bold text-gray-800">
+            <View className="justify-center flex-1 ml-4">
+              <Text className="text-xl font-bold text-gray-800 capitalize">
                 {profile.fullName}
               </Text>
               <View className="flex-row items-center">
@@ -144,9 +143,6 @@ export default function ProfileScreen() {
                 </Text>
               </View>
               <View className="flex-row items-center mt-1">
-                <Text className="text-gray-500 text-sm">
-                  ID: {profile.patientId}
-                </Text>
                 {profile.patientStatus && (
                   <View
                     className={`ml-3 px-2 py-0.5 rounded-full ${
@@ -184,8 +180,8 @@ export default function ProfileScreen() {
         </View>
 
         {/* Medical Information */}
-        <View className="bg-white rounded-xl p-5 mx-4 mb-4 shadow-sm">
-          <View className="flex-row justify-between items-center mb-4">
+        <View className="p-5 mx-4 mb-4 bg-white shadow-sm rounded-xl">
+          <View className="flex-row items-center justify-between mb-4">
             <Text className="text-lg font-semibold text-gray-800">
               Medical Information
             </Text>
@@ -193,28 +189,28 @@ export default function ProfileScreen() {
 
           <View className="flex-row flex-wrap mb-2">
             <View className="w-1/2 mb-3">
-              <Text className="text-gray-500 text-xs">Blood Type</Text>
+              <Text className="text-xs text-gray-500">Blood Type</Text>
               <Text className="text-gray-800">
                 {profile.bloodType || "Not specified"}
               </Text>
             </View>
 
             <View className="w-1/2 mb-3">
-              <Text className="text-gray-500 text-xs">Height</Text>
+              <Text className="text-xs text-gray-500">Height</Text>
               <Text className="text-gray-800">
                 {profile.height ? `${profile.height} cm` : "Not specified"}
               </Text>
             </View>
 
             <View className="w-1/2 mb-3">
-              <Text className="text-gray-500 text-xs">Weight</Text>
+              <Text className="text-xs text-gray-500">Weight</Text>
               <Text className="text-gray-800">
                 {profile.weight ? `${profile.weight} kg` : "Not specified"}
               </Text>
             </View>
 
             <View className="w-1/2 mb-3">
-              <Text className="text-gray-500 text-xs">Birth Date</Text>
+              <Text className="text-xs text-gray-500">Birth Date</Text>
               <Text className="text-gray-800">
                 {formatDate(profile.birthDate)}
               </Text>
@@ -222,7 +218,7 @@ export default function ProfileScreen() {
           </View>
 
           <View className="mb-3">
-            <Text className="text-gray-500 text-xs mb-1">Allergies</Text>
+            <Text className="mb-1 text-xs text-gray-500">Allergies</Text>
             {profile.allergies &&
             profile.allergies.length > 0 &&
             profile.allergies.some((allergy) => allergy && allergy.trim()) ? (
@@ -233,7 +229,7 @@ export default function ProfileScreen() {
                     allergy.trim() && (
                       <View
                         key={index}
-                        className="bg-red-50 px-2 py-1 rounded-md mr-2 mb-2"
+                        className="px-2 py-1 mb-2 mr-2 rounded-md bg-red-50"
                       >
                         <Text className="text-red-700">{allergy}</Text>
                       </View>
@@ -247,14 +243,14 @@ export default function ProfileScreen() {
 
           {profile.category && profile.category.length > 0 && (
             <View className="mb-3">
-              <Text className="text-gray-500 text-xs mb-1">Conditions</Text>
+              <Text className="mb-1 text-xs text-gray-500">Conditions</Text>
               <View className="flex-row flex-wrap">
                 {profile.category.map(
                   (condition, index) =>
                     condition && (
                       <View
                         key={index}
-                        className="bg-blue-50 px-2 py-1 rounded-md mr-2 mb-2"
+                        className="px-2 py-1 mb-2 mr-2 rounded-md bg-blue-50"
                       >
                         <Text className="text-blue-700">{condition}</Text>
                       </View>
@@ -266,7 +262,7 @@ export default function ProfileScreen() {
 
           {doctorName && (
             <View className="mt-2">
-              <Text className="text-gray-500 text-xs">Primary Physician</Text>
+              <Text className="text-xs text-gray-500">Primary Physician</Text>
               <Text className="text-gray-800">{doctorName}</Text>
             </View>
           )}
@@ -274,27 +270,24 @@ export default function ProfileScreen() {
 
         {/* Medical History */}
         {profile.medicalHistory && profile.medicalHistory.length > 0 && (
-          <View className="bg-white rounded-xl p-5 mx-4 mb-4 shadow-sm">
-            <View className="flex-row justify-between items-center mb-4">
+          <View className="p-5 mx-4 mb-4 bg-white shadow-sm rounded-xl">
+            <View className="flex-row items-center justify-between mb-4">
               <Text className="text-lg font-semibold text-gray-800">
                 Medical History
               </Text>
-              <TouchableOpacity onPress={() => router.push("/medical-history")}>
-                <Text className="text-blue-500 text-sm">View All</Text>
-              </TouchableOpacity>
             </View>
 
             {profile.medicalHistory.slice(0, 2).map((history, index) => (
               <View
                 key={index}
                 className={`pb-3 ${
-                  index < Math.min(profile.medicalHistory.length, 2) - 1
+                  index < Math.min(profile.medicalHistory!.length, 2) - 1
                     ? "mb-3 border-b border-gray-100"
                     : ""
                 }`}
               >
-                <View className="flex-row justify-between mb-1">
-                  <Text className="text-gray-800 font-medium">
+                <View className="flex-row justify-between mb-2">
+                  <Text className="text-base font-bold text-gray-800">
                     {history.condition}
                   </Text>
                   <View
@@ -315,17 +308,19 @@ export default function ProfileScreen() {
                     </Text>
                   </View>
                 </View>
-                <Text className="text-gray-500 text-xs mb-1">
-                  Diagnosed: {formatDate(history.diagnosedAt)}
-                </Text>
+                {history.diagnosedAt && (
+                  <Text className="text-base font-medium text-gray-500">
+                    Diagnosed: {formatDate(history.diagnosedAt)}
+                  </Text>
+                )}
 
                 {history.medications && history.medications.length > 0 && (
                   <View className="mt-1">
-                    <Text className="text-gray-700 text-xs">
-                      Current Medications:
+                    <Text className="text-base font-medium text-gray-500">
+                      Current Medications
                     </Text>
                     {history.medications.map((med, medIndex) => (
-                      <Text key={medIndex} className="text-gray-800">
+                      <Text key={medIndex} className="text-gray-800 font-small">
                         • {med}
                       </Text>
                     ))}
@@ -338,36 +333,36 @@ export default function ProfileScreen() {
 
         {/* Emergency Contact */}
         {profile.emergencyContact && (
-          <View className="bg-white rounded-xl p-5 mx-4 mb-4 shadow-sm">
-            <View className="flex-row justify-between items-center mb-4">
+          <View className="p-5 mx-4 mb-4 bg-white shadow-sm rounded-xl">
+            <View className="flex-row items-center justify-between mb-4">
               <Text className="text-lg font-semibold text-gray-800">
                 Emergency Contact
               </Text>
             </View>
 
             <View className="mb-2">
-              <Text className="text-gray-500 text-xs">Name</Text>
+              <Text className="text-xs text-gray-500">Name</Text>
               <Text className="text-gray-800">
-                {profile.emergencyContact.name}
+                {profile.emergencyContact!.name}
               </Text>
             </View>
 
             <View className="mb-2">
-              <Text className="text-gray-500 text-xs">Relationship</Text>
+              <Text className="text-xs text-gray-500">Relationship</Text>
               <Text className="text-gray-800">
-                {profile.emergencyContact.relationship}
+                {profile.emergencyContact!.relationship}
               </Text>
             </View>
 
             <View>
-              <Text className="text-gray-500 text-xs">Phone</Text>
+              <Text className="text-xs text-gray-500">Phone</Text>
               <View className="flex-row items-center">
                 <Text className="text-gray-800">
-                  {profile.emergencyContact.phone}
+                  {profile.emergencyContact!.phone}
                 </Text>
                 <TouchableOpacity
-                  className="ml-2 p-1"
-                  onPress={() => handleCall(profile.emergencyContact.phone)}
+                  className="p-1 ml-2"
+                  onPress={() => handleCall(profile.emergencyContact!.phone)}
                 >
                   <Ionicons name="call-outline" size={18} color="#3b82f6" />
                 </TouchableOpacity>
@@ -377,19 +372,19 @@ export default function ProfileScreen() {
         )}
 
         {/* Contact & Personal Information */}
-        <View className="bg-white rounded-xl p-5 mx-4 mb-4 shadow-sm">
-          <View className="flex-row justify-between items-center mb-4">
+        <View className="p-5 mx-4 mb-4 bg-white shadow-sm rounded-xl">
+          <View className="flex-row items-center justify-between mb-4">
             <Text className="text-lg font-semibold text-gray-800">
               Contact Information
             </Text>
           </View>
 
           <View className="mb-3">
-            <Text className="text-gray-500 text-xs">Phone</Text>
+            <Text className="text-xs text-gray-500">Phone</Text>
             <View className="flex-row items-center">
               <Text className="text-gray-800">{profile.contactNumber}</Text>
               <TouchableOpacity
-                className="ml-2 p-1"
+                className="p-1 ml-2"
                 onPress={() => handleCall(profile.contactNumber)}
               >
                 <Ionicons name="call-outline" size={18} color="#3b82f6" />
@@ -398,76 +393,19 @@ export default function ProfileScreen() {
           </View>
 
           <View className="mb-3">
-            <Text className="text-gray-500 text-xs">Email</Text>
+            <Text className="text-xs text-gray-500">Email</Text>
             <Text className="text-gray-800">{profile.email}</Text>
           </View>
 
           <View>
-            <Text className="text-gray-500 text-xs">Address</Text>
+            <Text className="text-xs text-gray-500">Address</Text>
             <Text className="text-gray-800">
               {profile.address || "Not specified"}
             </Text>
           </View>
         </View>
 
-        {/* Settings & More */}
-        <View className="bg-white rounded-xl mx-4 mb-6 shadow-sm">
-          <TouchableOpacity
-            className="flex-row items-center p-4 border-b border-gray-100"
-            onPress={() => router.push("/notifications-settings")}
-          >
-            <Ionicons
-              name="notifications-outline"
-              size={22}
-              color="#4B5563"
-              className="mr-3"
-            />
-            <Text className="flex-1 text-gray-800">Notifications</Text>
-            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="flex-row items-center p-4 border-b border-gray-100"
-            onPress={() => router.push("/privacy-settings")}
-          >
-            <Ionicons
-              name="lock-closed-outline"
-              size={22}
-              color="#4B5563"
-              className="mr-3"
-            />
-            <Text className="flex-1 text-gray-800">Privacy & Security</Text>
-            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="flex-row items-center p-4 border-b border-gray-100"
-            onPress={() => router.push("/support")}
-          >
-            <Ionicons
-              name="help-circle-outline"
-              size={22}
-              color="#4B5563"
-              className="mr-3"
-            />
-            <Text className="flex-1 text-gray-800">Help & Support</Text>
-            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            className="flex-row items-center p-4 border-b border-gray-100"
-            onPress={() => router.push("/terms")}
-          >
-            <Ionicons
-              name="document-text-outline"
-              size={22}
-              color="#4B5563"
-              className="mr-3"
-            />
-            <Text className="flex-1 text-gray-800">Terms & Conditions</Text>
-            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-          </TouchableOpacity>
-
+        <View className="mx-4 mb-6 bg-white shadow-sm rounded-xl">
           <TouchableOpacity
             className="flex-row items-center p-4"
             onPress={handleLogout}

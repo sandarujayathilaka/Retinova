@@ -124,15 +124,15 @@ export default function ForgotPasswordScreen() {
             {/* Logo and App Name */}
             <View className="items-center mb-8">
               <Image
-                source={require("@/assets/images/icon.png")}
-                className="w-20 h-20"
+                source={require("@/assets/images/retinova_logo.png")}
+                className="w-40 h-40"
                 resizeMode="contain"
               />
               <Text className="text-2xl font-bold text-gray-800 mt-2">
-                EyeDiagnosis
+                RETINOVA
               </Text>
               <Text className="text-sm text-gray-500">
-                Advanced retinal analysis tools
+                Know Your Vision, Anytime, Anywhere
               </Text>
             </View>
 
